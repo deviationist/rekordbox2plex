@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env
 
+from .rekordbox_file_resolver import resolve_track
 import json
-from rekordbox_file_resolver import resolve_track
 
 def main():
   file_path = "/data/music/main/Minimal but pling plong/Cajal - 0220 (Original Mix).aiff"
