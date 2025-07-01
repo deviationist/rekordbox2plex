@@ -1,0 +1,23 @@
+[project]
+name = "rekordbox2plex"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Robert Sæther",email = "robert4832@pm.me"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pysqlcipher3 (>=1.2.0,<2.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "rekordbox2plex", from = "src"}]
+
+[tool.poetry.scripts]
+rekordbox2plex = "rekordbox2plex.__main__:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
