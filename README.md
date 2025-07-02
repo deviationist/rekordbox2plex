@@ -10,17 +10,17 @@
 - Attempt to assign album / album artist via ID if it already exists? Now there seems to be a lot of duplicates...
 - Create script to check if there's any orphaned files in my folder structure? Or any tracks that misses it's file?
 - Check if there's some artwork that does not get transfered to Plex?
+- Write about how playlists are flattened
+- Make stuff optional and configurable
 
 ## Features
 
 * ✅ Sync Rekordbox track metadata and playlists to Plex
 * ✅ Supports file path remapping (e.g. when Plex is running in Docker)
-* ✅ Securely reads Rekordbox’s encrypted SQLite database (`pysqlcipher3`)
+* ✅ Reads Rekordbox’s encrypted SQLite database using `pysqlcipher3` (read-only mode for safety)
 * ✅ Colorful console output and progress bars using `rich`
 * ❌ No concurrency yet – planned for future versions
 * 🛠️ Can be run manually or scheduled via `cron`
-* Write about how playlists are flattened
-* Make stuff optional and configurable
 
 ---
 
