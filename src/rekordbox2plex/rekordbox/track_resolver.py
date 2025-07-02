@@ -4,13 +4,14 @@ import json
 
 console = Console()
 
-def convert_path_to_rekordbox(plexPath: str) -> str:
+def convert_path_to_rekordbox(plex_path: str) -> str:
+    # TODO: Allow file not to exist and just use the plex_path without any changes
     with open("folderMappings.json", "r") as f:
         folder_mappings = json.load(f)
     for plex_folder, rekordbox_folder in folder_mappings.items():
-        if plexPath.startswith(plex_folder):
-            return rekordbox_folder + plexPath[len(plex_folder):]
-    console.log(f"[red]Warning: No mapping found for {plexPath}")
+        if plex_path.startswith(plex_folder):
+            return rekordbox_folder + plex_path[len(plex_folder):]
+    console.log(f"[red]Warning: No mapping found for {plex_path}")
 
 def resolve_track(plex_track: str, progress = None, task = None) -> tuple[dict, dict | None, dict | None, dict | None, dict | None] | bool:
     db = RekordboxDB()
