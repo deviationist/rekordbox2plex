@@ -19,6 +19,8 @@
 * ✅ Colorful console output and progress bars using `rich`
 * ❌ No concurrency yet – planned for future versions
 * 🛠️ Can be run manually or scheduled via `cron`
+* Write about how playlists are flattened
+* Make stuff optional and configurable
 
 ---
 
@@ -28,7 +30,7 @@
 * [`Poetry`](https://python-poetry.org/)
 * Rekordbox (with access to its encrypted SQLite DB)
 * A running Plex server
-* Your Rekordbox tracks must be accessible to Plex
+* Rekordbox and Plex must be on the same file system
 
 ---
 
@@ -63,6 +65,9 @@ cp .env.example .env
 * `PLEX_BASEURL` – your Plex server URL (e.g. [http://localhost:32400](http://localhost:32400))
 * `PLEX_LIBRARY_NAME`- your Plex library name that contains your music
 
+> 🔐 **How to find your Plex Token?**
+> See [this guide](#how-to-find-your-plex-token).
+
 > 🔐 **How to find your Rekordbox database and password?**
 > See [this guide](#how-to-find-your-rekordbox-sqlite-db).
 
@@ -78,7 +83,7 @@ Edit `folderMappings.json` to map local Rekordbox paths to Plex-accessible paths
 
 ```json
 {
-  "/Users/yourname/Music/Rekordbox": "/music"
+  "/path/to/your/plex/music": "/path/to/your/rekordbox/music"
 }
 ```
 
@@ -100,7 +105,13 @@ To run the sync regularly (e.g. nightly), set up a cron job:
 
 ---
 
+## How to Find Your Plex Token
+
+TODO: Finish this
+
 ## How to Find Your Rekordbox SQLite DB
+
+TODO: Correct this
 
 1. Open Rekordbox.
 2. Click **Preferences > Advanced > Database** to see your library location.
@@ -122,7 +133,7 @@ This project is using:
 ### Goals for future versions
 
 * Add concurrency for faster syncing
-* Automatically detect and prompt for Rekordbox path and password
+* More configurability
 * Improved error handling and logging
 * Better playlist syncing (e.g., smart playlists)
 
