@@ -1,0 +1,28 @@
+# .editorconfig for Python projects
+
+root = true
+
+# Global settings (applies to all files unless overridden)
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Python-specific settings
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88  # Match Black's default
+
+# Markdown and JSON files (common in repos)
+[*.{md,json}]
+indent_style = space
+indent_size = 2
+
+# YAML files
+[*.yml]
+indent_style = space
+indent_size = 2
