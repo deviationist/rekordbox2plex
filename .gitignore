@@ -84,6 +84,7 @@ cython_debug/
 .env
 .env.*
 *.env
+!.env.example
 
 # Virtual environments
 venv/
