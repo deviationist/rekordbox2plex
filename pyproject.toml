@@ -21,6 +21,7 @@ packages = [{include = "rekordbox2plex", from = "src"}]
 
 [tool.poetry.scripts]
 rekordbox2plex = "rekordbox2plex.__main__:main"
+rekordbox2db = "rekordbox2db.__main__:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
