@@ -11,7 +11,9 @@ dependencies = [
     "pysqlcipher3 (>=1.2.0,<2.0.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
     "plexapi (>=4.17.0,<5.0.0)",
-    "rich (>=14.0.0,<15.0.0)"
+    "rich (>=14.0.0,<15.0.0)",
+    "frida-tools (>=14.4.0,<15.0.0)",
+    "psutil (>=7.0.0,<8.0.0)"
 ]
 
 [tool.poetry]

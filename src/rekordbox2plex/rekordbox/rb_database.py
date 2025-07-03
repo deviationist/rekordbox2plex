@@ -1,8 +1,5 @@
 from pysqlcipher3 import dbapi2 as sqlite
-import os
-
-DB_PATH = os.getenv("REKORDBOX_MASTERDB_PATH")
-DB_PASSWORD = os.getenv("REKORDBOX_MASTERDB_PASSWORD")
+from ..config import get_db_pass, get_db_path
 
 class RekordboxDB:
     _instance = None
@@ -16,6 +13,8 @@ class RekordboxDB:
 
     def connect(self):
         if self._conn is None:
+            DB_PATH = get_db_path()
+            DB_PASSWORD = get_db_pass()
             uri = f"file:{DB_PATH}?mode=ro"
             self._conn = sqlite.connect(uri)
             self._conn.row_factory = sqlite.Row
