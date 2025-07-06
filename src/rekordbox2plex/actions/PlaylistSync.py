@@ -1,0 +1,107 @@
+from ..rekordbox.playlist_resolver import get_all_playlists as get_all_playlists_from_rekordbox, get_playlist_tracks
+from ..plex.repository.PlaylistRepository import PlaylistRepository
+from ..utils.TrackIdMapper import TrackIdMapper
+from ..utils.progress_bar import progress_instance
+from ..utils.logger import logger
+
+class PlaylistSync:
+    def __init__(self):
+        self.trackIdMapper = TrackIdMapper()
+        self.deleted = 0
+        self.created = 0
+        self.updated = 0
+
+    def sync(self):
+        logger.info("[cyan]Attempting to synchronize Rekordbox playlists to Plex...")
+        self.trackIdMapper.ensure_mappings() # Ensure we have all tracks
+        rb_playlists = get_all_playlists_from_rekordbox()
+        plex_playlists = PlaylistRepository().get_all_playlists()
+        logger.info(f"[cyan]Found {len(rb_playlists)} in Rekordbox, and {len(plex_playlists)} in Plex, proceeding to sync.")
+        with progress_instance() as progress:
+            task = progress.add_task("", total=len(rb_playlists))
+            for rb_playlist in rb_playlists:
+                progress.update(task, description=f'[yellow]Synchronizing Rekordbox playlist "{rb_playlist["FlattenedName"]}"...')
+                plex_playlist = next((pl for pl in plex_playlists if pl.title == rb_playlist["FlattenedName"]), None)
+                if plex_playlist:
+                    playlist_was_synced = self.sync_playlist_tracks(rb_playlist, plex_playlist) # Make sure tracks are up to date
+                    if playlist_was_synced:
+                        progress.update(task, advance=1, description=f"[bold green]✔ Done! Playlist {rb_playlist["FlattenedName"]} synchronized!")
+                    else:
+                        progress.update(task, advance=1) # No Change
+                else:
+                    if self.create_playlist(rb_playlist):
+                        progress.update(task, advance=1, description=f"[bold green]✔ Done! Playlist {rb_playlist["FlattenedName"]} created!")
+                    else:
+                        progress.update(task, advance=1) # Playlist not crated (most likely empty/no tracks inside)
+            progress.update(task, description=f"[bold green]✔ Done! Rekordbox playlists are synchronized with Plex!")
+        self.delete_orphaned_playlists(rb_playlists, plex_playlists)
+        logger.info(f"[bold green]✔ Process complete! Rekordbox and Plex playlists should now be in sync!")
+
+    def resolve_plex_track_from_rb_playlist(self, rb_playlist):
+        plex_items = []
+        rb_playlist_items = get_playlist_tracks(rb_playlist["PlaylistID"])
+        for rb_playlist_item in rb_playlist_items:
+            plex_item = self.trackIdMapper.resolve_plex_track_by_rb(rb_playlist_item["ID"])
+            if plex_item:
+                plex_items.append(plex_item["track_object"])
+        return plex_items
+
+    def create_playlist(self, rb_playlist) -> bool:
+        plex_items = self.resolve_plex_track_from_rb_playlist(rb_playlist)
+        if len(plex_items) > 0:
+            self.created+=1
+            PlaylistRepository().create_playlist(rb_playlist["FlattenedName"], plex_items)
+            return True
+        return False
+
+    def add_items_to_playlist(self, plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist) -> bool:
+        items_to_add = []
+        for plex_item in plex_playlist_items_from_rb:
+            in_playlist = next((pl for pl in plex_playlist_existing_items if pl.ratingKey == plex_item.ratingKey), None)
+            if not in_playlist:
+                items_to_add.append(plex_item)
+        if len(items_to_add) > 0:
+            plex_playlist.addItems(items_to_add)
+            return True
+        return False
+
+    def remove_items_from_playlist(self, plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist) -> bool:
+        items_to_remove = []
+        for plex_item in plex_playlist_existing_items:
+            in_playlist = next((pl for pl in plex_playlist_items_from_rb if pl.ratingKey == plex_item.ratingKey), None)
+            if not in_playlist:
+                items_to_remove.append(plex_item)
+        if len(items_to_remove) > 0:
+            plex_playlist.removeItems(items_to_remove)
+            return True
+        return False
+
+    def sync_playlist_tracks(self, rb_playlist, plex_playlist) -> str | bool:
+        plex_playlist_items_from_rb = self.resolve_plex_track_from_rb_playlist(rb_playlist)
+        plex_playlist_existing_items = plex_playlist.items()
+        if len(plex_playlist.items()) > 0:
+            did_add_items = self.add_items_to_playlist(plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist)
+            did_remove_items = self.remove_items_from_playlist(plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist)
+            if did_add_items or did_remove_items:
+                self.updated+=1
+                return True
+            else:
+                return False
+        else:
+            plex_playlist.delete()
+            self.deleted+=1
+            return False
+
+    def delete_orphaned_playlists(self, rb_playlists, plex_playlists):
+        orphaned_playlists = []
+        for plex_playlist in plex_playlists:
+            playlist_exists_in_rb = next((pl for pl in rb_playlists if pl["FlattenedName"] == plex_playlist.title), None)
+            if not playlist_exists_in_rb:
+                orphaned_playlists.append(plex_playlist)
+        orphaned_playlists_count = len(orphaned_playlists)
+        if orphaned_playlists_count > 0:
+            logger.info(f"[cyan]Found {orphaned_playlists_count} orphaned playlists, deleting...")
+            for orphaned_playlist in orphaned_playlists:
+                orphaned_playlist.delete()
+                self.deleted+=1
+            logger.info(f"[bold green]✔{orphaned_playlists_count} orphaned playlists deleted!")

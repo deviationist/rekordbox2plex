@@ -1,8 +1,7 @@
-from .rb_database import RekordboxDB
-from rich.console import Console
-console = Console()
+from .RekordboxDB import RekordboxDB
+from typing import Any
 
-def get_playlist_tracks(playlist_ID):
+def get_playlist_tracks(playlist_ID) -> Any:
     db = RekordboxDB()
     cursor = db.cursor
 
@@ -22,8 +21,8 @@ def get_playlist_tracks(playlist_ID):
     cursor.execute(query, (playlist_ID,))
     return cursor.fetchall()
 
-def get_all_playlists() -> tuple:
-    db = DatabaseConnection()
+def get_all_playlists() -> Any:
+    db = RekordboxDB()
     cursor = db.cursor
 
     query = """
