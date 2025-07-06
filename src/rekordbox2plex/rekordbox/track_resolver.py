@@ -1,17 +1,22 @@
-from .rb_database import RekordboxDB
-from rich.console import Console
+from .RekordboxDB import RekordboxDB
+from ..utils.logger import logger
 import json
 
-console = Console()
-
 def convert_path_to_rekordbox(plex_path: str) -> str:
-    # TODO: Allow file not to exist and just use the plex_path without any changes
-    with open("folderMappings.json", "r") as f:
-        folder_mappings = json.load(f)
+    try:
+        with open("folderMappings.json", "r") as f:
+            folder_mappings = json.load(f)
+    except FileNotFoundError:
+        logger.info('[red]Warning: folderMappings.json not found, using original path')
+        return plex_path
+
     for plex_folder, rekordbox_folder in folder_mappings.items():
         if plex_path.startswith(plex_folder):
             return rekordbox_folder + plex_path[len(plex_folder):]
-    console.log(f"[red]Warning: No mapping found for {plex_path}")
+
+    # No mapping found, just return the original path
+    logger.info(f'[yellow]Warning: No mapping found for "{plex_path}", using original path')
+    return plex_path
 
 def resolve_track(plex_track: str, progress = None, task = None) -> tuple[dict, dict | None, dict | None, dict | None, dict | None] | bool:
     db = RekordboxDB()
@@ -92,9 +97,9 @@ def resolve_track(plex_track: str, progress = None, task = None) -> tuple[dict, 
 
             return track, artist, artwork, album, albumArtist
         else:
-            console.log(f"[red]Warning: No file found for {rekordboxPath}")
+            logger.info(f"[red]Warning: No file found for {rekordboxPath}")
             return False
 
     except Exception as e:  # Changed from sqlite.Error to catch any issues
-        console.log("[red]Database error:", e)
+        logger.info("[red]Database error:", e)
         return False

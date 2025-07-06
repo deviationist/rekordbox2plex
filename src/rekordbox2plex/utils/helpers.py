@@ -1,0 +1,34 @@
+import argparse
+
+VALID_TARGET_CHOICES = {"tracks", "playlists", "artwork"}
+
+def build_track_string(plex_track) -> str:
+    return f'"{plex_track["title"]}" by "{plex_track["track_artist"]}"'
+
+def determine_sync_targets(args, default_target = "tracks"):
+    return args.sync if args.sync else default_target
+
+
+def parse_sync_arg(s):
+    items = [item.strip() for item in s.split(',')]
+    invalid = set(items) - VALID_TARGET_CHOICES
+    if invalid:
+        raise argparse.ArgumentTypeError(
+            f"Invalid choices: {', '.join(invalid)}. Valid options are: {', '.join(VALID_TARGET_CHOICES)}"
+        )
+    return items
+
+def parse_script_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0,
+        help="Increase verbosity: -v = INFO, -vv = DEBUG"
+    )
+
+    parser.add_argument(
+        "--sync",
+        type=parse_sync_arg,
+        help="Comma-separated list of what to sync: tracks, playlists, artwork",
+    )
+
+    return parser.parse_args()

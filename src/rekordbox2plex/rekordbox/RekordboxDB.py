@@ -1,5 +1,19 @@
 from pysqlcipher3 import dbapi2 as sqlite
+import sys
 from ..config import get_db_pass, get_db_path
+import atexit
+
+def close_connection():
+    db = RekordboxDB()
+    db.close()
+
+def setup_db_connection():
+    try:
+        db = RekordboxDB()
+        db.cursor
+    except Exception as e:
+        sys.exit(f"Cannot connect to DB. Please check DB path and password. Error: {e}")
+    atexit.register(close_connection)
 
 class RekordboxDB:
     _instance = None

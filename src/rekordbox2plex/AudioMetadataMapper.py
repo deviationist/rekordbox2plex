@@ -1,3 +1,6 @@
+from .plex.repository.ArtistRepository import ArtistRepository
+from .plex.repository.AlbumRepository import AlbumRepository
+
 class AudioMetadataMapper:
     FORCE_UPDATE = True
     def __init__(self, plex_track, rb_item):
@@ -8,6 +11,7 @@ class AudioMetadataMapper:
         self.rb_album = rb_album
         self.rb_album_artist = rb_album_artist
         self.plex_track = plex_track
+        self.album_artist_rating_key = None
         self.edits = {}
 
     def updateTrackTitle(self):
@@ -21,11 +25,22 @@ class AudioMetadataMapper:
         self.edits["originalTitle.locked"] = 1
 
     def updateAlbumArtist(self):
-        albumArtistName = self.rb_album.get("Name", "") if self.rb_album else ""
+        albumArtistName = self.rb_album_artist.get("Name", "") if self.rb_album_artist else ""
+        if albumArtistName:
+            artist = ArtistRepository().search_for_artist(albumArtistName)
+            if artist:
+                self.album_artist_rating_key = artist.ratingKey
+                self.edits["artist.id.value"] = artist.ratingKey
+                return
         self.edits["artist.title.value"] = albumArtistName
 
     def updateAlbum(self):
         albumName = self.rb_album.get("Name", "") if self.rb_album else ""
+        if albumName and self.album_artist_rating_key:
+            album = AlbumRepository().search_for_album_by_artist(self.album_artist_rating_key, albumName)
+            if album:
+                self.edits["album.id.value"] = album.ratingKey
+                return
         self.edits["album.title.value"] = albumName
 
     def transfer(self):

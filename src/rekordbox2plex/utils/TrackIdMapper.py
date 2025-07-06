@@ -1,17 +1,15 @@
-from .plex.track_resolver import fetch_tracks
-from .rekordbox.track_resolver import resolve_track
+from ..plex.repository.TrackRepository import TrackRepository
+from ..rekordbox.track_resolver import resolve_track
 from .progress_bar import progress_instance
-from rich.console import Console
-from .helper import build_track_string
+from .helpers import build_track_string
+from .logger import logger
 
-console = Console()
-
-class TrackMapper:
+class TrackIdMapper:
     _instance = None
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(TrackMapper, cls).__new__(cls)
+            cls._instance = super(TrackIdMapper, cls).__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
@@ -87,8 +85,8 @@ class TrackMapper:
 
     def ensure_mappings(self):
         if len(self.mappings) == 0:
-            console.log("[cyan]No mappings found, fetching tracks...")
-            plex_tracks, track_count = fetch_tracks()
+            logger.info("[cyan]No mappings found, fetching tracks...")
+            plex_tracks, track_count = TrackRepository().get_all_tracks()
             with progress_instance() as progress:
                 task = progress.add_task("", total=track_count)
                 for plex_track in plex_tracks:
