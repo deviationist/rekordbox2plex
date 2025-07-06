@@ -22,8 +22,6 @@ class NullProgress:
 
 def progress_instance(enabled: bool = True):
     if enabled:
-        return NullProgress()
-    else:
         return Progress(
             BarColumn(),
             TaskProgressColumn(),
@@ -31,3 +29,5 @@ def progress_instance(enabled: bool = True):
             TimeRemainingColumn(),
             TextColumn("{task.description}")
         )
+    else:
+        return NullProgress()

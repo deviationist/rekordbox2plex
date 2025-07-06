@@ -27,14 +27,18 @@ class PlaylistSync:
                     if playlist_was_synced:
                         progress.update(task, advance=1, description=f"[bold green]✔ Done! Playlist {rb_playlist["FlattenedName"]} synchronized!")
                     else:
+                        logger.debug(f'Playlist "{rb_playlist["FlattenedName"]}" already up to date.')
                         progress.update(task, advance=1) # No Change
                 else:
-                    if self.create_playlist(rb_playlist):
-                        progress.update(task, advance=1, description=f"[bold green]✔ Done! Playlist {rb_playlist["FlattenedName"]} created!")
+                    track_count = self.create_playlist(rb_playlist)
+                    if isinstance(track_count, int):
+                        progress.update(task, advance=1, description=f"[bold green]✔ Done! Playlist {rb_playlist["FlattenedName"]} created with {track_count} tracks!")
                     else:
+                        logger.debug(f'Playlist "{rb_playlist["FlattenedName"]}" not created since it is empty.')
                         progress.update(task, advance=1) # Playlist not crated (most likely empty/no tracks inside)
             progress.update(task, description=f"[bold green]✔ Done! Rekordbox playlists are synchronized with Plex!")
         self.delete_orphaned_playlists(rb_playlists, plex_playlists)
+        logger.info(f"[bold green]✔ Result: {self.deleted} deleted, {self.updated} updated, and {self.created} created.")
         logger.info(f"[bold green]✔ Process complete! Rekordbox and Plex playlists should now be in sync!")
 
     def resolve_plex_track_from_rb_playlist(self, rb_playlist):
@@ -46,12 +50,14 @@ class PlaylistSync:
                 plex_items.append(plex_item["track_object"])
         return plex_items
 
-    def create_playlist(self, rb_playlist) -> bool:
+    def create_playlist(self, rb_playlist) -> int | bool:
         plex_items = self.resolve_plex_track_from_rb_playlist(rb_playlist)
-        if len(plex_items) > 0:
+        track_count = len(plex_items)
+        if track_count > 0:
             self.created+=1
+            logger.debug(f'Creating playlist "{rb_playlist["FlattenedName"]}" with {len(plex_items)} tracks')
             PlaylistRepository().create_playlist(rb_playlist["FlattenedName"], plex_items)
-            return True
+            return track_count
         return False
 
     def add_items_to_playlist(self, plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist) -> bool:
@@ -102,6 +108,7 @@ class PlaylistSync:
         if orphaned_playlists_count > 0:
             logger.info(f"[cyan]Found {orphaned_playlists_count} orphaned playlists, deleting...")
             for orphaned_playlist in orphaned_playlists:
+                logger.debug(f'Delete playlist "{orphaned_playlist.title}"')
                 orphaned_playlist.delete()
                 self.deleted+=1
             logger.info(f"[bold green]✔{orphaned_playlists_count} orphaned playlists deleted!")
