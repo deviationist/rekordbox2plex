@@ -1,5 +1,5 @@
-from .plex.repository.ArtistRepository import ArtistRepository
-from .plex.repository.AlbumRepository import AlbumRepository
+from ..plex.repository.ArtistRepository import ArtistRepository
+from ..plex.repository.AlbumRepository import AlbumRepository
 
 class AudioMetadataMapper:
     FORCE_UPDATE = True

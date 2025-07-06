@@ -1,4 +1,4 @@
-from ..AudioMetadataMapper import AudioMetadataMapper
+from ..utils.AudioMetadataMapper import AudioMetadataMapper
 from ..plex.repository.TrackRepository import TrackRepository
 from ..rekordbox.track_resolver import resolve_track as resolve_track_in_rekordbox
 from ..utils.progress_bar import progress_instance

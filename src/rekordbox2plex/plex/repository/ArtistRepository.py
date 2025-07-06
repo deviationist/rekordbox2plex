@@ -18,5 +18,8 @@ class ArtistRepository(RepositoryBase):
         self._store_in_cache(artists)
         return artists
 
-    def search_for_artist(self, artist_name: str):
-        return search_for_artists(artist_name)
+    def search_for_artist(self, artist_name: str) -> bool | tuple:
+        results = search_for_artists(artist_name)
+        if results and len(results) > 0:
+            return results[0]
+        return False

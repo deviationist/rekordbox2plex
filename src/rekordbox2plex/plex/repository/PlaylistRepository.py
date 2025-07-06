@@ -7,9 +7,9 @@ class PlaylistRepository(RepositoryBase):
     def get_playlist(self, playlist_id: str):
         return get_playlist(playlist_id)
 
-    def get_all_playlists():
+    def get_all_playlists(self):
         return get_all_playlists()
 
-    def create_playlist(playlist_name, items):
+    def create_playlist(self, playlist_name, items):
         music_library, _ = get_music_library()
         music_library.createPlaylist(playlist_name, items=items)
