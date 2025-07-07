@@ -1,6 +1,13 @@
 import os
 
 
+def get_logger_name() -> str:
+    LOGGER_NAME = os.getenv("LOGGER_NAME")
+    if LOGGER_NAME:
+        return LOGGER_NAME
+    return "rekordbox2plex"
+
+
 def get_db_path() -> str:
     DB_PATH = os.getenv("REKORDBOX_MASTERDB_PATH")
     if not DB_PATH:

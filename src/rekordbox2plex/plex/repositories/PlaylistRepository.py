@@ -13,6 +13,6 @@ class PlaylistRepository(RepositoryBase):
     def get_all_playlists(self) -> PlexPlaylists:
         return get_all_playlists()
 
-    def create_playlist(self, playlist_name: str, items: List[Track]):
+    def create_playlist(self, playlist_name: str, items: List[Track]) -> None:
         music_library, _ = get_music_library()
         music_library.createPlaylist(playlist_name, items=items)
