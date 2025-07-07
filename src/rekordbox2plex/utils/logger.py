@@ -1,10 +1,12 @@
 import logging
+import argparse
 from rich.logging import RichHandler
+from ..config import get_logger_name
 
-logger = logging.getLogger("rekordbox2plex")
+logger = logging.getLogger(get_logger_name())
 
 
-def init_logger(args):
+def init_logger(args: argparse.Namespace) -> None:
     # Set logging level based on verbosity
     if args.verbose >= 2:
         level = logging.DEBUG

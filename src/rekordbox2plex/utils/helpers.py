@@ -1,4 +1,5 @@
 import argparse
+from typing import List
 from ..plex.data_types import PlexTrackWrapper
 
 VALID_TARGET_CHOICES = {"tracks", "playlists", "albums"}
@@ -12,7 +13,7 @@ def determine_sync_targets(args, default_target: str = "tracks") -> str:
     return args.sync if args.sync else default_target
 
 
-def parse_sync_arg(s):
+def parse_sync_arg(s) -> List[str]:
     items = [item.strip() for item in s.split(",")]
     invalid = set(items) - VALID_TARGET_CHOICES
     if invalid:
@@ -22,7 +23,7 @@ def parse_sync_arg(s):
     return items
 
 
-def parse_script_arguments():
+def parse_script_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-v",

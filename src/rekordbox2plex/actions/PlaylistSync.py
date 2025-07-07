@@ -2,12 +2,12 @@ from ..rekordbox.resolvers.playlist import (
     get_all_playlists as get_all_playlists_from_rekordbox,
     get_playlist_tracks,
 )
+from ..rekordbox.data_types import Playlist as RekordboxPlaylist
 from ..plex.repositories.PlaylistRepository import PlaylistRepository
+from ..plex.data_types import Track, PlexPlaylist, PlexPlaylists
 from ..utils.TrackIdMapper import TrackIdMapper
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
-from ..plex.data_types import Track, PlexPlaylist, PlexPlaylists
-from ..rekordbox.data_types import Playlist as RekordboxPlaylist
 from typing import List, Literal
 
 
@@ -114,18 +114,13 @@ class PlaylistSync:
     def add_items_to_playlist(
         self,
         plex_playlist_items_from_rb: List[Track],
-        plex_playlist_existing_items,
+        plex_playlist_existing_items: List[Track],
         plex_playlist: PlexPlaylist,
     ) -> bool:
         items_to_add = []
         for plex_item in plex_playlist_items_from_rb:
-            in_playlist = next(
-                (
-                    pl
-                    for pl in plex_playlist_existing_items
-                    if pl.ratingKey == plex_item.ratingKey
-                ),
-                None,
+            in_playlist = self.exists_in_playlist(
+                plex_item, plex_playlist_existing_items
             )
             if not in_playlist:
                 items_to_add.append(plex_item)
@@ -136,17 +131,15 @@ class PlaylistSync:
         return False
 
     def remove_items_from_playlist(
-        self, plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist
+        self,
+        plex_playlist_items_from_rb: List[Track],
+        plex_playlist_existing_items: List[Track],
+        plex_playlist: PlexPlaylist,
     ) -> bool:
         items_to_remove = []
         for plex_item in plex_playlist_existing_items:
-            in_playlist = next(
-                (
-                    pl
-                    for pl in plex_playlist_items_from_rb
-                    if pl.ratingKey == plex_item.ratingKey
-                ),
-                None,
+            in_playlist = self.exists_in_playlist(
+                plex_item, plex_playlist_items_from_rb
             )
             if not in_playlist:
                 items_to_remove.append(plex_item)
@@ -156,7 +149,13 @@ class PlaylistSync:
             return True
         return False
 
-    def resolve_playlist_tracks(plex_playlist: PlexPlaylist) -> List[Track]:
+    def exists_in_playlist(self, plex_item: Track, existing_items: List[Track]):
+        return next(
+            (pl for pl in existing_items if pl.ratingKey == plex_item.ratingKey),
+            None,
+        )
+
+    def resolve_playlist_tracks(self, plex_playlist: PlexPlaylist) -> List[Track]:
         return plex_playlist.items()
 
     def sync_playlist_tracks(
@@ -165,8 +164,9 @@ class PlaylistSync:
         plex_playlist_items_from_rb = self.resolve_plex_tracks_from_rb_playlist(
             rb_playlist
         )
-        plex_playlist_existing_items = plex_playlist.items()
-        if len(plex_playlist.items()) > 0:
+        plex_playlist_existing_items = self.resolve_playlist_tracks(plex_playlist)
+        plex_playlist_existing_item_count = len(plex_playlist_existing_items)
+        if plex_playlist_existing_item_count > 0:
             did_add_items = self.add_items_to_playlist(
                 plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist
             )

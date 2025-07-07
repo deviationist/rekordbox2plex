@@ -26,7 +26,7 @@ class AlbumRepository(RepositoryBase):
     ) -> PlexAlbums:
         artist_albums = []
         if use_cache and self._all_fetched and (cached_albums := self._get_all_cache()):
-            for cached_album in cached_albums:
+            for _, cached_album in cached_albums:
                 if cached_album.parentRatingKey == artist_id:
                     artist_albums.append(cached_album)
             return artist_albums
@@ -36,5 +36,10 @@ class AlbumRepository(RepositoryBase):
             return artist_albums
         return None
 
-    def search_for_album_by_artist(self, artist_id: int, album_name: str):
-        return ""
+    def search_for_album_by_artist(self, artist_id: int, album_name: str) -> PlexAlbum:
+        all_albums = self.get_all_albums()
+        if all_albums:
+            for album in all_albums:
+                if album.parentRatingKey == artist_id and album.title == album_name:
+                    return album
+        return None

@@ -4,7 +4,7 @@ from ..resolvers.library import get_music_library_name
 from ...utils.progress_bar import progress_instance
 from ...utils.logger import logger
 from typing import List, Tuple
-from ..data_types import PlexTrack, PlexTrackWrapper
+from ..data_types import PlexTrack, PlexTrackWrapper, CacheItems
 
 
 @singleton
@@ -22,9 +22,9 @@ class TrackRepository(RepositoryBase):
 
     def get_all_tracks(
         self, use_cache: bool = True
-    ) -> Tuple[List[PlexTrackWrapper], int]:
+    ) -> Tuple[List[PlexTrackWrapper] | CacheItems, int]:
         if use_cache and self._all_fetched and (cached_tracks := self._get_all_cache()):
-            return cached_tracks
+            return cached_tracks, len(cached_tracks)
         with progress_instance(self._display_progress) as progress:
             library_name = get_music_library_name()
             tracks = get_all_tracks()

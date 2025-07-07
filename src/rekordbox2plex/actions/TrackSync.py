@@ -1,13 +1,13 @@
-from ..utils.TrackMetadataMapper import TrackMetadataMapper
 from ..plex.repositories.TrackRepository import TrackRepository
+from ..plex.data_types import PlexTrackWrapper
 from ..rekordbox.resolvers.track import resolve_track as resolve_track_in_rekordbox
+from ..rekordbox.data_types import ResolvedTrack
+from ..utils.TrackMetadataMapper import TrackMetadataMapper
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
 from ..utils.TrackIdMapper import TrackIdMapper
 from ..utils.helpers import build_track_string
 from typing import List, Tuple
-from ..plex.data_types import PlexTrackWrapper
-from ..rekordbox.data_types import ResolvedTrack
 
 
 class TrackSync:
