@@ -3,23 +3,23 @@ from ..resolvers.track_resolver import get_track, get_all_tracks
 from ..resolvers.library_resolver import get_music_library_name
 from ...utils.progress_bar import progress_instance
 from ...utils.logger import logger
-from typing import List
-from .types import PlexTrack
+from typing import List, Tuple
+from ..data_types import PlexTrack, PlexTrackWrapper
 
 @singleton
 class TrackRepository(RepositoryBase):
-    def get_track_id(self, item):
+    def get_track_id(self, item) -> int:
         return item.id
 
-    def get_track(self, track_id: str, use_cache: bool = True):
-        if use_cache and (cached_track := self._get_from_cache(track_id)):
+    def get_track(self, track_id: int, use_cache: bool = True) -> PlexTrack:
+        if use_cache and (cached_track := self._get_from_cache(str(track_id))):
             return cached_track
         if track := get_track(track_id):
             self._store_single_in_cache(track, self.get_track_id)
             return track
-        return False
+        return None
 
-    def get_all_tracks(self, use_cache: bool = True) -> tuple[List[PlexTrack], int]:
+    def get_all_tracks(self, use_cache: bool = True) -> Tuple[List[PlexTrackWrapper], int]:
         if use_cache and self._all_fetched and (cached_tracks := self._get_all_cache()):
             return cached_tracks
         with progress_instance(self._display_progress) as progress:
@@ -35,7 +35,7 @@ class TrackRepository(RepositoryBase):
                 try:
                     media = track.media[0]
                     part = media.parts[0]
-                    results.append(PlexTrack(
+                    results.append(PlexTrackWrapper(
                         id=track.ratingKey,
                         file_path=part.file,
                         title=track.title,

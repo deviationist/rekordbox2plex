@@ -1,8 +1,9 @@
 from .RekordboxDB import RekordboxDB
 from ..utils.logger import logger
-from .types import TrackWithArtwork, Artist, Album, ResolvedAlbumWithTracks
+from .data_types import TrackWithArtwork, Artist, Album, ResolvedAlbumWithTracks
+from typing import Literal
 
-def get_album_with_tracks(album_name, artist_name) -> ResolvedAlbumWithTracks | bool:
+def get_album_with_tracks(album_name: str, artist_name: str) -> ResolvedAlbumWithTracks | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 
@@ -35,7 +36,6 @@ def get_album_with_tracks(album_name, artist_name) -> ResolvedAlbumWithTracks | 
             tracks = []
             artist = None
             album = None
-            artwork = None
 
             for row in rows:
                 # Convert row to dict for easier handling
@@ -51,18 +51,18 @@ def get_album_with_tracks(album_name, artist_name) -> ResolvedAlbumWithTracks | 
                     artwork_local_path=row_dict.get("artwork_rb_local_path")
                 ))
 
-                if artist == None:
+                if artist is None:
                     artist = Artist(
                         id=int(row_dict["albumAritst_ID"]),
                         name=row_dict["albumAritst_Name"]
                     )
-                if album == None:
+                if album is None:
                     album = Album(
                         id=int(row_dict["album_ID"]),
                         name=row_dict["album_Name"]
                     )
 
-            return ResolvedAlbumWithTracks(tracks, artist, album, artwork)
+            return ResolvedAlbumWithTracks(tracks, artist, album)
         else:
             return False
 

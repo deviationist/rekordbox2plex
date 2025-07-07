@@ -1,13 +1,14 @@
 from .library_resolver import get_music_library
+from ..data_types import PlexArtist, PlexArtists
 
-def get_artist(rating_key):
+def get_artist(rating_key: int) -> PlexArtist:
     music_library, _ = get_music_library()
     return music_library.fetchItem(rating_key)
 
-def get_all_artists():
-    music_library, _ = get_music_library()
-    return music_library.artists()
+#def get_all_artists() -> PlexArtists:
+#    music_library, _ = get_music_library()
+#    return music_library.artists()
 
-def search_for_artists(artist_name):
+def search_for_artists(artist_name) -> PlexArtists:
     music_library, _ = get_music_library()
     return music_library.search(artist_name, libtype="artist")

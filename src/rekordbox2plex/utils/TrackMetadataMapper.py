@@ -1,16 +1,17 @@
-from ..plex.repository.ArtistRepository import ArtistRepository
-from ..plex.repository.AlbumRepository import AlbumRepository
+from ..plex.repositories.ArtistRepository import ArtistRepository
+from ..plex.repositories.AlbumRepository import AlbumRepository
+from ..plex.data_types import PlexTrackWrapper
+from ..rekordbox.data_types import ResolvedTrack
 from .logger import logger
-from ..plex.repository.types import PlexTrack
-from ..rekordbox.types import ResolvedTrack
+from typing import Any
 
 class TrackMetadataMapper:
     FORCE_UPDATE = True
-    def __init__(self, plex_track: PlexTrack, rb_item: ResolvedTrack):
+    def __init__(self, plex_track: PlexTrackWrapper, rb_item: ResolvedTrack):
         self.rb_item = rb_item
         self.plex_track = plex_track
         self.album_artist_rating_key = None
-        self.edits = {}
+        self.edits: dict[str, Any] = {}
 
     def get_track_title(self):
         return self.rb_item.track.title if self.rb_item.track else ""

@@ -1,8 +1,11 @@
 from plexapi.server import PlexServer
 import os
 
-def plexapi_client():
-    return PlexClient().server
+def plexapi_client() -> PlexServer:
+    server = PlexClient().server
+    if server is None:
+        raise Exception("Could not initialize Plex SDK")
+    return server
 
 class PlexClient:
     _instance = None

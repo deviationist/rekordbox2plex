@@ -1,10 +1,13 @@
 from ..utils.TrackMetadataMapper import TrackMetadataMapper
-from ..plex.repository.TrackRepository import TrackRepository
+from ..plex.repositories.TrackRepository import TrackRepository
 from ..rekordbox.track_resolver import resolve_track as resolve_track_in_rekordbox
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
 from ..utils.TrackIdMapper import TrackIdMapper
 from ..utils.helpers import build_track_string
+from typing import List, Tuple
+from ..plex.data_types import PlexTrackWrapper
+from ..rekordbox.data_types import ResolvedTrack
 
 class TrackSync:
     def __init__(self, args):
@@ -17,10 +20,10 @@ class TrackSync:
         plex_tracks, track_count = TrackRepository().progress(True).get_all_tracks()
         resolved_tracks, orphaned_tracks, resolved_track_count = self.resolve_tracks_in_rekordbox(plex_tracks, track_count)
         self.update_tracks_metadata_in_plex(resolved_tracks, resolved_track_count)
-        logger.info(f"[bold green]✔ Process complete! Rekordbox and Plex metadata should now be in sync!")
+        logger.info("[bold green]✔ Process complete! Rekordbox and Plex metadata should now be in sync!")
         self.delete_orphaned_tracks(orphaned_tracks)
 
-    def resolve_tracks_in_rekordbox(self, plex_tracks, track_count):
+    def resolve_tracks_in_rekordbox(self, plex_tracks: List[PlexTrackWrapper], track_count: int) -> Tuple[List[Tuple[PlexTrackWrapper, ResolvedTrack]], List[PlexTrackWrapper], int]:
         with progress_instance() as progress:
             logger.info("[cyan]Resolving track metadata in Rekordbox database...")
             task = progress.add_task("", total=track_count)
@@ -44,7 +47,7 @@ class TrackSync:
             logger.info(f'[yellow]{orphaned_tracks_count} track(s) seems to be orphaned and will be deleted from Plex.')
         return resolved_tracks, orphaned_tracks, track_count
 
-    def update_tracks_metadata_in_plex(self, resolved_tracks, track_count):
+    def update_tracks_metadata_in_plex(self, resolved_tracks: List[Tuple[PlexTrackWrapper, ResolvedTrack]], track_count: int):
         with progress_instance() as progress:
             logger.info("[cyan]Updating track metadata in Plex...")
             task = progress.add_task("", total=track_count)
@@ -58,7 +61,7 @@ class TrackSync:
                 progress.update(task, advance=1, description=f'[yellow]Procesed track {track_string}...')
             progress.update(task, description=f"[bold green]✔ Done! Updated metadata for {track_count} tracks!")
 
-    def delete_orphaned_tracks(self, orphaned_tracks):
+    def delete_orphaned_tracks(self, orphaned_tracks: List[PlexTrackWrapper]):
         """Delete tracks that are present in Plex but not in Rekordbox"""
         orphaned_tracks_count = len(orphaned_tracks)
         if orphaned_tracks_count > 0:

@@ -4,7 +4,8 @@ from rich.progress import (
     TextColumn,
     TimeElapsedColumn,
     TimeRemainingColumn,
-    TaskProgressColumn
+    TaskProgressColumn,
+    TaskID
 )
 
 class NullProgress:
@@ -20,7 +21,7 @@ class NullProgress:
     def update(self, *args, **kwargs):
         pass
 
-def progress_instance(enabled: bool = True):
+def progress_instance(enabled: bool = True) -> Progress | NullProgress:
     if enabled:
         return Progress(
             BarColumn(),
@@ -31,3 +32,5 @@ def progress_instance(enabled: bool = True):
         )
     else:
         return NullProgress()
+
+__all__ = ["Progress", "TaskID", "NullProgress", "progress_instance"]

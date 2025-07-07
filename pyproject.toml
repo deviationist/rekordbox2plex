@@ -20,6 +20,23 @@ packages = [{include = "rekordbox2plex", from = "src"}]
 [tool.poetry.scripts]
 rekordbox2plex = "rekordbox2plex.__main__:main"
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.12.2"
+mypy = "^1.16.1"
+
+[tool.mypy]
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "plexapi.*"
+ignore_errors = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pysqlcipher3"
+ignore_errors = true
+ignore_missing_imports = true
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
