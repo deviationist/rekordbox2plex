@@ -1,7 +1,7 @@
 from ..plex.repositories.AlbumRepository import AlbumRepository
 from ..plex.repositories.ArtistRepository import get_artist
 from ..utils.AlbumMetadataMapper import AlbumMetadataMapper
-from ..rekordbox.album_resolver import get_album_with_tracks
+from ..rekordbox.resolvers.album import get_album_with_tracks
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
 

@@ -1,9 +1,9 @@
-from .RekordboxDB import RekordboxDB
-from ..utils.progress_bar import Progress, TaskID, NullProgress
-from ..utils.logger import logger
-from ..plex.data_types import PlexTrackWrapper
+from ..RekordboxDB import RekordboxDB
+from ...utils.progress_bar import Progress, TaskID, NullProgress
+from ...utils.logger import logger
+from ...plex.data_types import PlexTrackWrapper
 import json
-from .data_types import Track, Artist, Album, ResolvedTrack
+from ..data_types import Track, Artist, Album, ResolvedTrack
 from typing import Literal
 
 def convert_path_to_rekordbox(plex_path: str) -> str:
@@ -27,8 +27,7 @@ def resolve_track(plex_track: PlexTrackWrapper, progress: Progress | NullProgres
     cursor = db.cursor
 
     rekordboxPath = convert_path_to_rekordbox(plex_track.file_path)
-    if not rekordboxPath:
-        return False
+    logger.debug(f'Attempting to resolve file in Rekordbox using path "{rekordboxPath}')
 
     if progress and task:
         progress.update(task, description=f'[yellow]Resolving track "{plex_track.title}" in Rekordbox database...')

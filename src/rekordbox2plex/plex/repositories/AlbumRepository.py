@@ -1,5 +1,5 @@
 from ._RepositoryBase import RepositoryBase, singleton
-from ..resolvers.album_resolver import get_album, get_all_albums
+from ..resolvers.album import get_album, get_all_albums
 from .ArtistRepository import ArtistRepository
 from ..data_types import PlexAlbum, PlexAlbums
 

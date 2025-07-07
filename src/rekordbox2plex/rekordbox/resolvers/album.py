@@ -1,6 +1,6 @@
-from .RekordboxDB import RekordboxDB
-from ..utils.logger import logger
-from .data_types import TrackWithArtwork, Artist, Album, ResolvedAlbumWithTracks
+from ..RekordboxDB import RekordboxDB
+from ...utils.logger import logger
+from ..data_types import TrackWithArtwork, Artist, Album, ResolvedAlbumWithTracks
 from typing import Literal
 
 def get_album_with_tracks(album_name: str, artist_name: str) -> ResolvedAlbumWithTracks | Literal[False]:
