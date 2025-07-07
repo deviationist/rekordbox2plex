@@ -1,14 +1,16 @@
 from .RekordboxDB import RekordboxDB
-from typing import Any
+from typing import List
+import pprint
+from .types import Playlist, PlaylistTrack
 
-def get_playlist_tracks(playlist_ID) -> Any:
+def get_playlist_tracks(playlist_ID) -> List[PlaylistTrack] | bool:
     db = RekordboxDB()
     cursor = db.cursor
 
     query = """
     SELECT
-        c.ID,
-        c.Title
+        c.ID AS track_ID,
+        c.Title AS track_Title
     FROM djmdSongPlaylist AS pl
     INNER JOIN
         djmdContent AS c
@@ -19,15 +21,28 @@ def get_playlist_tracks(playlist_ID) -> Any:
         AND c.rb_data_status = 0
 """
     cursor.execute(query, (playlist_ID,))
-    return cursor.fetchall()
+    rows = cursor.fetchall()
+    if rows:
+        tracks = []
 
-def get_all_playlists() -> Any:
+        for row in rows:
+            # Convert row to dict for easier handling
+            row_dict = dict(row)
+            pprint.pprint(row_dict)
+            tracks.append(PlaylistTrack(
+                id=row_dict["track_ID"],
+                title=row_dict["track_Title"]
+            ))
+        return tracks
+    return False
+
+def get_all_playlists() -> List[Playlist] | bool:
     db = RekordboxDB()
     cursor = db.cursor
 
     query = """
     SELECT
-        child.ID AS PlaylistID,
+        child.ID AS playlist_ID,
         CASE
             WHEN parent.Name IS NOT NULL THEN parent.Name || '/' || child.Name
             ELSE child.Name
@@ -52,5 +67,18 @@ def get_all_playlists() -> Any:
         FlattenedName;
 """
     cursor.execute(query)
-    return cursor.fetchall()
+    rows = cursor.fetchall()
+    if rows:
+        tracks = []
+
+        for row in rows:
+            # Convert row to dict for easier handling
+            row_dict = dict(row)
+            pprint.pprint(row_dict)
+            tracks.append(Playlist(
+                id=row_dict["playlist_ID"],
+                name=row_dict["FlattenedName"]
+            ))
+        return tracks
+    return False
 

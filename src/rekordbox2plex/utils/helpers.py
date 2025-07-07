@@ -1,20 +1,19 @@
 import argparse
 
-VALID_TARGET_CHOICES = {"tracks", "playlists", "artwork"}
+VALID_TARGET_CHOICES = {"tracks", "playlists", "albums"}
 
 def build_track_string(plex_track) -> str:
-    return f'"{plex_track["title"]}" by "{plex_track["track_artist"]}"'
+    return f'"{plex_track.title}" by "{plex_track.track_artist}"'
 
-def determine_sync_targets(args, default_target = "tracks"):
+def determine_sync_targets(args, default_target = "tracks") -> str:
     return args.sync if args.sync else default_target
 
-
 def parse_sync_arg(s):
-    items = [item.strip() for item in s.split(',')]
+    items = [item.strip() for item in s.split(",")]
     invalid = set(items) - VALID_TARGET_CHOICES
     if invalid:
         raise argparse.ArgumentTypeError(
-            f"Invalid choices: {', '.join(invalid)}. Valid options are: {', '.join(VALID_TARGET_CHOICES)}"
+            f'Invalid choices: {", ".join(invalid)}. Valid options are: {", ".join(VALID_TARGET_CHOICES)}'
         )
     return items
 
@@ -26,9 +25,15 @@ def parse_script_arguments():
     )
 
     parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Simulate the actions without making changes."
+    )
+
+    parser.add_argument(
         "--sync",
         type=parse_sync_arg,
-        help="Comma-separated list of what to sync: tracks, playlists, artwork",
+        help=f'Comma-separated list of what to sync: {", ".join(VALID_TARGET_CHOICES)}',
     )
 
     return parser.parse_args()

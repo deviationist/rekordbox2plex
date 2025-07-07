@@ -28,20 +28,13 @@ class TrackIdMapper:
             plex_track: Dictionary containing Plex track data with 'id' key
             rb_item: Tuple of (track, artist, artwork, album, albumArtist) from Rekordbox
         """
-        plex_id = plex_track["id"]
-        track, artist, artwork, album, albumArtist = rb_item
-        rekordbox_id = track["ID"]
+        plex_id = plex_track.id
+        rekordbox_id = rb_item.track.id
 
         # Store the complete mapping
         mapping_data = {
             "plex_track": plex_track,
-            "rekordbox": {
-                "track": track,
-                "artist": artist,
-                "artwork": artwork,
-                "album": album,
-                "albumArtist": albumArtist
-            }
+            "rekordbox": rb_item
         }
 
         self.mappings[plex_id] = mapping_data
