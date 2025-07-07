@@ -3,7 +3,10 @@ from ...utils.logger import logger
 from ..data_types import TrackWithArtwork, Artist, Album, ResolvedAlbumWithTracks
 from typing import Literal
 
-def get_album_with_tracks(album_name: str, artist_name: str) -> ResolvedAlbumWithTracks | Literal[False]:
+
+def get_album_with_tracks(
+    album_name: str, artist_name: str
+) -> ResolvedAlbumWithTracks | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 
@@ -42,24 +45,25 @@ def get_album_with_tracks(album_name: str, artist_name: str) -> ResolvedAlbumWit
                 row_dict = dict(row)
 
                 # Provide None for artwork fields if they don't exist
-                tracks.append(TrackWithArtwork(
-                    id=int(row_dict["track_ID"]),
-                    title=row_dict["track_Title"],
-                    release_year=int(row_dict["track_ReleaseYear"]),
-                    artwork_id=row_dict.get("artwork_ID"),
-                    artwork_path=row_dict.get("artwork_Path"),
-                    artwork_local_path=row_dict.get("artwork_rb_local_path")
-                ))
+                tracks.append(
+                    TrackWithArtwork(
+                        id=int(row_dict["track_ID"]),
+                        title=row_dict["track_Title"],
+                        release_year=int(row_dict["track_ReleaseYear"]),
+                        artwork_id=row_dict.get("artwork_ID"),
+                        artwork_path=row_dict.get("artwork_Path"),
+                        artwork_local_path=row_dict.get("artwork_rb_local_path"),
+                    )
+                )
 
                 if artist is None:
                     artist = Artist(
                         id=int(row_dict["albumAritst_ID"]),
-                        name=row_dict["albumAritst_Name"]
+                        name=row_dict["albumAritst_Name"],
                     )
                 if album is None:
                     album = Album(
-                        id=int(row_dict["album_ID"]),
-                        name=row_dict["album_Name"]
+                        id=int(row_dict["album_ID"]), name=row_dict["album_Name"]
                     )
 
             return ResolvedAlbumWithTracks(tracks, artist, album)
@@ -69,8 +73,3 @@ def get_album_with_tracks(album_name: str, artist_name: str) -> ResolvedAlbumWit
     except Exception as e:  # Changed from sqlite.Error to catch any issues
         logger.info("[red]Database error:", e)
         return False
-
-
-
-
-

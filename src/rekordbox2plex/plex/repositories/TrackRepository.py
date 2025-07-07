@@ -6,6 +6,7 @@ from ...utils.logger import logger
 from typing import List, Tuple
 from ..data_types import PlexTrack, PlexTrackWrapper
 
+
 @singleton
 class TrackRepository(RepositoryBase):
     def get_track_id(self, item) -> int:
@@ -19,37 +20,52 @@ class TrackRepository(RepositoryBase):
             return track
         return None
 
-    def get_all_tracks(self, use_cache: bool = True) -> Tuple[List[PlexTrackWrapper], int]:
+    def get_all_tracks(
+        self, use_cache: bool = True
+    ) -> Tuple[List[PlexTrackWrapper], int]:
         if use_cache and self._all_fetched and (cached_tracks := self._get_all_cache()):
             return cached_tracks
         with progress_instance(self._display_progress) as progress:
             library_name = get_music_library_name()
             tracks = get_all_tracks()
             track_count = len(tracks)
-            logger.info(f'[cyan]Found {track_count} tracks in Plex library "{library_name}"')
+            logger.info(
+                f'[cyan]Found {track_count} tracks in Plex library "{library_name}"'
+            )
             logger.info("[cyan]Fetching track metadata from Plex...")
             task = progress.add_task("", total=track_count)
             results = []
             for track in tracks:
-                progress.update(task, description=f'[cyan]Fetching track metadata for "{track.title}" by "{track.originalTitle}"...')
+                progress.update(
+                    task,
+                    description=f'[cyan]Fetching track metadata for "{track.title}" by "{track.originalTitle}"...',
+                )
                 try:
                     media = track.media[0]
                     part = media.parts[0]
-                    results.append(PlexTrackWrapper(
-                        id=track.ratingKey,
-                        file_path=part.file,
-                        title=track.title,
-                        added_at=track.addedAt,
-                        track_artist=track.originalTitle,
-                        album_id=track.parentRatingKey,
-                        album_artist_id=track.grandparentRatingKey,
-                        track_object=track,
-                    ))
-                    progress.update(task, description=f'[cyan]Fetched track metadata for "{track.title}" by "{track.originalTitle}"...')
+                    results.append(
+                        PlexTrackWrapper(
+                            id=track.ratingKey,
+                            file_path=part.file,
+                            title=track.title,
+                            added_at=track.addedAt,
+                            track_artist=track.originalTitle,
+                            album_id=track.parentRatingKey,
+                            album_artist_id=track.grandparentRatingKey,
+                            track_object=track,
+                        )
+                    )
+                    progress.update(
+                        task,
+                        description=f'[cyan]Fetched track metadata for "{track.title}" by "{track.originalTitle}"...',
+                    )
                 except (IndexError, AttributeError):
                     logger.info(f'[red]No file path found for "{track.title}"')
                 finally:
                     progress.update(task, advance=1)
-                progress.update(task, description=f"[bold green]✔ Done! Fetched metadata for {track_count} tracks!")
+                progress.update(
+                    task,
+                    description=f"[bold green]✔ Done! Fetched metadata for {track_count} tracks!",
+                )
             self._store_in_cache(results, self.get_track_id)
             return results, len(results)

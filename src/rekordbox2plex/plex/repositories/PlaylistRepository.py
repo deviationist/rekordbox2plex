@@ -4,6 +4,7 @@ from ..resolvers.playlist import get_playlist, get_all_playlists
 from ..data_types import Track, PlexPlaylist, PlexPlaylists
 from typing import List
 
+
 @singleton
 class PlaylistRepository(RepositoryBase):
     def get_playlist(self, playlist_id: int) -> PlexPlaylist:

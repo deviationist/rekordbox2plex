@@ -8,6 +8,7 @@ from .utils.logger import init_logger
 
 dotenv.load_dotenv()
 
+
 def main():
     setup_db_connection()
     args = parse_script_arguments()

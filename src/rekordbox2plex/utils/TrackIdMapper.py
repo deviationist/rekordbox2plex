@@ -7,6 +7,7 @@ from .helpers import build_track_string
 from .logger import logger
 from typing import Literal
 
+
 class TrackIdMapper:
     _instance = None
 
@@ -35,10 +36,7 @@ class TrackIdMapper:
         rekordbox_id = rb_item.track.id
 
         # Store the complete mapping
-        mapping_data = {
-            "plex_track": plex_track,
-            "rekordbox": rb_item
-        }
+        mapping_data = {"plex_track": plex_track, "rekordbox": rb_item}
 
         self.mappings[plex_id] = mapping_data
         self.rekordbox_lookup[rekordbox_id] = plex_id
@@ -61,7 +59,9 @@ class TrackIdMapper:
             return mapping["rekordbox"]
         return False
 
-    def resolve_plex_track_by_rb(self, rekordbox_id: int) -> PlexTrackWrapper | Literal[False]:
+    def resolve_plex_track_by_rb(
+        self, rekordbox_id: int
+    ) -> PlexTrackWrapper | Literal[False]:
         """
         Get the Plex track data for a given Rekordbox ID
 
@@ -87,9 +87,18 @@ class TrackIdMapper:
                 task = progress.add_task("", total=track_count)
                 for plex_track in plex_tracks:
                     track_string = build_track_string(plex_track)
-                    progress.update(task, description=f'[yellow]Resolving track metadata {track_string}...')
+                    progress.update(
+                        task,
+                        description=f"[yellow]Resolving track metadata {track_string}...",
+                    )
                     rb_item = resolve_track(plex_track, progress, task)
-                    progress.update(task, advance=1, description=f'[yellow]Resolved track metadata {track_string}...')
+                    progress.update(
+                        task,
+                        advance=1,
+                        description=f"[yellow]Resolved track metadata {track_string}...",
+                    )
                     self.map(plex_track, rb_item)
-                progress.update(task, description=f"[bold green]✔ Done! Resolved track metadata for {track_count} tracks!")
-
+                progress.update(
+                    task,
+                    description=f"[bold green]✔ Done! Resolved track metadata for {track_count} tracks!",
+                )

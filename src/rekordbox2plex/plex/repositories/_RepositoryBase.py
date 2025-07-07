@@ -2,6 +2,7 @@ from abc import ABC
 from typing import Dict, Any, Optional, Callable
 from ..data_types import PlexItem
 
+
 def singleton(cls):
     """Decorator to make a class a singleton"""
     instances = {}
@@ -13,6 +14,7 @@ def singleton(cls):
 
     return get_instance
 
+
 class RepositoryBase(ABC):
     """Base repository class with caching functionality"""
 
@@ -21,13 +23,15 @@ class RepositoryBase(ABC):
         self._all_fetched = False
         self._display_progress = False
 
-    def progress(self, display_progress = True):
+    def progress(self, display_progress=True):
         self._display_progress = display_progress
         return self
 
-    def _get_cache_key(self, params: PlexItem, cache_key_resolver: Callable | None = None):
+    def _get_cache_key(
+        self, params: PlexItem, cache_key_resolver: Callable | None = None
+    ):
         """Generate cache key from endpoint and parameters"""
-        if (callable(cache_key_resolver)):
+        if callable(cache_key_resolver):
             return cache_key_resolver(params)
         return params.ratingKey
 
@@ -55,7 +59,9 @@ class RepositoryBase(ABC):
         self._display_progress = False
         self._all_fetched = True
 
-    def _store_single_in_cache(self, item: Any, cache_key_resolver: Callable | None = None):
+    def _store_single_in_cache(
+        self, item: Any, cache_key_resolver: Callable | None = None
+    ):
         """Store item in cache"""
         cache_key = self._get_cache_key(item, cache_key_resolver)
         self._cache[cache_key] = item

@@ -3,6 +3,7 @@ from ..resolvers.album import get_album, get_all_albums
 from .ArtistRepository import ArtistRepository
 from ..data_types import PlexAlbum, PlexAlbums
 
+
 @singleton
 class AlbumRepository(RepositoryBase):
     def get_album(self, album_id: int, use_cache: bool = True) -> PlexAlbum:
@@ -13,14 +14,16 @@ class AlbumRepository(RepositoryBase):
             return album
         return None
 
-    def get_all_albums(self, use_cache = True) -> PlexAlbums:
+    def get_all_albums(self, use_cache=True) -> PlexAlbums:
         if use_cache and self._all_fetched and (cached_albums := self._get_all_cache()):
             return cached_albums
         albums = get_all_albums()
         self._store_in_cache(albums)
         return albums
 
-    def get_albums_by_artist(self, artist_id: int, use_cache: bool = True) -> PlexAlbums:
+    def get_albums_by_artist(
+        self, artist_id: int, use_cache: bool = True
+    ) -> PlexAlbums:
         artist_albums = []
         if use_cache and self._all_fetched and (cached_albums := self._get_all_cache()):
             for cached_album in cached_albums:

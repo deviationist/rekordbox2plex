@@ -3,6 +3,7 @@ from typing import List, Literal
 import pprint
 from ..data_types import Playlist, PlaylistTrack
 
+
 def get_playlist_tracks(playlist_id: int) -> List[PlaylistTrack] | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
@@ -29,12 +30,12 @@ def get_playlist_tracks(playlist_id: int) -> List[PlaylistTrack] | Literal[False
             # Convert row to dict for easier handling
             row_dict = dict(row)
             pprint.pprint(row_dict)
-            tracks.append(PlaylistTrack(
-                id=row_dict["track_ID"],
-                title=row_dict["track_Title"]
-            ))
+            tracks.append(
+                PlaylistTrack(id=row_dict["track_ID"], title=row_dict["track_Title"])
+            )
         return tracks
     return False
+
 
 def get_all_playlists() -> List[Playlist] | Literal[False]:
     db = RekordboxDB()
@@ -75,10 +76,8 @@ def get_all_playlists() -> List[Playlist] | Literal[False]:
             # Convert row to dict for easier handling
             row_dict = dict(row)
             pprint.pprint(row_dict)
-            tracks.append(Playlist(
-                id=row_dict["playlist_ID"],
-                name=row_dict["FlattenedName"]
-            ))
+            tracks.append(
+                Playlist(id=row_dict["playlist_ID"], name=row_dict["FlattenedName"])
+            )
         return tracks
     return False
-

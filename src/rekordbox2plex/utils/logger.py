@@ -3,6 +3,7 @@ from rich.logging import RichHandler
 
 logger = logging.getLogger("rekordbox2plex")
 
+
 def init_logger(args):
     # Set logging level based on verbosity
     if args.verbose >= 2:
@@ -15,6 +16,5 @@ def init_logger(args):
     logging.basicConfig(
         level=level,
         format="[%(levelname)s] %(message)s",
-        handlers=[RichHandler(markup=True)]
+        handlers=[RichHandler(markup=True)],
     )
-
