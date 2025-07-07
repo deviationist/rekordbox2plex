@@ -1,9 +1,9 @@
 from .RekordboxDB import RekordboxDB
-from typing import List
+from typing import List, Literal
 import pprint
-from .types import Playlist, PlaylistTrack
+from .data_types import Playlist, PlaylistTrack
 
-def get_playlist_tracks(playlist_ID) -> List[PlaylistTrack] | bool:
+def get_playlist_tracks(playlist_id: int) -> List[PlaylistTrack] | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 
@@ -20,7 +20,7 @@ def get_playlist_tracks(playlist_ID) -> List[PlaylistTrack] | bool:
         AND pl.rb_data_status = 0
         AND c.rb_data_status = 0
 """
-    cursor.execute(query, (playlist_ID,))
+    cursor.execute(query, (playlist_id,))
     rows = cursor.fetchall()
     if rows:
         tracks = []
@@ -36,7 +36,7 @@ def get_playlist_tracks(playlist_ID) -> List[PlaylistTrack] | bool:
         return tracks
     return False
 
-def get_all_playlists() -> List[Playlist] | bool:
+def get_all_playlists() -> List[Playlist] | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 

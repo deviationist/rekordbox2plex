@@ -1,10 +1,12 @@
-__import__("dotenv").load_dotenv()
-from .actions.TrackSync import TrackSync
-from .utils.logger import init_logger
-from .utils.helpers import determine_sync_targets, parse_script_arguments
-from .actions.PlaylistSync import PlaylistSync
-from .actions.AlbumSync import AlbumSync
+import dotenv
 from .rekordbox.RekordboxDB import setup_db_connection
+from .actions.AlbumSync import AlbumSync
+from .actions.PlaylistSync import PlaylistSync
+from .actions.TrackSync import TrackSync
+from .utils.helpers import determine_sync_targets, parse_script_arguments
+from .utils.logger import init_logger
+
+dotenv.load_dotenv()
 
 def main():
     setup_db_connection()

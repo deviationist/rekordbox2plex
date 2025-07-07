@@ -1,5 +1,6 @@
 from abc import ABC
 from typing import Dict, Any, Optional, Callable
+from ..data_types import PlexItem
 
 def singleton(cls):
     """Decorator to make a class a singleton"""
@@ -15,8 +16,8 @@ def singleton(cls):
 class RepositoryBase(ABC):
     """Base repository class with caching functionality"""
 
-    def __init__(self):
-        self._cache: Dict[str, Dict[str, Any]] = {}
+    def __init__(self) -> None:
+        self._cache: Dict[str, PlexItem] = {}
         self._all_fetched = False
         self._display_progress = False
 
@@ -24,7 +25,7 @@ class RepositoryBase(ABC):
         self._display_progress = display_progress
         return self
 
-    def _get_cache_key(self, params: Dict, cache_key_resolver: Callable = None):
+    def _get_cache_key(self, params: PlexItem, cache_key_resolver: Callable | None = None):
         """Generate cache key from endpoint and parameters"""
         if (callable(cache_key_resolver)):
             return cache_key_resolver(params)
@@ -46,7 +47,7 @@ class RepositoryBase(ABC):
         for item in items:
             self._store_single_in_cache(item)
 
-    def _store_in_cache(self, items: Any, cache_key_resolver: Callable = None):
+    def _store_in_cache(self, items: Any, cache_key_resolver: Callable | None = None):
         """Store data in cache"""
         self._clear_cache()
         for item in items:
@@ -54,7 +55,7 @@ class RepositoryBase(ABC):
         self._display_progress = False
         self._all_fetched = True
 
-    def _store_single_in_cache(self, item: Any, cache_key_resolver: Callable = None):
+    def _store_single_in_cache(self, item: Any, cache_key_resolver: Callable | None = None):
         """Store item in cache"""
         cache_key = self._get_cache_key(item, cache_key_resolver)
         self._cache[cache_key] = item

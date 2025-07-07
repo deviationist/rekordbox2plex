@@ -1,19 +1,21 @@
-from ..plex.repository.ArtistRepository import ArtistRepository
-from ..plex.repository.AlbumRepository import AlbumRepository
-from ..utils.logger import logger
+#from ..plex.repositories.ArtistRepository import ArtistRepository
+#from ..plex.repositories.AlbumRepository import AlbumRepository
+#from ..utils.logger import logger
+from typing import Any
+from ..rekordbox.data_types import ResolvedAlbumWithTracks
+from plexapi.audio import Album
 import pprint
 
 class AlbumMetadataMapper:
     FORCE_UPDATE = True
-    def __init__(self, plex_album, rb_lookup):
-        tracks, artist, album, artwork = rb_lookup
+    def __init__(self, plex_album: Album, rb_lookup: ResolvedAlbumWithTracks):
+        tracks, artist, album = rb_lookup
         self.rb_tracks = tracks
         self.rb_artist = artist
         self.rb_album = album
-        self.rb_artwork = artwork
         self.plex_album = plex_album
         self.album_artist_rating_key = None
-        self.edits = {}
+        self.edits: dict[str, Any] = {}
 
     def resolve_release_year(self) -> bool | int:
         years = []

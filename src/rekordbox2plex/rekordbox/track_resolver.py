@@ -1,7 +1,10 @@
 from .RekordboxDB import RekordboxDB
+from ..utils.progress_bar import Progress, TaskID, NullProgress
 from ..utils.logger import logger
+from ..plex.data_types import PlexTrackWrapper
 import json
-from .types import Track, Artist, Album, ResolvedTrack
+from .data_types import Track, Artist, Album, ResolvedTrack
+from typing import Literal
 
 def convert_path_to_rekordbox(plex_path: str) -> str:
     try:
@@ -19,7 +22,7 @@ def convert_path_to_rekordbox(plex_path: str) -> str:
     logger.info(f'[yellow]Warning: No mapping found for "{plex_path}", using original path')
     return plex_path
 
-def resolve_track(plex_track: str, progress = None, task = None) -> ResolvedTrack | bool:
+def resolve_track(plex_track: PlexTrackWrapper, progress: Progress | NullProgress | None = None, task: TaskID | None = None) -> ResolvedTrack | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 
@@ -27,7 +30,8 @@ def resolve_track(plex_track: str, progress = None, task = None) -> ResolvedTrac
     if not rekordboxPath:
         return False
 
-    if progress and task: progress.update(task, description=f'[yellow]Resolving track "{plex_track.title}" in Rekordbox database...')
+    if progress and task:
+        progress.update(task, description=f'[yellow]Resolving track "{plex_track.title}" in Rekordbox database...')
 
     try:
         # Single query with JOINs to get all related data at once
@@ -52,7 +56,6 @@ def resolve_track(plex_track: str, progress = None, task = None) -> ResolvedTrac
             row_dict = dict(row)
 
             # Extract track data (all columns that don't have prefixes)
-            track = {}
             artist = None
             album = None
             album_artist = None
@@ -85,7 +88,8 @@ def resolve_track(plex_track: str, progress = None, task = None) -> ResolvedTrac
                     name=row_dict["albumArtist_Name"]
                 )
 
-            if progress and task: progress.update(task, description=f'[yellow]Resolved track "{plex_track.title}" in Rekordbox database...')
+            if progress and task:
+                progress.update(task, description=f'[yellow]Resolved track "{plex_track.title}" in Rekordbox database...')
             return ResolvedTrack(track, artist, album, album_artist)
         else:
             logger.debug(f"[yellow]Warning: No file found for {rekordboxPath}")

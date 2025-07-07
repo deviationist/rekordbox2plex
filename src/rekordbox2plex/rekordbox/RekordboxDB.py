@@ -1,6 +1,6 @@
 from pysqlcipher3 import dbapi2 as sqlite
-import sys
 from ..config import get_db_pass, get_db_path
+import sys
 import atexit
 
 def close_connection():

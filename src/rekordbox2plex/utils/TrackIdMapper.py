@@ -1,5 +1,7 @@
-from ..plex.repository.TrackRepository import TrackRepository
+from ..plex.repositories.TrackRepository import TrackRepository
+from ..plex.data_types import PlexTrackWrapper
 from ..rekordbox.track_resolver import resolve_track
+from ..rekordbox.data_types import ResolvedTrack
 from .progress_bar import progress_instance
 from .helpers import build_track_string
 from .logger import logger
@@ -20,7 +22,7 @@ class TrackIdMapper:
         self.rekordbox_lookup = {}  # rekordboxId -> plexId for reverse lookup
         self._initialized = True
 
-    def map(self, plex_track, rb_item):
+    def map(self, plex_track: PlexTrackWrapper, rb_item: ResolvedTrack):
         """
         Map a complete Plex track to Rekordbox item data
 
@@ -40,7 +42,7 @@ class TrackIdMapper:
         self.mappings[plex_id] = mapping_data
         self.rekordbox_lookup[rekordbox_id] = plex_id
 
-    def resolve_rb_track_by_plex(self, plex_id):
+    def resolve_rb_track_by_plex(self, plex_id: int):
         """
         Get the Rekordbox data for a given Plex ID
 
@@ -58,7 +60,7 @@ class TrackIdMapper:
             return mapping["rekordbox"]
         return False
 
-    def resolve_plex_track_by_rb(self, rekordbox_id):
+    def resolve_plex_track_by_rb(self, rekordbox_id: int):
         """
         Get the Plex track data for a given Rekordbox ID
 
