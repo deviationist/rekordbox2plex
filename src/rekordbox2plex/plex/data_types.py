@@ -26,3 +26,5 @@ PlexTracks = MediaContainer[PlexTrack]
 
 PlexPlaylist = Playlist | None
 PlexPlaylists = MediaContainer[PlexPlaylist]
+
+__all__ = ["Track", "Album", "Artist", "Playlist", "MediaContainer", "PlexTrackWrapper", "PlexItem", "PlexArtist", "PlexArtists", "PlexAlbum", "PlexAlbums", "PlexTrack", "PlexTracks", "PlexPlaylist", "PlexPlaylists"]

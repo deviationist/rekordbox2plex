@@ -5,6 +5,7 @@ from ..rekordbox.data_types import ResolvedTrack
 from .progress_bar import progress_instance
 from .helpers import build_track_string
 from .logger import logger
+from typing import Literal
 
 class TrackIdMapper:
     _instance = None
@@ -42,7 +43,7 @@ class TrackIdMapper:
         self.mappings[plex_id] = mapping_data
         self.rekordbox_lookup[rekordbox_id] = plex_id
 
-    def resolve_rb_track_by_plex(self, plex_id: int):
+    def resolve_rb_track_by_plex(self, plex_id: int) -> ResolvedTrack | Literal[False]:
         """
         Get the Rekordbox data for a given Plex ID
 
@@ -60,7 +61,7 @@ class TrackIdMapper:
             return mapping["rekordbox"]
         return False
 
-    def resolve_plex_track_by_rb(self, rekordbox_id: int):
+    def resolve_plex_track_by_rb(self, rekordbox_id: int) -> PlexTrackWrapper | Literal[False]:
         """
         Get the Plex track data for a given Rekordbox ID
 

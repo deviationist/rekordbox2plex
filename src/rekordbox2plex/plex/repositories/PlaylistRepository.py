@@ -1,9 +1,8 @@
 from ._RepositoryBase import RepositoryBase, singleton
 from ..resolvers.library import get_music_library
 from ..resolvers.playlist import get_playlist, get_all_playlists
-from ..data_types import PlexPlaylist, PlexPlaylists
+from ..data_types import Track, PlexPlaylist, PlexPlaylists
 from typing import List
-from plexapi.audio import Track
 
 @singleton
 class PlaylistRepository(RepositoryBase):
