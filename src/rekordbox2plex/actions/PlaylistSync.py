@@ -3,9 +3,8 @@ from ..plex.repositories.PlaylistRepository import PlaylistRepository
 from ..utils.TrackIdMapper import TrackIdMapper
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
-from ..plex.data_types import PlexPlaylist, PlexPlaylists
+from ..plex.data_types import Track, PlexPlaylist, PlexPlaylists
 from ..rekordbox.data_types import Playlist as RekordboxPlaylist
-from plexapi.audio import Track
 from typing import List, Literal
 
 class PlaylistSync:
@@ -52,7 +51,7 @@ class PlaylistSync:
         logger.info("[bold green]✔ Process complete! Rekordbox and Plex playlists should now be in sync!")
 
     def resolve_plex_tracks_from_rb_playlist(self, rb_playlist: RekordboxPlaylist) -> List[Track]:
-        plex_items = []
+        plex_items: List[Track] = []
         rb_playlist_items = get_playlist_tracks(rb_playlist.id)
         if rb_playlist_items:
             for rb_playlist_item in rb_playlist_items:
@@ -66,12 +65,12 @@ class PlaylistSync:
         track_count = len(plex_items)
         if track_count > 0:
             self.created+=1
-            logger.debug(f'Creating playlist "{rb_playlist.name}" with {len(plex_items)} tracks')
+            logger.debug(f'Creating playlist "{rb_playlist.name}" with {track_count} tracks')
             PlaylistRepository().create_playlist(rb_playlist.name, plex_items)
             return track_count
         return False
 
-    def add_items_to_playlist(self, plex_playlist_items_from_rb: List[Track], plex_playlist_existing_items, plex_playlist) -> bool:
+    def add_items_to_playlist(self, plex_playlist_items_from_rb: List[Track], plex_playlist_existing_items, plex_playlist: PlexPlaylist) -> bool:
         items_to_add = []
         for plex_item in plex_playlist_items_from_rb:
             in_playlist = next((pl for pl in plex_playlist_existing_items if pl.ratingKey == plex_item.ratingKey), None)
@@ -94,6 +93,9 @@ class PlaylistSync:
                 plex_playlist.removeItems(items_to_remove)
             return True
         return False
+
+    def resolve_playlist_tracks(plex_playlist: PlexPlaylist) -> List[Track]:
+        return plex_playlist.items()
 
     def sync_playlist_tracks(self, rb_playlist, plex_playlist: PlexPlaylist) -> str | bool:
         plex_playlist_items_from_rb = self.resolve_plex_tracks_from_rb_playlist(rb_playlist)

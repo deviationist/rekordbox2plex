@@ -23,6 +23,7 @@ rekordbox2plex = "rekordbox2plex.__main__:main"
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.12.2"
 mypy = "^1.16.1"
+black = "^25.1.0"
 
 [tool.mypy]
 explicit_package_bases = true

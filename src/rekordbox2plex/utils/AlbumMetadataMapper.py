@@ -3,7 +3,7 @@
 #from ..utils.logger import logger
 from typing import Any
 from ..rekordbox.data_types import ResolvedAlbumWithTracks
-from plexapi.audio import Album
+from ..plex.data_types import Album
 import pprint
 
 class AlbumMetadataMapper:
