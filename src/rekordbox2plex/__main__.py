@@ -1,9 +1,9 @@
-__import__('dotenv').load_dotenv()
+__import__("dotenv").load_dotenv()
 from .actions.TrackSync import TrackSync
 from .utils.logger import init_logger
 from .utils.helpers import determine_sync_targets, parse_script_arguments
 from .actions.PlaylistSync import PlaylistSync
-from .actions.ArtworkSync import ArtworkSync
+from .actions.AlbumSync import AlbumSync
 from .rekordbox.RekordboxDB import setup_db_connection
 
 def main():
@@ -12,8 +12,8 @@ def main():
     init_logger(args)
     sync = determine_sync_targets(args)
     if "tracks" in sync:
-        TrackSync().sync()
+        TrackSync(args).sync()
     if "playlists" in sync:
-        PlaylistSync().sync()
-    if "artwork" in sync:
-        ArtworkSync().sync()
+        PlaylistSync(args).sync()
+    if "albums" in sync:
+        AlbumSync(args).sync()

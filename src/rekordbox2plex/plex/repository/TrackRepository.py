@@ -3,11 +3,13 @@ from ..resolvers.track_resolver import get_track, get_all_tracks
 from ..resolvers.library_resolver import get_music_library_name
 from ...utils.progress_bar import progress_instance
 from ...utils.logger import logger
+from typing import List
+from .types import PlexTrack
 
 @singleton
 class TrackRepository(RepositoryBase):
     def get_track_id(self, item):
-        return item["id"]
+        return item.id
 
     def get_track(self, track_id: str, use_cache: bool = True):
         if use_cache and (cached_track := self._get_from_cache(track_id)):
@@ -17,7 +19,7 @@ class TrackRepository(RepositoryBase):
             return track
         return False
 
-    def get_all_tracks(self, use_cache: bool = True) -> tuple[tuple, int]:
+    def get_all_tracks(self, use_cache: bool = True) -> tuple[List[PlexTrack], int]:
         if use_cache and self._all_fetched and (cached_tracks := self._get_all_cache()):
             return cached_tracks
         with progress_instance(self._display_progress) as progress:
@@ -33,16 +35,16 @@ class TrackRepository(RepositoryBase):
                 try:
                     media = track.media[0]
                     part = media.parts[0]
-                    results.append({
-                        "id": track.ratingKey,
-                        "file_path": part.file,
-                        "title": track.title,
-                        "added_at": track.addedAt,
-                        "track_artist": track.originalTitle,
-                        "album_id": track.parentRatingKey,
-                        "album_artist_id": track.grandparentRatingKey,
-                        "track_object": track,
-                    })
+                    results.append(PlexTrack(
+                        id=track.ratingKey,
+                        file_path=part.file,
+                        title=track.title,
+                        added_at=track.addedAt,
+                        track_artist=track.originalTitle,
+                        album_id=track.parentRatingKey,
+                        album_artist_id=track.grandparentRatingKey,
+                        track_object=track,
+                    ))
                     progress.update(task, description=f'[cyan]Fetched track metadata for "{track.title}" by "{track.originalTitle}"...')
                 except (IndexError, AttributeError):
                     logger.info(f'[red]No file path found for "{track.title}"')
