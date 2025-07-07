@@ -90,6 +90,9 @@ Edit `folderMappings.json` to map local Rekordbox paths to Plex-accessible paths
 ### Linting with ruff and mypy
 Run `poetry run ruff check .` and `poetry run mypy .`.
 
+### Code formatting with black
+Run `poetry run black .`.
+
 ---
 
 ## Usage

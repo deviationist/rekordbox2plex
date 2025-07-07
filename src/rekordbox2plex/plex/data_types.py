@@ -3,6 +3,7 @@ from plexapi.audio import Track, Album, Artist
 from plexapi.playlist import Playlist
 from plexapi.base import MediaContainer
 
+
 class PlexTrackWrapper(NamedTuple):
     id: int
     file_path: str
@@ -12,6 +13,7 @@ class PlexTrackWrapper(NamedTuple):
     album_id: int
     album_artist_id: int
     track_object: Track
+
 
 PlexItem = Track | Album | Artist | Playlist
 
@@ -27,4 +29,20 @@ PlexTracks = MediaContainer[PlexTrack]
 PlexPlaylist = Playlist | None
 PlexPlaylists = MediaContainer[PlexPlaylist]
 
-__all__ = ["Track", "Album", "Artist", "Playlist", "MediaContainer", "PlexTrackWrapper", "PlexItem", "PlexArtist", "PlexArtists", "PlexAlbum", "PlexAlbums", "PlexTrack", "PlexTracks", "PlexPlaylist", "PlexPlaylists"]
+__all__ = [
+    "Track",
+    "Album",
+    "Artist",
+    "Playlist",
+    "MediaContainer",
+    "PlexTrackWrapper",
+    "PlexItem",
+    "PlexArtist",
+    "PlexArtists",
+    "PlexAlbum",
+    "PlexAlbums",
+    "PlexTrack",
+    "PlexTracks",
+    "PlexPlaylist",
+    "PlexPlaylists",
+]

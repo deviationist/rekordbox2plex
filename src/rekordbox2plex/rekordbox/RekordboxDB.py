@@ -3,9 +3,11 @@ from ..config import get_db_pass, get_db_path
 import sys
 import atexit
 
+
 def close_connection():
     db = RekordboxDB()
     db.close()
+
 
 def setup_db_connection():
     try:
@@ -14,6 +16,7 @@ def setup_db_connection():
     except Exception as e:
         sys.exit(f"Cannot connect to DB. Please check DB path and password. Error: {e}")
     atexit.register(close_connection)
+
 
 class RekordboxDB:
     _instance = None

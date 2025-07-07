@@ -2,6 +2,7 @@ from ._RepositoryBase import RepositoryBase, singleton
 from ..resolvers.artist import get_artist, search_for_artists
 from ..data_types import PlexArtist
 
+
 @singleton
 class ArtistRepository(RepositoryBase):
     def get_artist(self, artist_id: int, use_cache: bool = True) -> PlexArtist:
@@ -12,7 +13,7 @@ class ArtistRepository(RepositoryBase):
             return artist
         return False
 
-    #def get_all_artists(self, use_cache: bool = True):
+    # def get_all_artists(self, use_cache: bool = True):
     #    if use_cache and self._all_fetched and (cached_artists := self._get_all_cache()):
     #        return cached_artists
     #    artists = get_all_artists()
