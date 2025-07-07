@@ -1,6 +1,6 @@
 from ..utils.TrackMetadataMapper import TrackMetadataMapper
 from ..plex.repositories.TrackRepository import TrackRepository
-from ..rekordbox.track_resolver import resolve_track as resolve_track_in_rekordbox
+from ..rekordbox.resolvers.track import resolve_track as resolve_track_in_rekordbox
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
 from ..utils.TrackIdMapper import TrackIdMapper

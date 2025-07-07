@@ -1,4 +1,4 @@
-from .library_resolver import get_music_library
+from .library import get_music_library
 from ..data_types import PlexAlbum, PlexAlbums
 
 def get_album(rating_key: int) -> PlexAlbum:

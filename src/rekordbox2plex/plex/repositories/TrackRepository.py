@@ -1,6 +1,6 @@
 from ._RepositoryBase import RepositoryBase, singleton
-from ..resolvers.track_resolver import get_track, get_all_tracks
-from ..resolvers.library_resolver import get_music_library_name
+from ..resolvers.track import get_track, get_all_tracks
+from ..resolvers.library import get_music_library_name
 from ...utils.progress_bar import progress_instance
 from ...utils.logger import logger
 from typing import List, Tuple

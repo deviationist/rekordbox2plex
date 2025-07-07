@@ -1,6 +1,6 @@
 from ..plex.repositories.TrackRepository import TrackRepository
 from ..plex.data_types import PlexTrackWrapper
-from ..rekordbox.track_resolver import resolve_track
+from ..rekordbox.resolvers.track import resolve_track
 from ..rekordbox.data_types import ResolvedTrack
 from .progress_bar import progress_instance
 from .helpers import build_track_string

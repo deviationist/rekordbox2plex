@@ -1,7 +1,7 @@
-from .RekordboxDB import RekordboxDB
+from ..RekordboxDB import RekordboxDB
 from typing import List, Literal
 import pprint
-from .data_types import Playlist, PlaylistTrack
+from ..data_types import Playlist, PlaylistTrack
 
 def get_playlist_tracks(playlist_id: int) -> List[PlaylistTrack] | Literal[False]:
     db = RekordboxDB()

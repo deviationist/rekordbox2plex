@@ -1,4 +1,4 @@
-from ..rekordbox.playlist_resolver import get_all_playlists as get_all_playlists_from_rekordbox, get_playlist_tracks
+from ..rekordbox.resolvers.playlist import get_all_playlists as get_all_playlists_from_rekordbox, get_playlist_tracks
 from ..plex.repositories.PlaylistRepository import PlaylistRepository
 from ..utils.TrackIdMapper import TrackIdMapper
 from ..utils.progress_bar import progress_instance

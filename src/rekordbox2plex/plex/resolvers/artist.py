@@ -1,4 +1,4 @@
-from .library_resolver import get_music_library
+from .library import get_music_library
 from ..data_types import PlexArtist, PlexArtists
 
 def get_artist(rating_key: int) -> PlexArtist:
