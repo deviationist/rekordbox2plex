@@ -7,8 +7,6 @@ from typing import Any
 
 
 class TrackMetadataMapper:
-    FORCE_UPDATE = True
-
     def __init__(self, plex_track: PlexTrackWrapper, rb_item: ResolvedTrack):
         self.rb_item = rb_item
         self.plex_track = plex_track
