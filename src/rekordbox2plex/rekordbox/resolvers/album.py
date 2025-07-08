@@ -13,23 +13,25 @@ def get_album_with_tracks(
     try:
         query = """
         SELECT
-            a.ID AS album_ID, a.Name AS album_Name,
+            al.ID AS album_ID, al.Name AS album_Name,
             c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear,
-            aa.ID AS albumAritst_ID, aa.Name AS albumAritst_Name,
+            a.ID AS artist_ID, a.Name AS artist_Name,
             cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path
         FROM djmdContent AS c
         INNER JOIN
-            djmdArtist AS aa
-            ON c.ArtistID = aa.ID
+            djmdArtist AS a
+            ON c.ArtistID = a.ID
         INNER JOIN
-            djmdAlbum AS a
-            ON a.AlbumArtistID = aa.ID
+            djmdAlbum AS al
+            ON al.ID = c.AlbumID
         LEFT JOIN
             contentFile AS cf
             ON c.ImagePath = cf.Path
         WHERE
-            a.Name = ?
-            AND aa.Name = ?
+            al.Name = ?
+            AND a.Name = ?
+            AND a.rb_local_deleted = 0
+            AND al.rb_local_deleted = 0
             AND c.rb_local_deleted = 0
     """
         cursor.execute(query, (album_name, artist_name))
@@ -58,8 +60,8 @@ def get_album_with_tracks(
 
                 if artist is None:
                     artist = Artist(
-                        id=int(row_dict["albumAritst_ID"]),
-                        name=row_dict["albumAritst_Name"],
+                        id=int(row_dict["artist_ID"]),
+                        name=row_dict["artist_Name"],
                     )
                 if album is None:
                     album = Album(
