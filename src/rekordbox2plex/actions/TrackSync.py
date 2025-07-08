@@ -6,9 +6,10 @@ from ..mappers.TrackMetadataMapper import TrackMetadataMapper
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
 from ..mappers.TrackIdMapper import TrackIdMapper
-from ..utils.helpers import build_track_string
-from typing import List, Tuple
+from ..utils.helpers import build_track_string, get_boolenv
 from ._ActionBase import ActionBase
+from typing import List, Tuple
+import os
 
 
 class TrackSync(ActionBase):
@@ -25,10 +26,11 @@ class TrackSync(ActionBase):
             self.resolve_tracks_in_rekordbox(plex_tracks, track_count)
         )
         self.update_tracks_metadata_in_plex(resolved_tracks, resolved_track_count)
+        if get_boolenv("DELETE_ORPHANED_TRACKS", "false"):
+            self.delete_orphaned_tracks(orphaned_tracks)
         logger.info(
             "[bold green]✔ Process complete! Rekordbox and Plex metadata should now be in sync!"
         )
-        self.delete_orphaned_tracks(orphaned_tracks)
 
     def resolve_tracks_in_rekordbox(
         self, plex_tracks: List[PlexTrackWrapper], track_count: int
