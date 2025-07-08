@@ -3,6 +3,7 @@ from ..plex.repositories.AlbumRepository import AlbumRepository
 from ..plex.data_types import PlexTrackWrapper
 from ..rekordbox.data_types import ResolvedTrack
 from ..utils.logger import logger
+from ..utils.helpers import get_boolenv
 from typing import Any
 
 
@@ -68,10 +69,14 @@ class TrackMetadataMapper:
         logger.debug(f'Creating new album "{album_name}" for track "{track_title}"')
 
     def transfer(self):
-        self.update_track_title()
-        self.update_track_artist()
-        self.update_album_artist()
-        self.update_album()
+        if get_boolenv("MAP_TRACK_TITLE", True):
+            self.update_track_title()
+        if get_boolenv("MAP_TRACK_ARTIST", True):
+            self.update_track_artist()
+        if get_boolenv("MAP_TRACK_ALBUM_ARTIST", True):
+            self.update_album_artist()
+        if get_boolenv("MAP_TRACK_ALBUM", True):
+            self.update_album()
         return self
 
     def save(self):

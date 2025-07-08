@@ -1,8 +1,16 @@
 import argparse
 from typing import List
 from ..plex.data_types import PlexTrackWrapper
+import os
 
 VALID_TARGET_CHOICES = {"all", "tracks", "playlists", "albums"}
+
+
+def get_boolenv(key: str, default: bool = False) -> bool:
+    return str_to_bool(os.getenv(key, default))
+
+def str_to_bool(value: str) -> bool:
+    return value.lower() in ("1", "true", "yes", "on")
 
 
 def build_track_string(plex_track: PlexTrackWrapper) -> str:

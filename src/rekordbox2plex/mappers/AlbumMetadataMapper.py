@@ -1,4 +1,5 @@
 from ..utils.logger import logger
+from ..utils.helpers import get_boolenv
 from ..config import is_dry_run
 from typing import Any, Literal
 from ..rekordbox.data_types import ResolvedAlbumWithTracks
@@ -35,6 +36,7 @@ class AlbumMetadataMapper:
             )
 
     def update_artwork(self):
+
         if self.plex_album.thumb:
             return  # Album has artwork already
         rb_artwork = ArtworkResolver(self.rb_item.tracks).resolve()
@@ -49,8 +51,10 @@ class AlbumMetadataMapper:
             self.resolved_artwork_path = artwork_path
 
     def transfer(self):
-        self.update_year()
-        self.update_artwork()
+        if get_boolenv("MAP_ALBUM_YEAR", True):
+            self.update_year()
+        if get_boolenv("MAP_ALBUM_ARTWORKS", True):
+            self.update_artwork()
         return self
 
     def save(self):
