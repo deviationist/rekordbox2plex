@@ -7,8 +7,6 @@ from ..utils.ArtworkResolver import ArtworkResolver
 
 
 class AlbumMetadataMapper:
-    FORCE_UPDATE = True
-
     def __init__(self, plex_album: Album, rb_lookup: ResolvedAlbumWithTracks):
         self.resolved_artwork_path = None
         self.rb_item = rb_lookup
@@ -29,7 +27,7 @@ class AlbumMetadataMapper:
 
     def update_year(self):
         release_year = self.resolve_release_year()
-        if release_year:
+        if release_year and release_year != self.plex_album.year:
             self.edits["year.value"] = release_year
             self.did_update = True
             logger.debug(
