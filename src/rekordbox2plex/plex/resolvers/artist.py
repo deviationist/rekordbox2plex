@@ -2,9 +2,9 @@ from .library import get_music_library
 from ..data_types import PlexArtist, PlexArtists
 
 
-def get_artist(rating_key: int) -> PlexArtist:
+def get_artist(artist_id: int) -> PlexArtist:
     music_library, _ = get_music_library()
-    return music_library.fetchItem(rating_key)
+    return music_library.fetchItem(artist_id)
 
 
 def search_for_artists(artist_name) -> PlexArtists:

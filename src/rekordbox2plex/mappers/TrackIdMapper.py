@@ -2,9 +2,9 @@ from ..plex.repositories.TrackRepository import TrackRepository
 from ..plex.data_types import PlexTrackWrapper
 from ..rekordbox.resolvers.track import resolve_track
 from ..rekordbox.data_types import ResolvedTrack
-from .progress_bar import progress_instance
-from .helpers import build_track_string
-from .logger import logger
+from ..utils.progress_bar import progress_instance
+from ..utils.helpers import build_track_string
+from ..utils.logger import logger
 from typing import Literal
 
 
@@ -81,7 +81,9 @@ class TrackIdMapper:
 
     def ensure_mappings(self):
         if len(self.mappings) == 0:
-            logger.info("[cyan]No mappings found, fetching tracks...")
+            logger.info(
+                "[cyan]No track mappings (Rekordbox <-> Plex) found, fetching tracks..."
+            )
             plex_tracks, track_count = TrackRepository().get_all_tracks()
             with progress_instance() as progress:
                 task = progress.add_task("", total=track_count)

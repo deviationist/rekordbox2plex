@@ -2,22 +2,24 @@ from ..plex.repositories.TrackRepository import TrackRepository
 from ..plex.data_types import PlexTrackWrapper
 from ..rekordbox.resolvers.track import resolve_track as resolve_track_in_rekordbox
 from ..rekordbox.data_types import ResolvedTrack
-from ..utils.TrackMetadataMapper import TrackMetadataMapper
+from ..mappers.TrackMetadataMapper import TrackMetadataMapper
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
-from ..utils.TrackIdMapper import TrackIdMapper
+from ..mappers.TrackIdMapper import TrackIdMapper
 from ..utils.helpers import build_track_string
 from typing import List, Tuple
+from ._ActionBase import ActionBase
 
 
-class TrackSync:
-    def __init__(self, args):
-        self.dry_run = args.dry_run
+class TrackSync(ActionBase):
+    def __init__(self):
+        super().__init__("Track sync")
         self.trackIdMapper = TrackIdMapper()
 
     def sync(self):
-        if self.dry_run:
-            logger.info("[cyan]This is a dry run! No changes will be made!")
+        logger.info(
+            "[cyan]Attempting to synchronize Rekordbox track metadata to Plex..."
+        )
         plex_tracks, track_count = TrackRepository().progress(True).get_all_tracks()
         resolved_tracks, orphaned_tracks, resolved_track_count = (
             self.resolve_tracks_in_rekordbox(plex_tracks, track_count)

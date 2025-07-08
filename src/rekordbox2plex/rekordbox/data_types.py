@@ -7,6 +7,12 @@ class Track(NamedTuple):
     release_year: int
 
 
+class Artwork(NamedTuple):
+    id: int | None
+    path: str | None
+    local_path: str | None
+
+
 class TrackWithArtwork(NamedTuple):
     id: int
     title: str

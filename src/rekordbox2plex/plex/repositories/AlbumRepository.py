@@ -24,22 +24,13 @@ class AlbumRepository(RepositoryBase):
     def get_albums_by_artist(
         self, artist_id: int, use_cache: bool = True
     ) -> PlexAlbums:
-        artist_albums = []
-        if use_cache and self._all_fetched and (cached_albums := self._get_all_cache()):
-            for _, cached_album in cached_albums:
-                if cached_album.parentRatingKey == artist_id:
-                    artist_albums.append(cached_album)
-            return artist_albums
-        if artist := ArtistRepository().get_artist(artist_id):
-            artist_albums = artist.albums()
-            self._append_to_cache(artist_albums)
-            return artist_albums
-        return None
+        artist = ArtistRepository().get_artist(artist_id, use_cache)
+        return artist.albums()
 
     def search_for_album_by_artist(self, artist_id: int, album_name: str) -> PlexAlbum:
-        all_albums = self.get_all_albums()
-        if all_albums:
-            for album in all_albums:
-                if album.parentRatingKey == artist_id and album.title == album_name:
+        artist_albums = self.get_albums_by_artist(artist_id)
+        if artist_albums:
+            for album in artist_albums:
+                if album.title == album_name:
                     return album
         return None

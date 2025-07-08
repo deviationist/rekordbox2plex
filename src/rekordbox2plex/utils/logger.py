@@ -1,9 +1,11 @@
 import logging
 import argparse
 from rich.logging import RichHandler
+from rich.console import Console
 from ..config import get_logger_name
 
 logger = logging.getLogger(get_logger_name())
+console = Console()
 
 
 def init_logger(args: argparse.Namespace) -> None:
