@@ -9,7 +9,6 @@ from ..mappers.TrackIdMapper import TrackIdMapper
 from ..utils.helpers import build_track_string, get_boolenv
 from ._ActionBase import ActionBase
 from typing import List, Tuple
-import os
 
 
 class TrackSync(ActionBase):
