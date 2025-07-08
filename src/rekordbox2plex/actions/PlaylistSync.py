@@ -5,23 +5,22 @@ from ..rekordbox.resolvers.playlist import (
 from ..rekordbox.data_types import Playlist as RekordboxPlaylist
 from ..plex.repositories.PlaylistRepository import PlaylistRepository
 from ..plex.data_types import Track, PlexPlaylist, PlexPlaylists
-from ..utils.TrackIdMapper import TrackIdMapper
+from ..mappers.TrackIdMapper import TrackIdMapper
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
 from typing import List, Literal
+from ._ActionBase import ActionBase
 
 
-class PlaylistSync:
-    def __init__(self, args):
-        self.dry_run = args.dry_run
+class PlaylistSync(ActionBase):
+    def __init__(self):
+        super().__init__("Playlist sync")
         self.trackIdMapper = TrackIdMapper()
         self.deleted = 0
         self.created = 0
         self.updated = 0
 
     def sync(self) -> None:
-        if self.dry_run:
-            logger.info("[cyan]This is a dry run! No changes will be made!")
         logger.info("[cyan]Attempting to synchronize Rekordbox playlists to Plex...")
         self.trackIdMapper.ensure_mappings()  # Ensure we have all tracks
         rb_playlists = get_all_playlists_from_rekordbox()
@@ -30,7 +29,7 @@ class PlaylistSync:
         else:
             plex_playlists = PlaylistRepository().get_all_playlists()
             logger.info(
-                f"[cyan]Found {len(rb_playlists)} in Rekordbox, and {len(plex_playlists)} in Plex, proceeding to sync."
+                f"[cyan]Found {len(rb_playlists)} playlists in Rekordbox, and {len(plex_playlists)} playlists in Plex, proceeding to sync them."
             )
             with progress_instance() as progress:
                 task = progress.add_task("", total=rb_playlists_count)

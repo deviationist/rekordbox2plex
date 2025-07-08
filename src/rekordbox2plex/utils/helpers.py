@@ -2,14 +2,14 @@ import argparse
 from typing import List
 from ..plex.data_types import PlexTrackWrapper
 
-VALID_TARGET_CHOICES = {"tracks", "playlists", "albums"}
+VALID_TARGET_CHOICES = {"all", "tracks", "playlists", "albums"}
 
 
 def build_track_string(plex_track: PlexTrackWrapper) -> str:
     return f'"{plex_track.title}" by "{plex_track.track_artist}"'
 
 
-def determine_sync_targets(args, default_target: str = "tracks") -> str:
+def determine_sync_targets(args, default_target: str = "all") -> str:
     return args.sync if args.sync else default_target
 
 

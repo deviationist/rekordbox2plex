@@ -37,7 +37,7 @@ class RepositoryBase(ABC):
 
     def _get_all_cache(self) -> CacheItems | Literal[False]:
         if len(self._cache) > 0:
-            return self._cache.items()
+            return self._cache.values()
         return False
 
     def _get_from_cache(self, cache_key: str) -> CacheItem | Literal[False]:

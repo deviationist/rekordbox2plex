@@ -1,7 +1,7 @@
 from ._RepositoryBase import RepositoryBase, singleton
 from ..resolvers.artist import get_artist, search_for_artists
 from ..data_types import PlexArtist
-from typing import Literal
+
 
 @singleton
 class ArtistRepository(RepositoryBase):
