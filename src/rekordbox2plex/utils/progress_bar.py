@@ -31,6 +31,7 @@ def progress_instance(enabled: bool = True) -> Progress | NullProgress:
             TimeElapsedColumn(),
             TimeRemainingColumn(),
             TextColumn("{task.description}"),
+            refresh_per_second=20
         )
     else:
         return NullProgress()
