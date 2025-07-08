@@ -46,7 +46,7 @@ class PlaylistSync(ActionBase):
                     if plex_playlist:
                         playlist_was_synced = self.sync_playlist_tracks(
                             rb_playlist, plex_playlist
-                        ) # Make sure tracks are up to date
+                        )  # Make sure tracks are up to date
                         if playlist_was_synced:
                             progress.update(
                                 task,

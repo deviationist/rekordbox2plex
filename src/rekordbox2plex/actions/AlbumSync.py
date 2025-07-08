@@ -9,6 +9,7 @@ from ..utils.helpers import get_boolenv
 from ._ActionBase import ActionBase
 from typing import List
 
+
 class AlbumSync(ActionBase):
     def __init__(self):
         super().__init__("Album sync")
