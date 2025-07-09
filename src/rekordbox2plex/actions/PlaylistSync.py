@@ -32,51 +32,7 @@ class PlaylistSync(ActionBase):
             logger.info(
                 f"[cyan]Found {len(rb_playlists)} playlists in Rekordbox, and {len(plex_playlists)} playlists in Plex, proceeding to sync them."
             )
-            with progress_instance() as progress:
-                task = progress.add_task("", total=rb_playlists_count)
-                for rb_playlist in rb_playlists:
-                    progress.update(
-                        task,
-                        description=f'[yellow]Synchronizing Rekordbox playlist "{rb_playlist.name}"...',
-                    )
-                    plex_playlist = next(
-                        (pl for pl in plex_playlists if pl.title == rb_playlist.name),
-                        None,
-                    )
-                    if plex_playlist:
-                        playlist_was_synced = self.sync_playlist_tracks(
-                            rb_playlist, plex_playlist
-                        )  # Make sure tracks are up to date
-                        if playlist_was_synced:
-                            progress.update(
-                                task,
-                                advance=1,
-                                description=f"[bold green]✔ Done! Playlist {rb_playlist.name} synchronized!",
-                            )
-                        else:
-                            logger.debug(
-                                f'Playlist "{rb_playlist.name}" already up to date.'
-                            )
-                            progress.update(task, advance=1)  # No Change
-                    else:
-                        track_count = self.create_playlist(rb_playlist)
-                        if isinstance(track_count, int):
-                            progress.update(
-                                task,
-                                advance=1,
-                                description=f"[bold green]✔ Done! Playlist {rb_playlist.name} created with {track_count} tracks!",
-                            )
-                        else:
-                            logger.debug(
-                                f'Playlist "{rb_playlist.name}" not created since it is empty.'
-                            )
-                            progress.update(
-                                task, advance=1
-                            )  # Playlist not crated (most likely empty/no tracks inside)
-                progress.update(
-                    task,
-                    description="[bold green]✔ Done! Rekordbox playlists are synchronized with Plex!",
-                )
+            self.synchronize_playlists(rb_playlists, rb_playlists_count, plex_playlists)
         logger.info(
             f"[bold green]✔ Result: {self.deleted} deleted, {self.updated} updated, and {self.created} created."
         )
@@ -85,6 +41,53 @@ class PlaylistSync(ActionBase):
         logger.info(
             "[bold green]✔ Process complete! Rekordbox and Plex playlists should now be in sync!"
         )
+
+    def synchronize_playlists(self, rb_playlists, rb_playlists_count, plex_playlists):
+        with progress_instance() as progress:
+            task = progress.add_task("", total=rb_playlists_count)
+            for rb_playlist in rb_playlists:
+                progress.update(
+                    task,
+                    description=f'[yellow]Synchronizing Rekordbox playlist "{rb_playlist.name}"...',
+                )
+                plex_playlist = next(
+                    (pl for pl in plex_playlists if pl.title == rb_playlist.name),
+                    None,
+                )
+                if plex_playlist:
+                    playlist_was_synced = self.sync_playlist_tracks(
+                        rb_playlist, plex_playlist
+                    )  # Make sure tracks are up to date
+                    if playlist_was_synced:
+                        progress.update(
+                            task,
+                            advance=1,
+                            description=f"[bold green]✔ Done! Playlist {rb_playlist.name} synchronized!",
+                        )
+                    else:
+                        logger.debug(
+                            f'Playlist "{rb_playlist.name}" already up to date.'
+                        )
+                        progress.update(task, advance=1)  # No Change
+                else:
+                    track_count = self.create_playlist(rb_playlist)
+                    if isinstance(track_count, int):
+                        progress.update(
+                            task,
+                            advance=1,
+                            description=f'[bold green]✔ Done! Playlist "{rb_playlist.name}" created with {track_count} tracks!',
+                        )
+                    else:
+                        logger.debug(
+                            f'Playlist "{rb_playlist.name}" not created since it is empty.'
+                        )
+                        progress.update(
+                            task, advance=1
+                        )  # Playlist not crated (most likely empty/no tracks inside)
+            progress.update(
+                task,
+                description="[bold green]✔ Done! Rekordbox playlists are synchronized with Plex!",
+            )
 
     def resolve_plex_tracks_from_rb_playlist(
         self, rb_playlist: RekordboxPlaylist
