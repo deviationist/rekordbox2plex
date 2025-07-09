@@ -1,22 +1,17 @@
 # rekordbox2plex
 
-**rekordbox2plex** is a Python script that syncs your **track metadata** and **playlists** from Rekordbox to Plex using [`python-plexapi`](https://github.com/pkkid/python-plexapi). This is especially useful for DJs who manage their music library in Rekordbox and want to reflect the same structure in Plex or Plexamp.
+**rekordbox2plex** is a Python script that syncs your **track metadata**, **album metadata** and **playlists** from Rekordbox to Plex using [`python-plexapi`](https://github.com/pkkid/python-plexapi). This is especially useful for DJs who manage their music library in Rekordbox and want to reflect the same structure in Plex or Plexamp.
 
 > ⚠️ This is a **work in progress** and currently an MVP.
 
 ## Todo
-- "Cosmic Cubes - A Cosmic Trance Compilation Vol. I" <- An example on what needs to be merged to one
-- When album artist is empty, default to "VA"? Use track artist?
-- Attempt to assign album / album artist via ID if it already exists? Now there seems to be a lot of duplicates...
-- Create script to check if there's any orphaned files in my folder structure? Or any tracks that misses it's file?
-- Check if there's some artwork that does not get transfered to Plex?
 - Write about how playlists are flattened
 - Make stuff optional and configurable
 
 ## Features
 
-* ✅ Sync Rekordbox track metadata and playlists to Plex
-* ✅ Supports file path remapping (e.g. when Plex is running in Docker)
+* ✅ Sync Rekordbox track metadata, album metadata and playlists to Plex
+* ✅ Supports file path remapping (e.g. when Plex is running in Docker and the media is mounted on a different path than Rekordbox)
 * ✅ Reads Rekordbox’s encrypted SQLite database using `pysqlcipher3` (read-only mode for safety)
 * ✅ Colorful console output and progress bars using `rich`
 * ❌ No concurrency yet – planned for future versions
@@ -29,7 +24,7 @@
 * Python 3.8+
 * [`Poetry`](https://python-poetry.org/)
 * Rekordbox (with access to its encrypted SQLite DB)
-* A running Plex server
+* A running Plex server + Plex access token
 * Rekordbox and Plex must be on the same file system
 
 ---
@@ -59,11 +54,22 @@ cp .env.example .env
 
 #### `.env` variables include:
 
-* `REKORDBOX_DB_PATH` – full path to your Rekordbox SQLite DB
-* `REKORDBOX_DB_PASSWORD` – the password for decrypting the DB
+* `REKORDBOX_FOLDER_PATH` – full path to your Rekordbox files (needed when synchronizing album artwork)
+* `REKORDBOX_DB_PATH` – full path to your Rekordbox SQLite DB (not required `REKORDBOX_FOLDER_PATH` if set)
+* `REKORDBOX_DB_PASSWORD` – the password for decrypting the SQLite DB
 * `PLEX_TOKEN` – your Plex API token
 * `PLEX_BASEURL` – your Plex server URL (e.g. [http://localhost:32400](http://localhost:32400))
-* `PLEX_LIBRARY_NAME`- your Plex library name that contains your music
+* `PLEX_LIBRARY_NAME` - your Plex library name that contains your music
+* `MAP_TRACK_TITLE=true|false` – whether to sync the track title to Plex
+* `MAP_TRACK_ARTIST=true|false` - whether to sync the track artist to Plex
+* `MAP_TRACK_ALBUM_ARTIST=true|false` - whether to sync the album artist to Plex
+* `MAP_TRACK_ALBUM=true|false` - whether to sync the album to Plex
+* `MAP_ALBUM_YEAR=true|false` - whether to sync album release year
+* `MAP_ALBUM_ARTWORKS=true|false` - whether to sync album artwork/thumb/poster
+* `DELETE_ORPHANED_TRACKS=true|false` - whether to delete orphaned tracks after synchronization
+* `DELETE_ORPHANED_PLAYLISTS=true|false` - whether to delete orphaned playlists after synchronization
+* `DELETE_ORPHANED_ALBUMS=false|false` - whether to delete orphaned albums after synchronization
+
 
 > 🔐 **How to find your Plex Token?**
 > See [this guide](#how-to-find-your-plex-token).
@@ -72,8 +78,7 @@ cp .env.example .env
 > See [this guide](#how-to-find-your-rekordbox-sqlite-db).
 
 ### 4. (Optional) Configure folder mappings
-
-If your Plex and Rekordbox libraries are on different paths (e.g., Plex is in Docker), you can create a file to remap file paths:
+If your Plex and Rekordbox libraries are on different paths (e.g., Plex is in Docker and has a different folder mount path), you can create a file to remap file paths:
 
 ```bash
 cp folderMappings.json.example folderMappings.json
@@ -103,6 +108,19 @@ Run the script via Poetry:
 poetry run rekordbox2plex
 ```
 
+### Arguments
+* `-v` and `-vv` - verbosity control (`-v` for info and `-vv`for debug)
+* `--dry-run` - no changes will be made
+* `--sync=` - what to sync, comma separated list, values: all, tracks, albums, playlists
+
+Example:
+
+This will attempt to synchronize tracks and playlists, but in dry mode so no real changes will be made. The log level is set to debug, meaning that log output will describe each step of the process.
+```bash
+poetry run rekordbox2plex -vv --dry-run --sync=tracks,playlists
+```
+
+### Running via UNIX Cron
 To run the sync regularly (e.g. nightly), set up a cron job:
 
 ```cron
