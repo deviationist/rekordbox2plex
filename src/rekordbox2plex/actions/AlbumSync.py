@@ -11,9 +11,10 @@ from typing import List
 
 
 class AlbumSync(ActionBase):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("Album sync")
         self.update_count = 0
+        self.orphaned_albums: List[PlexAlbum] = []
 
     def sync(self):
         logger.info(
@@ -28,9 +29,17 @@ class AlbumSync(ActionBase):
             logger.info(
                 f"[cyan]Found {album_count} albums in Plex, proceeding to sync."
             )
+            self.synchronize_albums(album_count, plex_albums)
+        logger.info(f"[bold green]✔ Result: {self.update_count} albums updated.")
+        if get_boolenv("DELETE_ORPHANED_ALBUMS", "false"):
+            self.delete_orphaned_albums()
+        logger.info(
+            "[bold green]✔ Process complete! Rekordbox and Plex albums should now be in sync!"
+        )
+
+    def synchronize_albums(self, album_count, plex_albums):
         with progress_instance() as progress:
             task = progress.add_task("", total=album_count)
-            orphaned_albums = []
             for plex_album in plex_albums:
                 if plex_album.title:
                     progress.update(
@@ -48,7 +57,7 @@ class AlbumSync(ActionBase):
                             if updater.did_update:
                                 self.update_count += 1
                         else:
-                            orphaned_albums.append(plex_album)
+                            self.orphaned_albums.append(plex_album)
 
                     progress.update(
                         task,
@@ -61,21 +70,15 @@ class AlbumSync(ActionBase):
                 task,
                 description="[bold green]✔ Done! Rekordbox albums are synchronized with Plex!",
             )
-        logger.info(f"[bold green]✔ Result: {self.update_count} albums updated.")
-        if get_boolenv("DELETE_ORPHANED_ALBUMS", "false"):
-            self.delete_orphaned_albums(orphaned_albums)
-        logger.info(
-            "[bold green]✔ Process complete! Rekordbox and Plex albums should now be in sync!"
-        )
 
-    def delete_orphaned_albums(self, orphaned_albums: List[PlexAlbum]):
+    def delete_orphaned_albums(self):
         """Delete albums that are present in Plex but not in Rekordbox"""
-        orphaned_albums_count = len(orphaned_albums)
+        orphaned_albums_count = len(self.orphaned_albums)
         if orphaned_albums_count > 0:
             logger.info(
                 f"[cyan]Found {orphaned_albums_count} orphaned album(s), deleting..."
             )
-            for plex_album in orphaned_albums:
+            for plex_album in self.orphaned_albums:
                 logger.debug(f'Delete album "{plex_album.title}"')
                 if not self.dry_run:
                     plex_album.delete()
