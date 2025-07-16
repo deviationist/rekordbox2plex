@@ -4,10 +4,6 @@
 
 > ⚠️ This is a **work in progress** and currently an MVP.
 
-## Todo
-- Write about how playlists are flattened
-- Make stuff optional and configurable
-
 ## Features
 
 * ✅ Sync Rekordbox track metadata, album metadata and playlists to Plex
@@ -17,7 +13,7 @@
 * ❌ No concurrency yet – planned for future versions
 * 🛠️ Can be run manually or scheduled via `cron`
 
-### Hierarchical Playlist Flattening
+## Hierarchical Playlist Flattening
 
 Plex does not support nested or hierarchical playlists, so we flatten the Rekordbox playlist structure during the sync process. This is done by prepending the parent playlist name to each child playlist name.
 
