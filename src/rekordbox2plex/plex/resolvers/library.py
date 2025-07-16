@@ -11,6 +11,14 @@ def get_music_library_name() -> str:
     return PLEX_LIBRARY_NAME
 
 
+def plex_playlist_flattening_delimiter() -> str:
+    PLEX_PLAYLIST_FLATTENING_DELIMITER = os.getenv("PLEX_PLAYLIST_FLATTENING_DELIMITER")
+    if not PLEX_PLAYLIST_FLATTENING_DELIMITER:
+        return "/"
+    return PLEX_PLAYLIST_FLATTENING_DELIMITER
+
+
+
 def get_music_library() -> Tuple[LibrarySection, str]:
     plexapi = plexapi_client()
     music_library_name = get_music_library_name()

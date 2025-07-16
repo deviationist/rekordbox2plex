@@ -15,20 +15,20 @@ def main():
     config.set_args(args)
     init_logger(args)
     setup_db_connection()
-    sync_targets = determine_sync_targets(args)
-    sync_all = "all" in sync_targets
+    sync_targets, sync_all = determine_sync_targets(args)
+    sync_target_count = len(sync_targets)
 
     if config.is_dry_run():
         logger.info("[cyan]This is a dry run! No changes will be made!")
 
     for i, sync_item in enumerate(sync_targets):
-        if sync_all or sync_item == "tracks":
+        if sync_item == "tracks":
             TrackSync().sync()
-        if sync_all or sync_item == "playlists":
+        if sync_item == "playlists":
             PlaylistSync().sync()
-        if sync_all or sync_item == "albums":
+        if sync_item == "albums":
             AlbumSync().sync()
-        if i != len(sync_targets) - 1:
+        if sync_target_count > 1 and i != sync_target_count - 1:
             console.rule()
 
     if sync_all:

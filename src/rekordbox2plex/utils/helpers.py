@@ -21,7 +21,15 @@ def build_track_string(plex_track: PlexTrackWrapper) -> str:
 
 
 def determine_sync_targets(args, default_target: str = "all") -> str:
-    return args.sync if args.sync else default_target
+    sync_all = args.sync == None or "all" in args.sync or len(args.sync) >= (len(VALID_TARGET_CHOICES) - 1)
+    sync_actions = []
+    if "tracks" in args.sync or sync_all:
+        sync_actions.append("tracks")
+    if "playlists" in args.sync or sync_all:
+        sync_actions.append("playlists")
+    if "albums" in args.sync or sync_all:
+        sync_actions.append("albums")
+    return sync_actions, sync_all
 
 
 def parse_sync_arg(s) -> List[str]:
