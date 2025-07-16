@@ -24,15 +24,21 @@ Plex does not support nested or hierarchical playlists, so we flatten the Rekord
 By default, playlists are joined using the `/` delimiter. You can change this by setting the `PLEX_PLAYLIST_FLATTENING_DELIMITER` environment variable.
 
 **Rekordbox structure:**
-- Parent Playlist
-  ├─ Child Playlist 1
-  ├─ Child Playlist 2
-  └─ Child Playlist 3
+
+```
+Parent Playlist
+├─ Child Playlist 1
+├─ Child Playlist 2
+└─ Child Playlist 3
+```
 
 **Flattened Plex structure:**
-- Parent Playlist/Child Playlist 1
-- Parent Playlist/Child Playlist 2
-- Parent Playlist/Child Playlist 3
+
+```
+Parent Playlist/Child Playlist 1
+Parent Playlist/Child Playlist 2
+Parent Playlist/Child Playlist 3
+```
 
 ---
 
