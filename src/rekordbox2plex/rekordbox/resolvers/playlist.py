@@ -1,6 +1,7 @@
 from ..RekordboxDB import RekordboxDB
 from typing import List, Literal
 from ..data_types import Playlist, PlaylistTrack
+from ...plex.resolvers.library import plex_playlist_flattening_delimiter
 
 
 def get_playlist_tracks(playlist_id: int) -> List[PlaylistTrack] | Literal[False]:
@@ -39,11 +40,13 @@ def get_all_playlists() -> List[Playlist] | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 
-    query = """
+    playlist_delimiter = plex_playlist_flattening_delimiter()
+
+    query = f"""
     SELECT
         child.ID AS playlist_ID,
         CASE
-            WHEN parent.Name IS NOT NULL THEN parent.Name || '/' || child.Name
+            WHEN parent.Name IS NOT NULL THEN parent.Name || '{playlist_delimiter}' || child.Name
             ELSE child.Name
         END AS FlattenedName,
         COUNT(sp.ID) AS TrackCount
@@ -64,7 +67,6 @@ def get_all_playlists() -> List[Playlist] | Literal[False]:
         COUNT(sp.ID) > 0
     ORDER BY
         FlattenedName
-    LIMIT 1
 """
     cursor.execute(query)
     rows = cursor.fetchall()

@@ -7,7 +7,6 @@
 ## Todo
 - Write about how playlists are flattened
 - Make stuff optional and configurable
-- Check why playlists are empty
 
 ## Features
 
@@ -17,6 +16,23 @@
 * ✅ Colorful console output and progress bars using `rich`
 * ❌ No concurrency yet – planned for future versions
 * 🛠️ Can be run manually or scheduled via `cron`
+
+### Hierarchical Playlist Flattening
+
+Plex does not support nested or hierarchical playlists, so we flatten the Rekordbox playlist structure during the sync process. This is done by prepending the parent playlist name to each child playlist name.
+
+By default, playlists are joined using the `/` delimiter. You can change this by setting the `PLEX_PLAYLIST_FLATTENING_DELIMITER` environment variable.
+
+**Rekordbox structure:**
+- Parent Playlist
+  ├─ Child Playlist 1
+  ├─ Child Playlist 2
+  └─ Child Playlist 3
+
+**Flattened Plex structure:**
+- Parent Playlist/Child Playlist 1
+- Parent Playlist/Child Playlist 2
+- Parent Playlist/Child Playlist 3
 
 ---
 
@@ -61,6 +77,7 @@ cp .env.example .env
 * `PLEX_TOKEN` – your Plex API token
 * `PLEX_BASEURL` – your Plex server URL (e.g. [http://localhost:32400](http://localhost:32400))
 * `PLEX_LIBRARY_NAME` - your Plex library name that contains your music
+* `PLEX_PLAYLIST_FLATTENING_DELIMITER`- (defaults to "/") qthe delimiter sign used to flatten hierarchical playlists from Rekordbox (since Plex does not support nested playlists)
 * `MAP_TRACK_TITLE=true|false` – whether to sync the track title to Plex
 * `MAP_TRACK_ARTIST=true|false` - whether to sync the track artist to Plex
 * `MAP_TRACK_ALBUM_ARTIST=true|false` - whether to sync the album artist to Plex
