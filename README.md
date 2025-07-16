@@ -7,6 +7,7 @@
 ## Todo
 - Write about how playlists are flattened
 - Make stuff optional and configurable
+- Check why playlists are empty
 
 ## Features
 

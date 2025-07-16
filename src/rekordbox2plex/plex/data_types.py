@@ -21,16 +21,16 @@ CacheItem: TypeAlias = PlexItem
 CacheItems: TypeAlias = ValuesView[CacheItem]
 Cache: TypeAlias = Dict[str, CacheItem]
 
-PlexArtist = Artist | None
+PlexArtist = Artist
 PlexArtists = MediaContainer[PlexArtist]
 
-PlexAlbum = Album | None
+PlexAlbum = Album
 PlexAlbums = MediaContainer[PlexAlbum]
 
-PlexTrack = Track | None
+PlexTrack = Track
 PlexTracks = MediaContainer[PlexTrack]
 
-PlexPlaylist = Playlist | None
+PlexPlaylist = Playlist
 PlexPlaylists = MediaContainer[PlexPlaylist]
 
 __all__ = [

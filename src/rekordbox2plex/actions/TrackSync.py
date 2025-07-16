@@ -65,6 +65,7 @@ class TrackSync(ActionBase):
                         advance=1,
                         description=f"[red]Could not resolve track metadata {track_string}...",
                     )
+            self.trackIdMapper.all_tracks_mapped()
             track_count = len(resolved_tracks)
             orphaned_tracks_count = len(orphaned_tracks)
             progress.update(
