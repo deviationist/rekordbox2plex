@@ -63,7 +63,8 @@ def get_all_playlists() -> List[Playlist] | Literal[False]:
     HAVING
         COUNT(sp.ID) > 0
     ORDER BY
-        FlattenedName;
+        FlattenedName
+    LIMIT 1
 """
     cursor.execute(query)
     rows = cursor.fetchall()

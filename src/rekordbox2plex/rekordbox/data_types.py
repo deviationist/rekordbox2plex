@@ -4,7 +4,7 @@ from typing import NamedTuple, List
 class Track(NamedTuple):
     id: int
     title: str
-    release_year: int
+    release_year: int | None
 
 
 class Artwork(NamedTuple):

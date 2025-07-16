@@ -1,6 +1,6 @@
 from ..plex.repositories.TrackRepository import TrackRepository
 from ..plex.data_types import PlexTrackWrapper
-from ..rekordbox.resolvers.track import resolve_track
+from ..rekordbox.resolvers.track import resolve_track as resolve_track_in_rekordbox
 from ..rekordbox.data_types import ResolvedTrack
 from ..utils.progress_bar import progress_instance
 from ..utils.helpers import build_track_string
@@ -20,9 +20,10 @@ class TrackIdMapper:
     def __init__(self):
         if self._initialized:
             return
-        self.mappings = {}  # plexId -> full mapping data
-        self.rekordbox_lookup = {}  # rekordboxId -> plexId for reverse lookup
+        self.plex_index = {}
+        self.rekordbox_index = {}
         self._initialized = True
+        self._all_mapped = False
 
     def map(self, plex_track: PlexTrackWrapper, rb_item: ResolvedTrack):
         """
@@ -32,14 +33,11 @@ class TrackIdMapper:
             plex_track: Dictionary containing Plex track data with 'id' key
             rb_item: Tuple of (track, artist, artwork, album, albumArtist) from Rekordbox
         """
-        plex_id = plex_track.id
-        rekordbox_id = rb_item.track.id
+        plex_id = int(plex_track.id)
+        rekordbox_id = int(rb_item.track.id)
 
-        # Store the complete mapping
-        mapping_data = {"plex_track": plex_track, "rekordbox": rb_item}
-
-        self.mappings[plex_id] = mapping_data
-        self.rekordbox_lookup[rekordbox_id] = plex_id
+        self.plex_index[plex_id] = rb_item
+        self.rekordbox_index[rekordbox_id] = plex_track
 
     def resolve_rb_track_by_plex(self, plex_id: int) -> ResolvedTrack | Literal[False]:
         """
@@ -54,9 +52,9 @@ class TrackIdMapper:
 
         self.ensure_mappings()
 
-        mapping = self.mappings.get(plex_id)
-        if mapping:
-            return mapping["rekordbox"]
+        rb_item = self.plex_index.get(int(plex_id))
+        if rb_item:
+            return rb_item
         return False
 
     def resolve_plex_track_by_rb(
@@ -74,33 +72,39 @@ class TrackIdMapper:
 
         self.ensure_mappings()
 
-        plex_id = self.rekordbox_lookup.get(rekordbox_id)
-        if plex_id and plex_id in self.mappings:
-            return self.mappings[plex_id]["plex_track"]
+        plex_track = self.rekordbox_index.get(int(rekordbox_id))
+        if plex_track:
+            return plex_track
         return False
 
+    def all_tracks_mapped(self):
+        self._all_mapped = True
+
     def ensure_mappings(self):
-        if len(self.mappings) == 0:
-            logger.info(
-                "[cyan]No track mappings (Rekordbox <-> Plex) found, fetching tracks..."
-            )
-            plex_tracks, track_count = TrackRepository().get_all_tracks()
-            with progress_instance() as progress:
-                task = progress.add_task("", total=track_count)
-                for plex_track in plex_tracks:
-                    track_string = build_track_string(plex_track)
-                    progress.update(
-                        task,
-                        description=f"[yellow]Resolving track metadata {track_string}...",
-                    )
-                    rb_item = resolve_track(plex_track, progress, task)
-                    progress.update(
-                        task,
-                        advance=1,
-                        description=f"[yellow]Resolved track metadata {track_string}...",
-                    )
-                    self.map(plex_track, rb_item)
-                progress.update(
-                    task,
-                    description=f"[bold green]✔ Done! Resolved track metadata for {track_count} tracks!",
-                )
+        if not self._all_mapped:
+            logger.info("[cyan]No track mappings found, fetching tracks...")
+            try:
+                plex_tracks, track_count = TrackRepository().get_all_tracks()
+                with progress_instance() as progress:
+                    task = progress.add_task("", total=track_count)
+                    successful_mappings = 0
+
+                    for plex_track in plex_tracks:
+                        track_string = build_track_string(plex_track)
+                        progress.update(task, description=f"[yellow]Resolving {track_string}...")
+
+                        try:
+                            rb_item = resolve_track_in_rekordbox(plex_track, progress, task)
+                            if rb_item:  # Only map if resolution succeeded
+                                self.map(plex_track, rb_item)
+                                successful_mappings += 1
+                        except Exception as e:
+                            logger.warning(f"Failed to resolve track {track_string}: {e}")
+
+                        progress.update(task, advance=1)
+
+                    progress.update(task, description=f"[bold green]✔ Done! Mapped {successful_mappings}/{track_count} tracks!")
+                self._all_mapped = True
+            except Exception as e:
+                logger.error(f"Failed to build track mappings: {e}")
+                raise

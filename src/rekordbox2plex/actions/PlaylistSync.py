@@ -42,7 +42,12 @@ class PlaylistSync(ActionBase):
             "[bold green]✔ Process complete! Rekordbox and Plex playlists should now be in sync!"
         )
 
-    def synchronize_playlists(self, rb_playlists, rb_playlists_count, plex_playlists):
+    def synchronize_playlists(
+        self,
+        rb_playlists: List[RekordboxPlaylist],
+        rb_playlists_count: int,
+        plex_playlists: PlexPlaylists,
+    ):
         with progress_instance() as progress:
             task = progress.add_task("", total=rb_playlists_count)
             for rb_playlist in rb_playlists:
@@ -54,7 +59,8 @@ class PlaylistSync(ActionBase):
                     (pl for pl in plex_playlists if pl.title == rb_playlist.name),
                     None,
                 )
-                if plex_playlist:
+
+                if isinstance(plex_playlist, PlexPlaylist):
                     playlist_was_synced = self.sync_playlist_tracks(
                         rb_playlist, plex_playlist
                     )  # Make sure tracks are up to date
