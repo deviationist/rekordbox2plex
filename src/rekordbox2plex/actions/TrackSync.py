@@ -172,7 +172,7 @@ class TrackSync(ActionBase):
                 f"[cyan]Found {orphaned_tracks_count} orphaned track(s), deleting..."
             )
             for plex_track in orphaned_tracks:
-                logger.debug(f'Delete track "{plex_track.title}"')
+                logger.debug(f'Deleting track "{plex_track.title}"')
                 if not self.dry_run:
                     plex_track.track_object.delete()
             logger.info(
