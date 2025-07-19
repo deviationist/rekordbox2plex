@@ -26,6 +26,7 @@ Parent Playlist
 ├─ Child Playlist 1
 ├─ Child Playlist 2
 └─ Child Playlist 3
+   └─ Grand-Child Playlist 1
 ```
 
 **Flattened Plex structure:**
@@ -34,6 +35,7 @@ Parent Playlist
 Parent Playlist/Child Playlist 1
 Parent Playlist/Child Playlist 2
 Parent Playlist/Child Playlist 3
+Parent Playlist/Child Playlist 3/Grand-Child Playlist 1
 ```
 
 ---
@@ -89,6 +91,8 @@ cp .env.example .env
 * `DELETE_ORPHANED_TRACKS=true|false` - whether to delete orphaned tracks after synchronization
 * `DELETE_ORPHANED_PLAYLISTS=true|false` - whether to delete orphaned playlists after synchronization
 * `DELETE_ORPHANED_ALBUMS=false|false` - whether to delete orphaned albums after synchronization
+* `ADD_NEW_TRACKS=true|false` - whether to look for tracks present in Rekordbox but not in Plex, then re-index the folder which contains the new tracks.
+* `FOLDER_PATHS_TO_IGNORE` - (optional) whether to ignore certain folder paths from the Rekordbox query when looking for new tracks, comma separated paths. Only used when `ADD_NEW_TRACKS` is set to true.
 
 
 > 🔐 **How to find your Plex Token?**

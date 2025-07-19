@@ -36,48 +36,70 @@ def get_playlist_tracks(playlist_id: int) -> List[PlaylistTrack] | Literal[False
     return False
 
 
+def resolve_playlist_name(playlist: dict, playlist_lookup: dict) -> str:
+    """Resolve the full name of a playlist by traversing its parent hierarchy."""
+    name_parts = [playlist["Name"]]
+    parent_id = playlist.get("ParentID")
+    while parent_id and parent_id != "root":
+        parent_item = playlist_lookup.get(int(parent_id))
+        if parent_item:
+            parent_name = parent_item.get("Name")
+            if parent_name:
+                name_parts.append(parent_name)
+                parent_id = playlist_lookup.get(int(parent_id), {}).get("ParentID")
+            else:
+                break
+        else:
+            break
+    return plex_playlist_flattening_delimiter().join(reversed(name_parts))
+
+
 def get_all_playlists() -> List[Playlist] | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 
-    playlist_delimiter = plex_playlist_flattening_delimiter()
-
-    query = f"""
+    query = """
     SELECT
-        child.ID AS playlist_ID,
-        CASE
-            WHEN parent.Name IS NOT NULL THEN parent.Name || '{playlist_delimiter}' || child.Name
-            ELSE child.Name
-        END AS FlattenedName,
+        p.ID AS PlaylistID,
+        p.Name AS Name,
+        ParentID,
         COUNT(sp.ID) AS TrackCount
     FROM
-        djmdPlaylist AS child
+        djmdPlaylist AS p
     LEFT JOIN
-        djmdPlaylist AS parent
-        ON child.ParentID = parent.ID
-    JOIN
         djmdSongPlaylist AS sp
-        ON sp.PlaylistID = child.ID
-    WHERE
-        child.rb_data_status = 0
+        ON sp.PlaylistID = p.ID
         AND sp.rb_data_status = 0
+        AND sp.rb_local_deleted = 0
+    WHERE
+        p.rb_data_status = 0
+        AND p.rb_local_deleted = 0
     GROUP BY
-        child.ID, FlattenedName
-    HAVING
-        COUNT(sp.ID) > 0
+        p.ID
     ORDER BY
-        FlattenedName
+        Name
 """
     cursor.execute(query)
     rows = cursor.fetchall()
     if rows:
-        tracks = []
+        playlists = []
+        playlist_lookup = {}
 
         for row in rows:
             # Convert row to dict for easier handling
             row_dict = dict(row)
-            tracks.append(
-                Playlist(id=row_dict["playlist_ID"], name=row_dict["FlattenedName"])
-            )
-        return tracks
+            playlist_lookup[int(row_dict["PlaylistID"])] = row_dict
+
+        for row in rows:
+            # Convert row to dict for easier handling
+            row_dict = dict(row)
+
+            flattened_name = resolve_playlist_name(row_dict, playlist_lookup)
+
+            if row_dict["TrackCount"] > 0:
+                playlists.append(
+                    Playlist(id=row_dict["PlaylistID"], name=flattened_name)
+                )
+
+        return playlists
     return False

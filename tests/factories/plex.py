@@ -1,5 +1,6 @@
 from rekordbox2plex.plex.data_types import PlexTrackWrapper
 
+
 def generate_plex_track(id: int, track_title: str) -> PlexTrackWrapper:
     return PlexTrackWrapper(
         id=id,
@@ -9,5 +10,5 @@ def generate_plex_track(id: int, track_title: str) -> PlexTrackWrapper:
         track_artist="Plex-o-rama",
         album_id=420,
         album_artist_id=69,
-        track_object={}
+        track_object={},
     )
