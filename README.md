@@ -83,7 +83,7 @@ cp .env.example .env
 * `PLEX_TOKEN` – your Plex API token
 * `PLEX_BASEURL` – your Plex server URL (e.g. [http://localhost:32400](http://localhost:32400))
 * `PLEX_LIBRARY_NAME` - your Plex library name that contains your music
-* `PLEX_PLAYLIST_FLATTENING_DELIMITER`- (defaults to "/") qthe delimiter sign used to flatten hierarchical playlists from Rekordbox (since Plex does not support nested playlists)
+* `PLEX_PLAYLIST_FLATTENING_DELIMITER`- (defaults to "/") the delimiter used to flatten hierarchical playlists from Rekordbox (since Plex does not support nested playlists)
 * `MAP_TRACK_TITLE=true|false` – whether to sync the track title to Plex
 * `MAP_TRACK_ARTIST=true|false` - whether to sync the track artist to Plex
 * `MAP_TRACK_ALBUM_ARTIST=true|false` - whether to sync the album artist to Plex
