@@ -34,6 +34,13 @@ def get_folders_to_ignore() -> List[str]:
     return [item.strip() for item in REKORDBOX_FOLDER_PATHS_TO_IGNORE.split(",")]
 
 
+def get_playlists_to_ignore() -> List[str]:
+    REKORDBOX_PLAYLISTS_TO_IGNORE = os.getenv("REKORDBOX_PLAYLISTS_TO_IGNORE")
+    if not REKORDBOX_PLAYLISTS_TO_IGNORE:
+        return []
+    return [item.strip() for item in REKORDBOX_PLAYLISTS_TO_IGNORE.split(",")]
+
+
 def get_rekordbox_folder_path() -> Optional[str]:
     return os.getenv("REKORDBOX_FOLDER_PATH")
 
