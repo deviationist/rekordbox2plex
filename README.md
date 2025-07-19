@@ -78,6 +78,7 @@ cp .env.example .env
 * `REKORDBOX_FOLDER_PATH` – full path to your Rekordbox files (needed when synchronizing album artwork)
 * `REKORDBOX_DB_PATH` – full path to your Rekordbox SQLite DB (not required `REKORDBOX_FOLDER_PATH` if set)
 * `REKORDBOX_DB_PASSWORD` – the password for decrypting the SQLite DB
+* `REKORDBOX_FOLDER_PATHS_TO_IGNORE` - (optional) whether to ignore certain folder paths from the Rekordbox query when looking for new tracks, comma separated paths. Only used when `ADD_NEW_TRACKS` is set to true.
 * `PLEX_TOKEN` – your Plex API token
 * `PLEX_BASEURL` – your Plex server URL (e.g. [http://localhost:32400](http://localhost:32400))
 * `PLEX_LIBRARY_NAME` - your Plex library name that contains your music
@@ -92,7 +93,7 @@ cp .env.example .env
 * `DELETE_ORPHANED_PLAYLISTS=true|false` - whether to delete orphaned playlists after synchronization
 * `DELETE_ORPHANED_ALBUMS=false|false` - whether to delete orphaned albums after synchronization
 * `ADD_NEW_TRACKS=true|false` - whether to look for tracks present in Rekordbox but not in Plex, then re-index the folder which contains the new tracks.
-* `FOLDER_PATHS_TO_IGNORE` - (optional) whether to ignore certain folder paths from the Rekordbox query when looking for new tracks, comma separated paths. Only used when `ADD_NEW_TRACKS` is set to true.
+* `OVERWRITE_EXISTING_ALBUM_ARTWORK` - whether to overwrite existing Plex album art with artwork from Rekordbox.
 
 
 > 🔐 **How to find your Plex Token?**

@@ -36,9 +36,8 @@ class AlbumMetadataMapper:
             )
 
     def update_artwork(self):
-
-        if self.plex_album.thumb:
-            return  # Album has artwork already
+        if self.plex_album.thumb and not get_boolenv("OVERWRITE_EXISTING_ALBUM_ARTWORK", True):
+            return # Album has artwork already
         rb_artwork = ArtworkResolver(self.rb_item.tracks).resolve()
         if not rb_artwork:
             return  # Could not resolve artwork
