@@ -54,3 +54,4 @@ class ResolvedAlbumWithTracks(NamedTuple):
     tracks: List[TrackWithArtwork]
     artist: Artist | None
     album: Album | None
+    album_artist: Artist | None

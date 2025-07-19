@@ -16,6 +16,7 @@ def get_album_with_tracks(
             al.ID AS album_ID, al.Name AS album_Name,
             c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear,
             a.ID AS artist_ID, a.Name AS artist_Name,
+            aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name,
             cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path
         FROM djmdContent AS c
         INNER JOIN
@@ -24,12 +25,15 @@ def get_album_with_tracks(
         INNER JOIN
             djmdAlbum AS al
             ON al.ID = c.AlbumID
+        INNER JOIN
+            djmdArtist AS aa
+            ON aa.ID = al.AlbumArtistID
         LEFT JOIN
             contentFile AS cf
             ON c.ImagePath = cf.Path
         WHERE
             al.Name = ?
-            AND a.Name = ?
+            AND aa.Name = ?
             AND a.rb_local_deleted = 0
             AND al.rb_local_deleted = 0
             AND c.rb_local_deleted = 0
@@ -41,6 +45,7 @@ def get_album_with_tracks(
             tracks = []
             artist = None
             album = None
+            album_artist = None
 
             for row in rows:
                 # Convert row to dict for easier handling
@@ -68,7 +73,13 @@ def get_album_with_tracks(
                         id=int(row_dict["album_ID"]), name=row_dict["album_Name"]
                     )
 
-            return ResolvedAlbumWithTracks(tracks, artist, album)
+                if album_artist is None:
+                    album_artist = Artist(
+                        id=int(row_dict["albumArtist_ID"]),
+                        name=row_dict["albumArtist_Name"],
+                    )
+
+            return ResolvedAlbumWithTracks(tracks, artist, album, album_artist)
         else:
             return False
 
