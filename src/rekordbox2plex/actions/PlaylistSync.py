@@ -2,11 +2,13 @@ from ..rekordbox.resolvers.playlist import (
     get_all_playlists as get_all_playlists_from_rekordbox,
     get_playlist_tracks,
 )
+from .. import config
 from ..rekordbox.data_types import Playlist as RekordboxPlaylist
 from ..plex.repositories.PlaylistRepository import PlaylistRepository
 from ..plex.data_types import Track, PlexPlaylist, PlexPlaylists
 from ..mappers.TrackIdMapper import TrackIdMapper
 from ..utils.progress_bar import progress_instance
+
 from ..utils.logger import logger
 from ..utils.helpers import get_boolenv
 from ._ActionBase import ActionBase
@@ -24,7 +26,8 @@ class PlaylistSync(ActionBase):
     def sync(self) -> None:
         logger.info("[cyan]Attempting to synchronize Rekordbox playlists to Plex...")
         self.trackIdMapper.ensure_mappings()  # Ensure we have all tracks
-        rb_playlists = get_all_playlists_from_rekordbox()
+        playlists_to_ignore = config.get_playlists_to_ignore()
+        rb_playlists = get_all_playlists_from_rekordbox(playlists_to_ignore)
         if rb_playlists is False or (rb_playlists_count := len(rb_playlists)) == 0:
             logger.info("[cyan]No playlists in Rekordbox.")
         else:

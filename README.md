@@ -79,6 +79,7 @@ cp .env.example .env
 * `REKORDBOX_DB_PATH` – full path to your Rekordbox SQLite DB (not required `REKORDBOX_FOLDER_PATH` if set)
 * `REKORDBOX_DB_PASSWORD` – the password for decrypting the SQLite DB
 * `REKORDBOX_FOLDER_PATHS_TO_IGNORE` - (optional) whether to ignore certain folder paths from the Rekordbox query when looking for new tracks, comma separated paths. Only used when `ADD_NEW_TRACKS` is set to true.
+* `REKORDBOX_PLAYLISTS_TO_IGNORE` - (optional) whether to ignore certain playlists from being synced to Plex, comma separated playlist names.
 * `PLEX_TOKEN` – your Plex API token
 * `PLEX_BASEURL` – your Plex server URL (e.g. [http://localhost:32400](http://localhost:32400))
 * `PLEX_LIBRARY_NAME` - your Plex library name that contains your music
