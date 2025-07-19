@@ -5,6 +5,7 @@ class Track(NamedTuple):
     id: int
     title: str
     release_year: int | None
+    folder_path: str | None = None
 
 
 class Artwork(NamedTuple):

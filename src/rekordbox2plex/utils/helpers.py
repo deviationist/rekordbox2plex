@@ -20,8 +20,12 @@ def build_track_string(plex_track: PlexTrackWrapper) -> str:
     return f'"{plex_track.title}" by "{plex_track.track_artist}"'
 
 
-def determine_sync_targets(args, default_target: str = "all") -> str:
-    sync_all = args.sync == None or "all" in args.sync or len(args.sync) >= (len(VALID_TARGET_CHOICES) - 1)
+def determine_sync_targets(args) -> tuple[List[str], bool]:
+    sync_all = (
+        args.sync is None
+        or "all" in args.sync
+        or len(args.sync) >= (len(VALID_TARGET_CHOICES) - 1)
+    )
     sync_actions = []
     if (args.sync and "tracks" in args.sync) or sync_all:
         sync_actions.append("tracks")

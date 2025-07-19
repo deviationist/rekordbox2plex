@@ -1,6 +1,6 @@
 import os
 import argparse
-from typing import Optional
+from typing import Optional, List
 
 _args: argparse.Namespace | None = None
 
@@ -25,6 +25,13 @@ def get_logger_name() -> str:
     if LOGGER_NAME:
         return LOGGER_NAME
     return "rekordbox2plex"
+
+
+def get_folders_to_ignore() -> List[str]:
+    FOLDER_PATHS_TO_IGNORE = os.getenv("FOLDER_PATHS_TO_IGNORE")
+    if not FOLDER_PATHS_TO_IGNORE:
+        return []
+    return [item.strip() for item in FOLDER_PATHS_TO_IGNORE.split(",")]
 
 
 def get_rekordbox_folder_path() -> Optional[str]:

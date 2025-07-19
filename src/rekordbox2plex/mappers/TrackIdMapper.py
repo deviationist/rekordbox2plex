@@ -91,19 +91,28 @@ class TrackIdMapper:
 
                     for plex_track in plex_tracks:
                         track_string = build_track_string(plex_track)
-                        progress.update(task, description=f"[yellow]Resolving {track_string}...")
+                        progress.update(
+                            task, description=f"[yellow]Resolving {track_string}..."
+                        )
 
                         try:
-                            rb_item = resolve_track_in_rekordbox(plex_track, progress, task)
+                            rb_item = resolve_track_in_rekordbox(
+                                plex_track, progress, task
+                            )
                             if rb_item:  # Only map if resolution succeeded
                                 self.map(plex_track, rb_item)
                                 successful_mappings += 1
                         except Exception as e:
-                            logger.warning(f"Failed to resolve track {track_string}: {e}")
+                            logger.warning(
+                                f"Failed to resolve track {track_string}: {e}"
+                            )
 
                         progress.update(task, advance=1)
 
-                    progress.update(task, description=f"[bold green]✔ Done! Mapped {successful_mappings}/{track_count} tracks!")
+                    progress.update(
+                        task,
+                        description=f"[bold green]✔ Done! Mapped {successful_mappings}/{track_count} tracks!",
+                    )
                 self._all_mapped = True
             except Exception as e:
                 logger.error(f"Failed to build track mappings: {e}")
