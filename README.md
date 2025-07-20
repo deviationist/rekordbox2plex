@@ -76,31 +76,31 @@ cp .env.example .env
 
 #### Available `.env` variables
 
-| Variable | Default | Description |
-|---------|---------|-------------|
-| `REKORDBOX_FOLDER_PATH` | – | Full path to your Rekordbox files (needed for artwork sync) |
-| `REKORDBOX_MASTERDB_PATH` | – | Full path to your Rekordbox SQLite DB (not required if `REKORDBOX_FOLDER_PATH` is set) |
-| `REKORDBOX_MASTERDB_PASSWORD` | – | Password for decrypting the SQLite DB |
-| `REKORDBOX_COPY_DB_BEFORE_SYNC` | `true` / `false` | Whether to copy the DB before starting sync |
-| `REKORDBOX_FOLDER_PATHS_TO_IGNORE` | – | Comma-separated list of folder paths to ignore (only used if `ADD_NEW_TRACKS=true`) |
-| `REKORDBOX_PLAYLISTS_TO_IGNORE` | – | Comma-separated list of playlist names to ignore |
-| `PLEX_URL` | – | Your Plex server URL (e.g., `http://localhost:32400`) |
-| `PLEX_TOKEN` | – | Your Plex API token |
-| `PLEX_LIBRARY_NAME` | – | Your Plex library name that contains your music |
-| `PLEX_PLAYLIST_FLATTENING_DELIMITER` | `/` | Delimiter for flattening nested Rekordbox playlists |
-| `MAP_TRACK_TITLE` | `true` | Sync track title to Plex |
-| `MAP_TRACK_ARTIST` | `true` | Sync track artist to Plex |
-| `MAP_TRACK_ALBUM_ARTIST` | `true` | Sync album artist to Plex |
-| `MAP_TRACK_ALBUM` | `true` | Sync album name to Plex |
-| `MAP_TRACK_ARTWORK` | `true` | Sync track artwork to Plex |
-| `OVERWRITE_EXISTING_TRACK_ARTWORK` | `true` | Overwrite existing Plex track artwork |
-| `ADD_NEW_TRACKS` | `true` | Add tracks from Rekordbox missing in Plex and reindex |
-| `MAP_ALBUM_YEAR` | `true` | Sync album release year |
-| `MAP_ALBUM_ARTWORKS` | `true` | Sync album artwork/thumb/poster |
-| `OVERWRITE_EXISTING_ALBUM_ARTWORK` | `true` | Overwrite existing Plex album artwork |
-| `DELETE_ORPHANED_TRACKS` | `true` | Delete orphaned tracks in Plex |
-| `DELETE_ORPHANED_PLAYLISTS` | `true` | Delete orphaned playlists in Plex |
-| `DELETE_ORPHANED_ALBUMS` | `false` | Delete orphaned albums in Plex |
+| Variable | Type | Default | Description |
+|---------|------|---------|-------------|
+| `REKORDBOX_FOLDER_PATH` | string | – | Full path to your Rekordbox files (needed for artwork sync) |
+| `REKORDBOX_MASTERDB_PATH` | string | – | Full path to your Rekordbox SQLite DB (not required if `REKORDBOX_FOLDER_PATH` is set) |
+| `REKORDBOX_MASTERDB_PASSWORD` | string | – | Password for decrypting the SQLite DB |
+| `REKORDBOX_COPY_DB_BEFORE_SYNC` | bool | `true` | Whether to make a copy the DB file before starting sync |
+| `REKORDBOX_FOLDER_PATHS_TO_IGNORE` | string | – | Comma-separated list of folder paths to ignore (only used if `ADD_NEW_TRACKS=true`) |
+| `REKORDBOX_PLAYLISTS_TO_IGNORE` | string | – | Comma-separated list of playlist names to ignore |
+| `PLEX_URL` | string | – | Your Plex server URL (e.g., `http://localhost:32400`) |
+| `PLEX_TOKEN` | string | – | Your Plex API token |
+| `PLEX_LIBRARY_NAME` | string | – | Your Plex library name that contains your music |
+| `PLEX_PLAYLIST_FLATTENING_DELIMITER` | string | `/` | Delimiter for flattening nested Rekordbox playlists |
+| `MAP_TRACK_TITLE` | bool | `true` | Sync track title to Plex |
+| `MAP_TRACK_ARTIST` | bool | `true` | Sync track artist to Plex |
+| `MAP_TRACK_ALBUM_ARTIST` | bool | `true` | Sync album artist to Plex |
+| `MAP_TRACK_ALBUM` | bool | `true` | Sync album name to Plex |
+| `MAP_TRACK_ARTWORK` | bool | `true` | Sync track artwork to Plex |
+| `OVERWRITE_EXISTING_TRACK_ARTWORK` | bool | `true` | Overwrite existing Plex track artwork |
+| `ADD_NEW_TRACKS` | bool | `true` | Add tracks from Rekordbox missing in Plex and reindex |
+| `MAP_ALBUM_YEAR` | bool | `true` | Sync album release year |
+| `MAP_ALBUM_ARTWORKS` | bool | `true` | Sync album artwork/thumb/poster |
+| `OVERWRITE_EXISTING_ALBUM_ARTWORK` | bool | `true` | Overwrite existing Plex album artwork |
+| `DELETE_ORPHANED_TRACKS` | bool | `true` | Delete orphaned tracks in Plex |
+| `DELETE_ORPHANED_PLAYLISTS` | bool | `true` | Delete orphaned playlists in Plex |
+| `DELETE_ORPHANED_ALBUMS` | bool | `false` | Delete orphaned albums in Plex |
 
 
 
