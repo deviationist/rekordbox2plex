@@ -1,13 +1,14 @@
 from ..plex.repositories.AlbumRepository import AlbumRepository
 from ..plex.repositories.ArtistRepository import get_artist
 from ..plex.data_types import PlexAlbum
+from ..rekordbox.data_types import ResolvedAlbumWithTracks
 from ..mappers.AlbumMetadataMapper import AlbumMetadataMapper
 from ..rekordbox.resolvers.album import get_album_with_tracks
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
 from ..utils.helpers import get_boolenv
 from ._ActionBase import ActionBase
-from typing import List
+from typing import List, Literal
 
 
 class AlbumSync(ActionBase):
@@ -37,6 +38,18 @@ class AlbumSync(ActionBase):
             "[bold green]✔ Process complete! Rekordbox and Plex albums should now be in sync!"
         )
 
+    def resolve_album_with_tracks(self, album_title: str, artist_title: str) -> ResolvedAlbumWithTracks | Literal[False]:
+        lookup = get_album_with_tracks(album_title, artist_title)
+        if lookup:
+            return lookup
+        artists = artist_title.split(",")
+        if len(artists) > 1:
+            for artist in artists:
+                lookup = get_album_with_tracks(album_title, artist.strip())
+                if lookup:
+                    return lookup
+        return False
+
     def synchronize_albums(self, album_count, plex_albums):
         with progress_instance() as progress:
             task = progress.add_task("", total=album_count)
@@ -49,7 +62,9 @@ class AlbumSync(ActionBase):
                     album_artist_id = plex_album.parentRatingKey
                     artist = get_artist(album_artist_id)
                     if artist:
-                        lookup = get_album_with_tracks(plex_album.title, artist.title)
+                        lookup = self.resolve_album_with_tracks(
+                            plex_album.title, artist.title
+                        )
                         if lookup:
                             updater = AlbumMetadataMapper(plex_album, lookup).transfer()
                             if not self.dry_run:
