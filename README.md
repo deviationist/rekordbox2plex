@@ -223,9 +223,6 @@ This project is using:
 ### Goals for future versions
 
 * Add concurrency for faster syncing
-* More configurability
-* Improved error handling and logging
-* Better playlist syncing (e.g., smart playlists)
 
 ---
 
