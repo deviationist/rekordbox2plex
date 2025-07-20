@@ -1,7 +1,8 @@
-from .library import get_music_library
+from .library import get_music_library, plexapi_client
 from ..data_types import PlexTrack, PlexTracks
 import json
 from ...utils.logger import logger
+from plexapi.utils import openOrRead
 
 
 def get_track(track_id: int) -> PlexTrack:
@@ -12,6 +13,15 @@ def get_track(track_id: int) -> PlexTrack:
 def get_all_tracks() -> PlexTracks:
     music_library, _ = get_music_library()
     return music_library.searchTracks()
+
+
+def update_track_poster(track_id: int, poster_path: str) -> None:
+    server = plexapi_client()
+    library, _ = get_music_library()
+    plex_item = library.fetchItem(track_id)
+    key = f"/library/metadata/{plex_item.ratingKey}/posters"
+    data = openOrRead(poster_path)
+    server.query(key, method=server._session.post, data=data)
 
 
 def convert_path_to_plex(rekordbox_path: str) -> str:

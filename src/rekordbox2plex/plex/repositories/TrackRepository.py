@@ -53,6 +53,7 @@ class TrackRepository(RepositoryBase):
                             album_id=track.parentRatingKey,
                             album_artist_id=track.grandparentRatingKey,
                             track_object=track,
+                            has_artwork=bool(track.thumb),
                         )
                     )
                     progress.update(

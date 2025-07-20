@@ -13,6 +13,7 @@ class PlexTrackWrapper(NamedTuple):
     album_id: int
     album_artist_id: int
     track_object: Track
+    has_artwork: bool
 
 
 PlexItem: TypeAlias = Track | Album | Artist | Playlist

@@ -3,7 +3,7 @@ from ...utils.progress_bar import Progress, TaskID, NullProgress
 from ...utils.logger import logger
 from ...plex.data_types import PlexTrackWrapper
 import json
-from ..data_types import Track, Artist, Album, ResolvedTrack
+from ..data_types import TrackWithArtwork, Track, Artist, Album, ResolvedTrack
 from typing import Literal, List
 
 
@@ -94,10 +94,14 @@ def handle_track_row(row: dict) -> ResolvedTrack:
     album_artist = None
 
     # Build track data
-    track = Track(
+    track = TrackWithArtwork(
         id=int(row_dict["track_ID"]),
         title=row_dict["track_Title"],
         release_year=int(row_dict["track_ReleaseYear"]),
+        folder_path=row_dict.get("track_FolderPath"),
+        artwork_id=row_dict.get("artwork_ID"),
+        artwork_path=row_dict.get("artwork_Path"),
+        artwork_local_path=row_dict.get("artwork_rb_local_path"),
     )
 
     # Build artist dictionary if artist exists
@@ -139,15 +143,29 @@ def resolve_track(
         # Single query with JOINs to get all related data at once
         query = """
         SELECT
-            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear,
+            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.FolderPath AS track_FolderPath,
             a.ID AS artist_ID, a.Name AS artist_Name,
             al.ID AS album_ID, al.Name AS album_Name,
-            aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name
-        FROM djmdContent c
-        LEFT JOIN djmdArtist a ON c.ArtistID = a.ID
-        LEFT JOIN djmdAlbum al ON c.AlbumID = al.ID
-        LEFT JOIN djmdArtist aa ON al.albumArtistID = aa.ID
-        WHERE c.rb_local_deleted = 0 AND c.folderPath = ?
+            aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name,
+            cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path
+        FROM
+            djmdContent AS c
+        LEFT JOIN
+            djmdArtist AS a
+            ON c.ArtistID = a.ID
+        LEFT JOIN
+            djmdAlbum AS al
+            ON c.AlbumID = al.ID
+        LEFT JOIN
+            djmdArtist AS aa
+            ON al.albumArtistID = aa.ID
+        LEFT JOIN
+            contentFile AS cf
+            ON c.ImagePath = cf.Path
+        WHERE
+            c.rb_local_deleted = 0
+            AND c.rb_data_status = 0
+            AND c.folderPath = ?
         """
 
         cursor.execute(query, (rekordboxPath,))

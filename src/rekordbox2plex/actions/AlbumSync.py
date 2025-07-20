@@ -31,7 +31,7 @@ class AlbumSync(ActionBase):
             )
             self.synchronize_albums(album_count, plex_albums)
         logger.info(f"[bold green]✔ Result: {self.update_count} albums updated.")
-        if get_boolenv("DELETE_ORPHANED_ALBUMS", "false"):
+        if get_boolenv("DELETE_ORPHANED_ALBUMS", False):
             self.delete_orphaned_albums()
         logger.info(
             "[bold green]✔ Process complete! Rekordbox and Plex albums should now be in sync!"

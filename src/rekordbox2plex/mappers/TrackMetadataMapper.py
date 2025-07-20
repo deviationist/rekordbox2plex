@@ -1,14 +1,18 @@
 from ..plex.repositories.ArtistRepository import ArtistRepository
 from ..plex.repositories.AlbumRepository import AlbumRepository
+from ..plex.resolvers.track import update_track_poster
 from ..plex.data_types import PlexTrackWrapper
 from ..rekordbox.data_types import ResolvedTrack
 from ..utils.logger import logger
 from ..utils.helpers import get_boolenv
+from ..config import is_dry_run
 from typing import Any
+from ..utils.ArtworkResolver import ArtworkResolver
 
 
 class TrackMetadataMapper:
     def __init__(self, plex_track: PlexTrackWrapper, rb_item: ResolvedTrack):
+        self.dry_run = is_dry_run()
         self.rb_item = rb_item
         self.plex_track = plex_track
         self.album_artist_id = None
@@ -68,6 +72,25 @@ class TrackMetadataMapper:
         self.edits["album.title.value"] = album_name
         logger.debug(f'Creating new album "{album_name}" for track "{track_title}"')
 
+    def update_artwork(self):
+        if self.plex_track.has_artwork and not get_boolenv(
+            "OVERWRITE_EXISTING_TRACK_ARTWORK", True
+        ):
+            logger.debug(
+                "Artwork already exists for this track, skipping artwork update"
+            )
+            return
+        artwork_path = self.rb_item.track.artwork_local_path
+        if not artwork_path:
+            logger.debug("No artwork path found, skipping artwork update")
+            return
+        filepath = ArtworkResolver().replace_rekordbox_root(artwork_path)
+        if filepath:
+            track_title = self.get_track_title()
+            logger.debug(f"Updating track artwork for track {track_title}")
+            if not self.dry_run:
+                update_track_poster(self.plex_track.id, filepath)
+
     def transfer(self):
         if get_boolenv("MAP_TRACK_TITLE", True):
             self.update_track_title()
@@ -77,6 +100,8 @@ class TrackMetadataMapper:
             self.update_album_artist()
         if get_boolenv("MAP_TRACK_ALBUM", True):
             self.update_album()
+        if get_boolenv("MAP_TRACK_ARTWORK", True):
+            self.update_artwork()
         return self
 
     def save(self):

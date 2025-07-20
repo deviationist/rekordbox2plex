@@ -4,7 +4,7 @@ from ..config import is_dry_run
 from typing import Any, Literal
 from ..rekordbox.data_types import ResolvedAlbumWithTracks
 from ..plex.data_types import Album
-from ..utils.ArtworkResolver import ArtworkResolver
+from ..utils.AlbumArtworkResolver import AlbumArtworkResolver
 
 
 class AlbumMetadataMapper:
@@ -36,9 +36,11 @@ class AlbumMetadataMapper:
             )
 
     def update_artwork(self):
-        if self.plex_album.thumb and not get_boolenv("OVERWRITE_EXISTING_ALBUM_ARTWORK", True):
-            return # Album has artwork already
-        rb_artwork = ArtworkResolver(self.rb_item.tracks).resolve()
+        if self.plex_album.thumb and not get_boolenv(
+            "OVERWRITE_EXISTING_ALBUM_ARTWORK", True
+        ):
+            return  # Album has artwork already
+        rb_artwork = AlbumArtworkResolver(self.rb_item.tracks).resolve()
         if not rb_artwork:
             return  # Could not resolve artwork
         artwork_track, artwork_path = rb_artwork

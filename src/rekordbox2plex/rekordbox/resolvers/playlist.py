@@ -54,7 +54,9 @@ def resolve_playlist_name(playlist: dict, playlist_lookup: dict) -> str:
     return plex_playlist_flattening_delimiter().join(reversed(name_parts))
 
 
-def get_all_playlists(playlists_to_ignore: List[str] = []) -> List[Playlist] | Literal[False]:
+def get_all_playlists(
+    playlists_to_ignore: List[str] = [],
+) -> List[Playlist] | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 
@@ -95,7 +97,8 @@ def get_all_playlists(playlists_to_ignore: List[str] = []) -> List[Playlist] | L
             flattened_name = resolve_playlist_name(row_dict, playlist_lookup)
 
             ignore_playlist = any(
-                ignore.lower() in flattened_name.lower() for ignore in playlists_to_ignore
+                ignore.lower() in flattened_name.lower()
+                for ignore in playlists_to_ignore
             )
 
             if row_dict["TrackCount"] > 0 and not ignore_playlist:
