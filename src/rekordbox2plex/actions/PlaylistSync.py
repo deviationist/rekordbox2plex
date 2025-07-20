@@ -39,7 +39,7 @@ class PlaylistSync(ActionBase):
         logger.info(
             f"[bold green]✔ Result: {self.deleted} deleted, {self.updated} updated, and {self.created} created."
         )
-        if get_boolenv("DELETE_ORPHANED_PLAYLISTS", "false"):
+        if get_boolenv("DELETE_ORPHANED_PLAYLISTS", False):
             self.delete_orphaned_playlists(rb_playlists or [], plex_playlists)
         logger.info(
             "[bold green]✔ Process complete! Rekordbox and Plex playlists should now be in sync!"

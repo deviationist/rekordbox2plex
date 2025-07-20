@@ -5,7 +5,7 @@ class Track(NamedTuple):
     id: int
     title: str
     release_year: int | None
-    folder_path: str | None = None
+    folder_path: str | None
 
 
 class Artwork(NamedTuple):
@@ -18,6 +18,7 @@ class TrackWithArtwork(NamedTuple):
     id: int
     title: str
     release_year: int
+    folder_path: str | None
     artwork_id: int | None
     artwork_path: str | None
     artwork_local_path: str | None
@@ -34,7 +35,7 @@ class Album(NamedTuple):
 
 
 class ResolvedTrack(NamedTuple):
-    track: Track
+    track: TrackWithArtwork
     artist: Artist | None
     album: Album | None
     album_artist: Artist | None

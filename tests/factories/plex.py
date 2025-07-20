@@ -11,4 +11,5 @@ def generate_plex_track(id: int, track_title: str) -> PlexTrackWrapper:
         album_id=420,
         album_artist_id=69,
         track_object={},
+        has_artwork=False,
     )
