@@ -105,7 +105,7 @@ cp .env.example .env
 
 
 > 🔐 **How to find your Plex Token?**
-> See [this guide](#how-to-find-your-plex-token).
+> See [this guide](#how-to-find-your-plex-api-token).
 
 > 🔐 **How to find your Rekordbox database and password?**
 > See [this guide](#how-to-find-your-rekordbox-sqlite-db).
@@ -162,9 +162,40 @@ To run the sync regularly (e.g. nightly), set up a cron job:
 
 ---
 
-## How to Find Your Plex Token
+## How to Find Your Plex API Token
 
-TODO: Finish this
+The **Plex API token** (also called `X-Plex-Token`) is needed to authenticate with the Plex server API.
+
+### 🔍 Option 1: Get Token via Web Browser
+
+1. **Sign in to Plex** in your browser:
+   Go to [https://app.plex.tv/](https://app.plex.tv/) and log in.
+
+2. **Open Dev Tools**:
+   - Right-click anywhere on the page → **Inspect**
+   - Go to the **Network** tab
+   - Reload the page (F5)
+
+3. **Find a request** to `plex.tv` or your Plex server.
+   - Click on a request (e.g., `home`, `resources`, etc.)
+   - Look under **Headers**
+
+4. **Search for `X-Plex-Token`**:
+   - You’ll see something like:
+     ```
+     X-Plex-Token: YOUR_TOKEN_HERE
+     ```
+
+### 💡 Option 2: Look in a URL
+
+Sometimes the token is included in the URL of a request. Example:
+
+`https://plex.tv/api/resources?includeHttps=1&X-Plex-Token=YOUR_TOKEN_HERE`
+
+### ⚠️ Important Notes
+
+- Treat the token like a **password** – don't share it.
+- If your token is ever compromised, you can revoke access by signing out of devices in your Plex settings.
 
 ## How to Find Your Rekordbox SQLite DB
 
