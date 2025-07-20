@@ -1,4 +1,4 @@
-from ..plex.repositories.TrackRepository import TrackRepository
+from ..plex.repositories.TrackRepository import TrackRepository as PlexTrackRepository
 from ..plex.data_types import PlexTrackWrapper
 from ..plex.resolvers.track import convert_path_to_plex
 from ..plex.resolvers.library import update_library
@@ -27,7 +27,7 @@ class TrackSync(ActionBase):
         logger.info(
             "[cyan]Attempting to synchronize Rekordbox track metadata to Plex..."
         )
-        plex_tracks, track_count = TrackRepository().progress(True).get_all_tracks()
+        plex_tracks, track_count = PlexTrackRepository().progress(True).get_all_tracks()
         resolved_tracks, resolved_track_count, orphaned_tracks = (
             self.resolve_tracks_in_rekordbox(plex_tracks, track_count)
         )
@@ -172,7 +172,7 @@ class TrackSync(ActionBase):
                 f"[cyan]Found {orphaned_tracks_count} orphaned track(s), deleting..."
             )
             for plex_track in orphaned_tracks:
-                logger.debug(f'Deleting track "{plex_track.title}"')
+                logger.debug(f'Deleting track "{plex_track.track_title}"')
                 if not self.dry_run:
                     plex_track.track_object.delete()
             logger.info(

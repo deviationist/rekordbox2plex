@@ -48,7 +48,7 @@ def get_all_tracks(
     try:
         query = f"""
         SELECT
-            *
+            ID, Title, Label, ReleaseYear, FolderPath
         FROM
             djmdContent
         WHERE
@@ -68,6 +68,7 @@ def get_all_tracks(
                     Track(
                         id=int(row_dict["ID"]),
                         title=row_dict["Title"],
+                        label=row_dict.get("Label"),
                         release_year=int(row_dict["ReleaseYear"]),
                         folder_path=row_dict["FolderPath"],
                     )
@@ -97,6 +98,7 @@ def handle_track_row(row: dict) -> ResolvedTrack:
     track = TrackWithArtwork(
         id=int(row_dict["track_ID"]),
         title=row_dict["track_Title"],
+        label=row_dict.get("track_Label"),
         release_year=int(row_dict["track_ReleaseYear"]),
         folder_path=row_dict.get("track_FolderPath"),
         artwork_id=row_dict.get("artwork_ID"),
@@ -136,14 +138,14 @@ def resolve_track(
     if progress and task:
         progress.update(
             task,
-            description=f'[yellow]Resolving track "{plex_track.title}" in Rekordbox database...',
+            description=f'[yellow]Resolving track "{plex_track.track_title}" in Rekordbox database...',
         )
 
     try:
         # Single query with JOINs to get all related data at once
         query = """
         SELECT
-            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.FolderPath AS track_FolderPath,
+            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.FolderPath AS track_FolderPath, c.Label AS track_Label,
             a.ID AS artist_ID, a.Name AS artist_Name,
             al.ID AS album_ID, al.Name AS album_Name,
             aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name,

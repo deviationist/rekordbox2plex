@@ -1,6 +1,6 @@
 from ._RepositoryBase import RepositoryBase, singleton
 from ..resolvers.album import get_album, get_all_albums
-from .ArtistRepository import ArtistRepository
+from .ArtistRepository import ArtistRepository as PlexArtistRepository
 from ..data_types import PlexAlbum, PlexAlbums
 
 
@@ -24,7 +24,7 @@ class AlbumRepository(RepositoryBase):
     def get_albums_by_artist(
         self, artist_id: int, use_cache: bool = True
     ) -> PlexAlbums:
-        artist = ArtistRepository().get_artist(artist_id, use_cache)
+        artist = PlexArtistRepository().get_artist(artist_id, use_cache)
         return artist.albums()
 
     def search_for_album_by_artist(self, artist_id: int, album_name: str) -> PlexAlbum:

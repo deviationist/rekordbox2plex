@@ -3,6 +3,7 @@ from ..data_types import PlexTrack, PlexTracks
 import json
 from ...utils.logger import logger
 from plexapi.utils import openOrRead
+from plexapi.audio import Track
 
 
 def get_track(track_id: int) -> PlexTrack:
@@ -15,18 +16,29 @@ def get_all_tracks() -> PlexTracks:
     return music_library.searchTracks()
 
 
-def update_track_poster(track_id: int, poster_path: str) -> bool:
+def update_track_poster(plex_item: Track, poster_path: str) -> bool:
     server = plexapi_client()
     library, _ = get_music_library()
-    plex_item = library.fetchItem(track_id)
     try:
         key = f"/library/metadata/{plex_item.ratingKey}/posters"
         data = openOrRead(poster_path)
         server.query(key, method=server._session.post, data=data)
         return True
     except Exception as e:
-        logger.error(f"Failed to update poster for track {track_id}: {e}")
+        logger.error(f"Failed to update poster for track {plex_item.ratingKey}: {e}")
         return False
+
+
+def get_track_thumb_file(track: Track) -> bytes:
+    server = plexapi_client()
+    token: str = server._token
+
+    thumb_url: str = f"{server.url(track.thumb)}?X-Plex-Token={token}"
+
+    response = server._session.get(thumb_url)
+    response.raise_for_status()
+
+    return response.content
 
 
 def convert_path_to_plex(rekordbox_path: str) -> str:

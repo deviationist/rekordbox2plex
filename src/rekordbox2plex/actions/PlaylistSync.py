@@ -4,7 +4,9 @@ from ..rekordbox.resolvers.playlist import (
 )
 from .. import config
 from ..rekordbox.data_types import Playlist as RekordboxPlaylist
-from ..plex.repositories.PlaylistRepository import PlaylistRepository
+from ..plex.repositories.PlaylistRepository import (
+    PlaylistRepository as PlexPlaylistRepository,
+)
 from ..plex.data_types import Track, PlexPlaylist, PlexPlaylists
 from ..mappers.TrackIdMapper import TrackIdMapper
 from ..utils.progress_bar import progress_instance
@@ -31,7 +33,7 @@ class PlaylistSync(ActionBase):
         if rb_playlists is False or (rb_playlists_count := len(rb_playlists)) == 0:
             logger.info("[cyan]No playlists in Rekordbox.")
         else:
-            plex_playlists = PlaylistRepository().get_all_playlists()
+            plex_playlists = PlexPlaylistRepository().get_all_playlists()
             logger.info(
                 f"[cyan]Found {len(rb_playlists)} playlists in Rekordbox, and {len(plex_playlists)} playlists in Plex, proceeding to sync them."
             )
@@ -120,7 +122,7 @@ class PlaylistSync(ActionBase):
             logger.debug(
                 f'Creating playlist "{rb_playlist.name}" with {track_count} tracks'
             )
-            PlaylistRepository().create_playlist(rb_playlist.name, plex_items)
+            PlexPlaylistRepository().create_playlist(rb_playlist.name, plex_items)
             return track_count
         return False
 

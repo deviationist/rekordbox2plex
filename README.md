@@ -96,6 +96,7 @@ cp .env.example .env
 | `OVERWRITE_EXISTING_TRACK_ARTWORK` | bool | `true` | Overwrite existing Plex track artwork |
 | `ADD_NEW_TRACKS` | bool | `true` | Add tracks from Rekordbox missing in Plex and reindex |
 | `MAP_ALBUM_YEAR` | bool | `true` | Sync album release year |
+| `MAP_ALBUM_LABEL` | bool | `true` | Sync album label |
 | `MAP_ALBUM_ARTWORKS` | bool | `true` | Sync album artwork/thumb/poster |
 | `OVERWRITE_EXISTING_ALBUM_ARTWORK` | bool | `true` | Overwrite existing Plex album artwork |
 | `DELETE_ORPHANED_TRACKS` | bool | `true` | Delete orphaned tracks in Plex |
@@ -219,6 +220,11 @@ This project is using:
 * [`pysqlcipher3`](https://pypi.org/project/pysqlcipher3/)
 * [`rich`](https://github.com/Textualize/rich)
 * [`poetry`](https://python-poetry.org/)
+* [`poetry`](https://python-poetry.org/)
+* [`pytest`](https://docs.pytest.org/)
+
+### Running tests
+To run tests: `poetry run pytest`
 
 ### Goals for future versions
 

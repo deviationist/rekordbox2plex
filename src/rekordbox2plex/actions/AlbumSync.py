@@ -1,4 +1,4 @@
-from ..plex.repositories.AlbumRepository import AlbumRepository
+from ..plex.repositories.AlbumRepository import AlbumRepository as PlexAlbumRepository
 from ..plex.repositories.ArtistRepository import get_artist
 from ..plex.data_types import PlexAlbum
 from ..rekordbox.data_types import ResolvedAlbumWithTracks
@@ -21,7 +21,7 @@ class AlbumSync(ActionBase):
         logger.info(
             "[cyan]Attempting to synchronize Rekordbox album metadata to Plex..."
         )
-        plex_albums = AlbumRepository().get_all_albums()
+        plex_albums = PlexAlbumRepository().get_all_albums()
         album_count = len(plex_albums)
         if album_count == 0:
             logger.info("[cyan]No playlists in Plex.")
@@ -38,7 +38,9 @@ class AlbumSync(ActionBase):
             "[bold green]✔ Process complete! Rekordbox and Plex albums should now be in sync!"
         )
 
-    def resolve_album_with_tracks(self, album_title: str, artist_title: str) -> ResolvedAlbumWithTracks | Literal[False]:
+    def resolve_album_with_tracks(
+        self, album_title: str, artist_title: str
+    ) -> ResolvedAlbumWithTracks | Literal[False]:
         lookup = get_album_with_tracks(album_title, artist_title)
         if lookup:
             return lookup
@@ -69,7 +71,7 @@ class AlbumSync(ActionBase):
                             updater = AlbumMetadataMapper(plex_album, lookup).transfer()
                             if not self.dry_run:
                                 updater.save()
-                            if updater.did_update:
+                            if updater.did_change:
                                 self.update_count += 1
                         else:
                             self.orphaned_albums.append(plex_album)

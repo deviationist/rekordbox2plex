@@ -1,5 +1,5 @@
 import argparse
-from typing import List
+from typing import List, Any
 from ..plex.data_types import PlexTrackWrapper
 import os
 
@@ -10,6 +10,13 @@ def get_boolenv(key: str, default: bool | str) -> bool:
     return str_to_bool(os.getenv(key, default))
 
 
+def field_is_locked(plex_item: Any, field_name: str) -> bool:
+    field = next((p for p in plex_item.fields if p.name == field_name), None)
+    if not field:
+        return False
+    return field.locked
+
+
 def str_to_bool(value: str | bool) -> bool:
     if isinstance(value, bool):
         return value
@@ -17,7 +24,7 @@ def str_to_bool(value: str | bool) -> bool:
 
 
 def build_track_string(plex_track: PlexTrackWrapper) -> str:
-    return f'"{plex_track.title}" by "{plex_track.track_artist}"'
+    return f'"{plex_track.track_title}" by "{plex_track.track_artist_name}"'
 
 
 def determine_sync_targets(args) -> tuple[List[str], bool]:

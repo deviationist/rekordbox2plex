@@ -41,11 +41,9 @@ class RekordboxDB:
         self._db_path = temp_db_path
         logger.debug(f"Copied Rekordbox DB to temporary location: {temp_db_path}")
 
-
     def delete_temp_db_copy(self):
         os.remove(self._db_path)
         logger.debug(f"Deleted temporary Rekordbox DB copy: {self._db_path}")
-
 
     def connect(self):
         if self._conn is None:
@@ -71,7 +69,6 @@ class RekordboxDB:
             self._cursor = None
             if get_boolenv("REKORDBOX_COPY_DB_BEFORE_SYNC", True):
                 self.delete_temp_db_copy()
-
 
     @property
     def cursor(self):

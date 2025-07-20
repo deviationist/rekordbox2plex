@@ -4,6 +4,7 @@ from typing import NamedTuple, List
 class Track(NamedTuple):
     id: int
     title: str
+    label: str | None
     release_year: int | None
     folder_path: str | None
 
@@ -17,6 +18,7 @@ class Artwork(NamedTuple):
 class TrackWithArtwork(NamedTuple):
     id: int
     title: str
+    label: str | None
     release_year: int
     folder_path: str | None
     artwork_id: int | None
