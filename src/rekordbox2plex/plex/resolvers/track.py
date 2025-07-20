@@ -15,13 +15,18 @@ def get_all_tracks() -> PlexTracks:
     return music_library.searchTracks()
 
 
-def update_track_poster(track_id: int, poster_path: str) -> None:
+def update_track_poster(track_id: int, poster_path: str) -> bool:
     server = plexapi_client()
     library, _ = get_music_library()
     plex_item = library.fetchItem(track_id)
-    key = f"/library/metadata/{plex_item.ratingKey}/posters"
-    data = openOrRead(poster_path)
-    server.query(key, method=server._session.post, data=data)
+    try:
+        key = f"/library/metadata/{plex_item.ratingKey}/posters"
+        data = openOrRead(poster_path)
+        server.query(key, method=server._session.post, data=data)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to update poster for track {track_id}: {e}")
+        return False
 
 
 def convert_path_to_plex(rekordbox_path: str) -> str:

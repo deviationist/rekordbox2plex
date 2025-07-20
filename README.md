@@ -78,25 +78,26 @@ cp .env.example .env
 * `REKORDBOX_FOLDER_PATH` – full path to your Rekordbox files (needed when synchronizing album artwork)
 * `REKORDBOX_MASTERDB_PATH` – full path to your Rekordbox SQLite DB (not required `REKORDBOX_FOLDER_PATH` if set)
 * `REKORDBOX_MASTERDB_PASSWORD` – the password for decrypting the SQLite DB
+* `REKORDBOX_COPY_DB_BEFORE_SYNC=true|false` - whether to make a copy of the SQLite DB before starting sync.
 * `REKORDBOX_FOLDER_PATHS_TO_IGNORE` - (optional) whether to ignore certain folder paths from the Rekordbox query when looking for new tracks, comma separated paths. Only used when `ADD_NEW_TRACKS` is set to true.
 * `REKORDBOX_PLAYLISTS_TO_IGNORE` - (optional) whether to ignore certain playlists from being synced to Plex, comma separated playlist names.
 * `PLEX_URL` – your Plex server URL (e.g. [http://localhost:32400](http://localhost:32400))
 * `PLEX_TOKEN` – your Plex API token
 * `PLEX_LIBRARY_NAME` - your Plex library name that contains your music
 * `PLEX_PLAYLIST_FLATTENING_DELIMITER`- (defaults to "/") the delimiter used to flatten hierarchical playlists from Rekordbox (since Plex does not support nested playlists)
-* `MAP_TRACK_TITLE=true|false` – whether to sync the track title to Plex
-* `MAP_TRACK_ARTIST=true|false` - whether to sync the track artist to Plex
-* `MAP_TRACK_ALBUM_ARTIST=true|false` - whether to sync the album artist to Plex
-* `MAP_TRACK_ALBUM=true|false` - whether to sync the album to Plex
-* `MAP_TRACK_ARTWORK=true|false` - whether to sync the track artwork to Plex
-* `OVERWRITE_EXISTING_TRACK_ARTWORK=true|false` - whether to overwrite existing Plex track art with artwork from Rekordbox.
-* `ADD_NEW_TRACKS=true|false` - whether to look for tracks present in Rekordbox but not in Plex, then re-index the folder which contains the new tracks.
-* `MAP_ALBUM_YEAR=true|false` - whether to sync album release year
-* `MAP_ALBUM_ARTWORKS=true|false` - whether to sync album artwork/thumb/poster
-* `OVERWRITE_EXISTING_ALBUM_ARTWORK=true|false` - whether to overwrite existing Plex album art with artwork from Rekordbox.
-* `DELETE_ORPHANED_TRACKS=true|false` - whether to delete orphaned tracks after synchronization
-* `DELETE_ORPHANED_PLAYLISTS=true|false` - whether to delete orphaned playlists after synchronization
-* `DELETE_ORPHANED_ALBUMS=false|false` - whether to delete orphaned albums after synchronization
+* `MAP_TRACK_TITLE=true|false` – (default true) whether to sync the track title to Plex
+* `MAP_TRACK_ARTIST=true|false` - (default true) whether to sync the track artist to Plex
+* `MAP_TRACK_ALBUM_ARTIST=true|false` - (default true) whether to sync the album artist to Plex
+* `MAP_TRACK_ALBUM=true|false` - (default true) whether to sync the album to Plex
+* `MAP_TRACK_ARTWORK=true|false` - (default true) whether to sync the track artwork to Plex
+* `OVERWRITE_EXISTING_TRACK_ARTWORK=true|false` - (default true) whether to overwrite existing Plex track art with artwork from Rekordbox.
+* `ADD_NEW_TRACKS=true|false` - (default true) whether to look for tracks present in Rekordbox but not in Plex, then re-index the folder which contains the new tracks.
+* `MAP_ALBUM_YEAR=true|false` - (default true) whether to sync album release year
+* `MAP_ALBUM_ARTWORKS=true|false` - (default true) whether to sync album artwork/thumb/poster
+* `OVERWRITE_EXISTING_ALBUM_ARTWORK=true|false` - (default true) whether to overwrite existing Plex album art with artwork from Rekordbox.
+* `DELETE_ORPHANED_TRACKS=true|false` - (default true) whether to delete orphaned tracks after synchronization
+* `DELETE_ORPHANED_PLAYLISTS=true|false` - (default true) whether to delete orphaned playlists after synchronization
+* `DELETE_ORPHANED_ALBUMS=false|false` - (default false) whether to delete orphaned albums after synchronization
 
 
 > 🔐 **How to find your Plex Token?**
