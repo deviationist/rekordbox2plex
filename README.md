@@ -80,7 +80,7 @@ cp .env.example .env
 |---------|------|---------|-------------|
 | `REKORDBOX_FOLDER_PATH` | string | – | Full path to your Rekordbox files (needed for artwork sync) |
 | `REKORDBOX_MASTERDB_PATH` | string | – | Full path to your Rekordbox SQLite DB (not required if `REKORDBOX_FOLDER_PATH` is set) |
-| `REKORDBOX_MASTERDB_PASSWORD` | string | – | Password for decrypting the SQLite DB |
+| `REKORDBOX_MASTERDB_PASSWORD` | string | `402fd...` | Password for decrypting the SQLite DB |
 | `REKORDBOX_COPY_DB_BEFORE_SYNC` | bool | `true` | Whether to make a copy the DB file before starting sync |
 | `REKORDBOX_FOLDER_PATHS_TO_IGNORE` | string | – | Comma-separated list of folder paths to ignore (only used if `ADD_NEW_TRACKS=true`) |
 | `REKORDBOX_PLAYLISTS_TO_IGNORE` | string | – | Comma-separated list of playlist names to ignore |
@@ -198,14 +198,16 @@ Sometimes the token is included in the URL of a request. Example:
 - If your token is ever compromised, you can revoke access by signing out of devices in your Plex settings.
 
 ## How to Find Your Rekordbox SQLite DB
+1. Open Rekordbox
+2. Click **Preferences > Advanced > Database** to see your library location
+3. Under "Imported Library" you will see the path to the file `rekordbox.xml`. For Mac-users it will look something like `/Users/yourusername/Library/Pioneer/rekordbox/rekordbox.xml`. Copy the path, replace `rekordbox.xml` with `master.db`. This is the path to your Rekordbox SQLite DB file.
 
-TODO: Correct this
+If you don't know your username then:
+- For Windows: Press Win + R, type cmd, and hit Enter. Then type `echo %username%` and hit enter.
+- For Mac: Open Terminal (press Cmd + Space, type "Terminal", hit Enter). Then type `whoami` and hit enter.
 
-1. Open Rekordbox.
-2. Click **Preferences > Advanced > Database** to see your library location.
-3. The SQLite database is typically named something like `master.db`.
-4. You’ll also need the encryption password. This varies between Rekordbox versions but tools like [`rekordcloud`](https://rekord.cloud/) or online forums may help identify your password.
-5. Ensure `pysqlcipher3` is able to open the DB using the provided password.
+## Rekordbox SQLite DB Password
+The password for the Rekordbox SQLite DB is `402fd482c38817c35ffa8ffb8c7d93143b749e7d315df7a81732a1ff43608497` and is already specified in the `.env.example`-file. This password is used to decrypt the database file which is encrypted using [`sqlcipher`](https://www.zetetic.net/sqlcipher/). Thanks to [liamcottle](https://github.com/liamcottle) for his great research into how Rekordbox works. See [this repo](https://github.com/liamcottle/pioneer-rekordbox-database-encryption) for more information.
 
 ---
 
