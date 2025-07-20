@@ -46,13 +46,15 @@ class TrackRepository(RepositoryBase):
                     results.append(
                         PlexTrackWrapper(
                             id=track.ratingKey,
-                            file_path=part.file,
-                            title=track.title,
-                            added_at=track.addedAt,
-                            track_artist=track.originalTitle,
+                            track_title=track.title,
+                            track_artist_name=track.originalTitle,
                             album_id=track.parentRatingKey,
+                            album_name=track.parentTitle,
                             album_artist_id=track.grandparentRatingKey,
+                            album_artist_name=track.grandparentTitle,
                             track_object=track,
+                            file_path=part.file,
+                            added_at=track.addedAt,
                             has_artwork=bool(track.thumb),
                         )
                     )

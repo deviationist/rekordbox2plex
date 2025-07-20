@@ -1,4 +1,4 @@
-from ..plex.repositories.TrackRepository import TrackRepository
+from ..plex.repositories.TrackRepository import TrackRepository as PlexTrackRepository
 from ..plex.data_types import PlexTrackWrapper
 from ..rekordbox.resolvers.track import resolve_track as resolve_track_in_rekordbox
 from ..rekordbox.data_types import ResolvedTrack
@@ -84,7 +84,7 @@ class TrackIdMapper:
         if not self._all_mapped:
             logger.info("[cyan]No track mappings found, fetching tracks...")
             try:
-                plex_tracks, track_count = TrackRepository().get_all_tracks()
+                plex_tracks, track_count = PlexTrackRepository().get_all_tracks()
                 with progress_instance() as progress:
                     task = progress.add_task("", total=track_count)
                     successful_mappings = 0

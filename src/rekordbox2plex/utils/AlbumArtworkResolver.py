@@ -1,11 +1,11 @@
 from PIL import Image
 from typing import List, Dict, Optional, Tuple
 from ..rekordbox.data_types import TrackWithArtwork
-
 from .logger import logger
 import imagehash
 import os
 from .ArtworkResolver import ArtworkResolver
+from .ImageHashComparer import ImageHashComparer
 
 
 class AlbumArtworkResolver(ArtworkResolver):
@@ -60,15 +60,9 @@ class AlbumArtworkResolver(ArtworkResolver):
         self, img1_path: str, img2_path: str, threshold: int = 5
     ) -> bool:
         """Check if two images are similar using perceptual hashing."""
-        hash1 = self.get_image_hash(img1_path)
-        hash2 = self.get_image_hash(img2_path)
-
-        if hash1 is None or hash2 is None:
-            return False
-
-        similarity = abs(hash1 - hash2) <= threshold
+        similarity, distance = ImageHashComparer().exec(img1_path, img2_path, threshold)
         logger.debug(
-            f"Image similarity: {similarity} (distance: {abs(hash1 - hash2)}) for {img1_path} vs {img2_path}"
+            f"Image similarity: {similarity} (distance: {distance}) for {img1_path} vs {img2_path}"
         )
         return similarity
 

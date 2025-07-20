@@ -1,9 +1,12 @@
+import dotenv
 from rekordbox2plex.mappers.TrackIdMapper import TrackIdMapper
 from rekordbox2plex.plex.data_types import PlexTrackWrapper
 from rekordbox2plex.rekordbox.data_types import ResolvedTrack
 from faker import Faker
-from .factories.plex import generate_plex_track
-from .factories.rekordbox import generate_rb_item
+from factories.plex import generate_plex_track
+from factories.rekordbox import generate_rb_item
+
+dotenv.load_dotenv()
 
 
 def test_track_mapper(faker: Faker):
@@ -29,5 +32,5 @@ def test_track_mapper(faker: Faker):
     assert resolved_plex_track.id == plex_track_id
     assert resolved_rb_track.track.id == rb_track_id
 
-    assert resolved_plex_track.title == track_title
+    assert resolved_plex_track.track_title == track_title
     assert resolved_rb_track.track.title == track_title

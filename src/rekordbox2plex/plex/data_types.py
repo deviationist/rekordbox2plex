@@ -6,13 +6,15 @@ from plexapi.base import MediaContainer
 
 class PlexTrackWrapper(NamedTuple):
     id: int
-    file_path: str
-    title: str
-    added_at: Any
-    track_artist: int
+    track_title: str
+    track_artist_name: str
     album_id: int
+    album_name: str
     album_artist_id: int
+    album_artist_name: str
     track_object: Track
+    file_path: str
+    added_at: Any
     has_artwork: bool
 
 
