@@ -10,9 +10,8 @@ from ..plex.repositories.PlaylistRepository import (
 from ..plex.data_types import Track, PlexPlaylist, PlexPlaylists
 from ..mappers.TrackIdMapper import TrackIdMapper
 from ..utils.progress_bar import progress_instance
-
 from ..utils.logger import logger
-from ..utils.helpers import get_boolenv
+from ..utils.helpers import get_boolenv, progress_count
 from ._ActionBase import ActionBase
 from typing import List, Literal
 
@@ -55,10 +54,11 @@ class PlaylistSync(ActionBase):
     ):
         with progress_instance() as progress:
             task = progress.add_task("", total=rb_playlists_count)
-            for rb_playlist in rb_playlists:
+            for i, rb_playlist in enumerate(rb_playlists):
+                count_string = progress_count(i, rb_playlists_count)
                 progress.update(
                     task,
-                    description=f'[yellow]Synchronizing Rekordbox playlist "{rb_playlist.name}"...',
+                    description=f'[cyan]({count_string}) Synchronizing Rekordbox playlist "{rb_playlist.name}"...',
                 )
                 plex_playlist = next(
                     (pl for pl in plex_playlists if pl.title == rb_playlist.name),
@@ -73,7 +73,7 @@ class PlaylistSync(ActionBase):
                         progress.update(
                             task,
                             advance=1,
-                            description=f"[bold green]✔ Done! Playlist {rb_playlist.name} synchronized!",
+                            description=f"[bold green]({count_string}) ✔ Done! Playlist {rb_playlist.name} synchronized!",
                         )
                     else:
                         logger.debug(
@@ -86,7 +86,7 @@ class PlaylistSync(ActionBase):
                         progress.update(
                             task,
                             advance=1,
-                            description=f'[bold green]✔ Done! Playlist "{rb_playlist.name}" created with {track_count} tracks!',
+                            description=f'[bold green]({count_string}) ✔ Done! Playlist "{rb_playlist.name}" created with {track_count} tracks!',
                         )
                     else:
                         logger.debug(
@@ -97,7 +97,7 @@ class PlaylistSync(ActionBase):
                         )  # Playlist not crated (most likely empty/no tracks inside)
             progress.update(
                 task,
-                description="[bold green]✔ Done! Rekordbox playlists are synchronized with Plex!",
+                description=f"[bold green]({count_string}) ✔ Done! Rekordbox playlists are synchronized with Plex!",
             )
 
     def resolve_plex_tracks_from_rb_playlist(

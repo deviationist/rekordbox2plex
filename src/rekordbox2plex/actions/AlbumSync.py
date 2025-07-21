@@ -1,12 +1,12 @@
 from ..plex.repositories.AlbumRepository import AlbumRepository as PlexAlbumRepository
 from ..plex.repositories.ArtistRepository import get_artist
-from ..plex.data_types import PlexAlbum
+from ..plex.data_types import PlexAlbum, PlexAlbums
 from ..rekordbox.data_types import ResolvedAlbumWithTracks
 from ..mappers.AlbumMetadataMapper import AlbumMetadataMapper
 from ..rekordbox.resolvers.album import get_album_with_tracks
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
-from ..utils.helpers import get_boolenv
+from ..utils.helpers import get_boolenv, progress_count
 from ._ActionBase import ActionBase
 from typing import List, Literal
 
@@ -44,26 +44,32 @@ class AlbumSync(ActionBase):
         lookup = get_album_with_tracks(album_title, artist_title)
         if lookup:
             return lookup
-        artists = artist_title.split(",")
-        if len(artists) > 1:
-            for artist in artists:
-                lookup = get_album_with_tracks(album_title, artist.strip())
-                if lookup:
-                    return lookup
+        album_name_delimiters = [",", ";"]
+        for delimiter in album_name_delimiters:
+            artists = artist_title.split(delimiter)
+            if len(artists) > 1:
+                for artist in artists:
+                    lookup = get_album_with_tracks(album_title, artist.strip())
+                    if lookup:
+                        return lookup
         return False
 
-    def synchronize_albums(self, album_count, plex_albums):
+    def synchronize_albums(self, plex_album_count: int, plex_albums: PlexAlbums):
         with progress_instance() as progress:
-            task = progress.add_task("", total=album_count)
-            for plex_album in plex_albums:
+            task = progress.add_task("", total=plex_album_count)
+            for i, plex_album in enumerate(plex_albums):
+                count_string = progress_count(i, plex_album_count)
                 if plex_album.title:
                     progress.update(
                         task,
-                        description=f'[yellow]Procesing album "{plex_album.title}"...',
+                        description=f'[cyan]({count_string}) Procesing album "{plex_album.title}"...',
                     )
                     album_artist_id = plex_album.parentRatingKey
+                    logger.debug(f'Attempting to resolve artist with ID "{album_artist_id}"')
                     artist = get_artist(album_artist_id)
                     if artist:
+                        logger.debug(f'Resolved artist "{artist.title}" from ID "{album_artist_id}"')
+                        logger.debug(f'Attempting to resolve the Rekordbox tracks for album "{plex_album.title}"...')
                         lookup = self.resolve_album_with_tracks(
                             plex_album.title, artist.title
                         )
@@ -75,17 +81,20 @@ class AlbumSync(ActionBase):
                                 self.update_count += 1
                         else:
                             self.orphaned_albums.append(plex_album)
+                            logger.debug(f'Could not resolve any Rekordbox tracks for album "{plex_album.title}"...')
+                    else:
+                        logger.debug(f'Could not resolve artist with ID "{album_artist_id}"')
 
                     progress.update(
                         task,
                         advance=1,
-                        description=f'[yellow]Processed album "{plex_album.title}"...',
+                        description=f'[cyan]({count_string}) Processed album "{plex_album.title}"...',
                     )
                 else:
                     progress.update(task, advance=1)
             progress.update(
                 task,
-                description="[bold green]✔ Done! Rekordbox albums are synchronized with Plex!",
+                description=f"[bold green]({count_string}) ✔ Done! Rekordbox albums are synchronized with Plex!",
             )
 
     def delete_orphaned_albums(self):

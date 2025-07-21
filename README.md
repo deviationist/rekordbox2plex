@@ -2,6 +2,12 @@
 
 **rekordbox2plex** is a Python script that syncs your **track metadata**, **album metadata** and **playlists** from Rekordbox to Plex using [`python-plexapi`](https://github.com/pkkid/python-plexapi). This is especially useful for DJs who manage their music library in Rekordbox and want to reflect the same structure in Plex or Plexamp.
 
+### The problem
+Using Plex and Plexamp for listening to music is great, but the indexing and organizing is pretty shit tbh. I attempted to add my whole collection of tracks from my DJ collection (WAV, AIFF, MP3s) to Plex and it ended up being extremely messy. I wanted a Spotify-like experience with my own music collection, but ended up with an unorganized mess. If I could only get the neat and organized structure from Rekordbox in Plex then it would be much better!
+
+### The solution
+I created this script to get the best of two worlds - the availability of Plex/Plexamp for listening, and the structure (metadata, playlists) from Rekordbox. This script bridges this gap, by taking control over the metadata in Plex by "mapping"/mirroring the structure from Rekordbox. Because of this I finally reached my goal of getting a Spotify-like experience in Plexamp, with my own curated music. This allows me to listen on the go, to have an active listening-relationship with my collection, re-discover old tracks, or delete tracks I no longer want in my collection. I hope this tool can do the same for you!
+
 ## Features
 
 * ✅ Sync Rekordbox track metadata, album metadata and playlists to Plex

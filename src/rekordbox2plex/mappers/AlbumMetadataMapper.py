@@ -1,5 +1,5 @@
 from ..utils.logger import logger
-from ..utils.helpers import get_boolenv, field_is_locked
+from ..utils.helpers import get_boolenv, field_is_locked, is_valid_date
 from typing import Literal
 from ..rekordbox.data_types import ResolvedAlbumWithTracks
 from ..plex.data_types import Album
@@ -65,7 +65,7 @@ class AlbumMetadataMapper(MapperBase):
     def resolve_release_date(self) -> Literal[False] | str:
         dates: list[str] = []
         for track in self.rb_item.tracks:
-            if track.release_date:
+            if track.release_date and is_valid_date(track.release_date):
                 dates.append(track.release_date)
         dates = list(set(dates))
         unique_count = len(dates)
@@ -75,7 +75,11 @@ class AlbumMetadataMapper(MapperBase):
 
     def update_release_date(self):
         rb_release_date = self.resolve_release_date()
-        if rb_release_date and rb_release_date != self.plex_album.originallyAvailableAt:
+        if (
+            rb_release_date
+            and is_valid_date(rb_release_date)
+            and rb_release_date != self.plex_album.originallyAvailableAt
+        ):
             self.add_change("originallyAvailableAt.value", rb_release_date)
             logger.debug(
                 f'Setting album release date to "{rb_release_date}" for album "{self.plex_album.title}"'

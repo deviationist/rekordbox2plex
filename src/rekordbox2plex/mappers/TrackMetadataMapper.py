@@ -41,12 +41,43 @@ class TrackMetadataMapper(MapperBase):
     def save(self):
         if not self.did_change:
             return
+
+        # Reparenting update
+        reparent_keys = {
+            "artist.id.value",
+            "artist.title.value",
+            "album.id.value",
+            "album.title.value",
+        }
+        reparent_edits = {k: v for k, v in self.edits.items() if k in reparent_keys}
+
+        if reparent_edits:
+            logger.debug(f"Applying reparenting edits: {reparent_edits}")
+            try:
+                self.plex_track.track_object.edit(**reparent_edits)
+            except Exception as e:
+                logger.warning(f"Failed to apply reparenting metadata: {e}")
+
+        # Apply artwork
         if self.resolved_artwork_path:
             update_track_poster(
                 self.plex_track.track_object, self.resolved_artwork_path
             )
-        self.plex_track.track_object.edit(**self.edits)
-        self.plex_track.track_object.reload()
+
+        # Remaining metadata
+        remaining_edits = {
+            k: v for k, v in self.edits.items() if k not in reparent_keys
+        }
+        if remaining_edits:
+            logger.debug(f"Applying remaining edits: {remaining_edits}")
+            try:
+                self.plex_track.track_object.edit(**remaining_edits)
+            except Exception as e:
+                logger.warning(f"Failed to apply remaining metadata: {e}")
+
+        # Reload track object if needed
+        if reparent_edits or remaining_edits or self.resolved_artwork_path:
+            self.plex_track.track_object.reload()
 
     def handle_album_metadata(self):
         self.update_album_artist()
@@ -77,7 +108,9 @@ class TrackMetadataMapper(MapperBase):
     def update_track_artist(self):
         rb_track_artist_name = self.get_track_artist_name()
         rb_track_title = self.get_track_title()
-        if self.plex_track.track_artist_name != rb_track_artist_name:  # Check for changes
+        if (
+            self.plex_track.track_artist_name != rb_track_artist_name
+        ):  # Check for changes
             logger.debug(
                 f'Setting track artist to "{rb_track_artist_name}" for track "{rb_track_title}"'
             )
@@ -112,8 +145,8 @@ class TrackMetadataMapper(MapperBase):
 
         if not rb_album_artist_name:
             return
-        self.ensure_album_artist_locked()
         if force_creation:
+            logger.debug("Forcing artist creation by sending album album name")
             self.update_album_artist_with_name(
                 True
             )  # Force update payload, create new album artist
@@ -131,6 +164,7 @@ class TrackMetadataMapper(MapperBase):
         current_album_artist_id = self.plex_track.album_artist_id
         current_album_artist_name = self.plex_track.album_artist_name
         self.album_artist_id = plex_artist.ratingKey
+        logger.debug("Attempting to update album artist ID")
         if plex_artist.ratingKey != current_album_artist_id:  # Check for changes
             logger.debug(
                 f'Setting album artist to "{plex_artist.title}" (ID "{plex_artist.ratingKey}") for track "{rb_track_title}"'
@@ -167,13 +201,6 @@ class TrackMetadataMapper(MapperBase):
             )
         return self._album_artist_name
 
-    def ensure_album_artist_locked(self) -> None:
-        if not field_is_locked(self.plex_track.track_object, "artist"):
-            logger.debug(
-                f'Locking album artist for "{self.get_album_artist_name()}" for track "{self.get_track_title()}"'
-            )
-            self.add_change("artist.locked", 1)
-
     # --- Album ---
     def update_album(self, force_creation: bool = False):
         rb_album_name = self.get_album_name()
@@ -186,8 +213,8 @@ class TrackMetadataMapper(MapperBase):
 
         if not rb_album_name:
             return
-        self.ensure_album_locked()
         if force_creation:
+            logger.debug("Forcing album creation by sending album name")
             self.update_album_with_name(True)
         else:
             if plex_album := self.resolve_album_id(rb_album_name):
@@ -199,8 +226,8 @@ class TrackMetadataMapper(MapperBase):
         rb_track_title = self.get_track_title()
         current_album_id = self.plex_track.album_id
         current_album_name = self.plex_track.album_name
-        logger.debug(f'Album artist ID is just set to "{self.album_artist_id}"')
         if plex_album:
+            logger.debug("Attempting to update album ID")
             if plex_album.ratingKey != current_album_id:  # Check for changes
                 self.album_did_change = True
                 logger.debug(
@@ -212,7 +239,11 @@ class TrackMetadataMapper(MapperBase):
                     f'Album already set to "{current_album_name}" (ID "{current_album_id}") for track "{rb_track_title}"'
                 )
             return True
-        return False
+        else:
+            logger.debug(
+                f'Could not resolve plex album ID for track "{rb_track_title}"'
+            )
+            return False
 
     def update_album_with_name(self, force_update: bool = False):
         rb_album_name = self.get_album_name()
@@ -245,13 +276,6 @@ class TrackMetadataMapper(MapperBase):
         if not self._album_name:
             self._album_name = self.rb_item.album.name if self.rb_item.album else ""
         return self._album_name
-
-    def ensure_album_locked(self) -> None:
-        if not field_is_locked(self.plex_track.track_object, "album"):
-            logger.debug(
-                f'Locking album for "{self.get_album_name()}" for track "{self.get_track_title()}"'
-            )
-            self.add_change("album.locked", 1)
 
     # --- Artwork ---
     def artworks_are_the_same(self, artwork_path: str, threshold: int = 5) -> bool:
