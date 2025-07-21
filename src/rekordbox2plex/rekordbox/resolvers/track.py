@@ -48,7 +48,7 @@ def get_all_tracks(
     try:
         query = f"""
         SELECT
-            ID, Title, Label, ReleaseYear, FolderPath
+            ID, Title, Label, ReleaseYear, ReleaseDate, StockDate, FolderPath
         FROM
             djmdContent
         WHERE
@@ -70,6 +70,8 @@ def get_all_tracks(
                         title=row_dict["Title"],
                         label=row_dict.get("Label"),
                         release_year=int(row_dict["ReleaseYear"]),
+                        release_date=row_dict["ReleaseDate"],
+                        added_at=row_dict["StockDate"],
                         folder_path=row_dict["FolderPath"],
                     )
                 )
@@ -100,6 +102,8 @@ def handle_track_row(row: dict) -> ResolvedTrack:
         title=row_dict["track_Title"],
         label=row_dict.get("track_Label"),
         release_year=int(row_dict["track_ReleaseYear"]),
+        release_date=row_dict["track_ReleaseDate"],
+        added_at=row_dict.get("track_AddedAt"),
         folder_path=row_dict.get("track_FolderPath"),
         artwork_id=row_dict.get("artwork_ID"),
         artwork_path=row_dict.get("artwork_Path"),
@@ -145,11 +149,12 @@ def resolve_track(
         # Single query with JOINs to get all related data at once
         query = """
         SELECT
-            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.FolderPath AS track_FolderPath, c.Label AS track_Label,
+            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.ReleaseDate AS track_ReleaseDate, c.FolderPath AS track_FolderPath, c.StockDate AS track_AddedAt,
             a.ID AS artist_ID, a.Name AS artist_Name,
             al.ID AS album_ID, al.Name AS album_Name,
             aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name,
-            cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path
+            cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path,
+            l.Name AS track_Label
         FROM
             djmdContent AS c
         LEFT JOIN
@@ -164,6 +169,9 @@ def resolve_track(
         LEFT JOIN
             contentFile AS cf
             ON c.ImagePath = cf.Path
+        LEFT JOIN
+            djmdLabel AS l
+            ON c.LabelID = l.ID
         WHERE
             c.rb_local_deleted = 0
             AND c.rb_data_status = 0

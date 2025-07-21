@@ -16,7 +16,8 @@ class TrackRepository(RepositoryBase):
         if use_cache and (cached_track := self._get_from_cache(str(track_id))):
             return cached_track
         if track := get_track(track_id):
-            self._store_single_in_cache(track, self.get_track_id)
+            if use_cache:
+                self._store_single_in_cache(track, self.get_track_id)
             return track
         return None
 
@@ -70,5 +71,6 @@ class TrackRepository(RepositoryBase):
                     task,
                     description=f"[bold green]✔ Done! Fetched metadata for {track_count} tracks!",
                 )
-            self._store_in_cache(results, self.get_track_id)
+            if use_cache:
+                self._store_in_cache(results, self.get_track_id)
             return results, len(results)

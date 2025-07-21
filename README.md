@@ -95,7 +95,8 @@ cp .env.example .env
 | `MAP_TRACK_ARTWORK` | bool | `true` | Sync track artwork to Plex |
 | `OVERWRITE_EXISTING_TRACK_ARTWORK` | bool | `true` | Overwrite existing Plex track artwork |
 | `ADD_NEW_TRACKS` | bool | `true` | Add tracks from Rekordbox missing in Plex and reindex |
-| `MAP_ALBUM_YEAR` | bool | `true` | Sync album release year |
+| `MAP_ALBUM_RELEASE_YEAR` | bool | `true` | Sync album release year |
+| `MAP_ALBUM_RELEASE_DATE` | bool | `true` | Sync album release date |
 | `MAP_ALBUM_LABEL` | bool | `true` | Sync album label |
 | `MAP_ALBUM_ARTWORKS` | bool | `true` | Sync album artwork/thumb/poster |
 | `OVERWRITE_EXISTING_ALBUM_ARTWORK` | bool | `true` | Overwrite existing Plex album artwork |

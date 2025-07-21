@@ -10,7 +10,8 @@ class AlbumRepository(RepositoryBase):
         if use_cache and (cached_album := self._get_from_cache(str(album_id))):
             return cached_album
         if album := get_album(album_id):
-            self._store_single_in_cache(album)
+            if use_cache:
+                self._store_single_in_cache(album)
             return album
         return None
 
@@ -18,7 +19,8 @@ class AlbumRepository(RepositoryBase):
         if use_cache and self._all_fetched and (cached_albums := self._get_all_cache()):
             return cached_albums
         albums = get_all_albums()
-        self._store_in_cache(albums)
+        if use_cache:
+            self._store_in_cache(albums)
         return albums
 
     def get_albums_by_artist(
