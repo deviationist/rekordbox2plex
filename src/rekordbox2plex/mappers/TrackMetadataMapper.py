@@ -19,9 +19,10 @@ class TrackMetadataMapper(MapperBase):
         self.rb_item = rb_item
         self.plex_track = plex_track
         self.album_artist_id = None
-        self.album_did_change = False
         self.album_artist_did_change = False
+        self.album_did_change = False
         self._track_title: str | None = None
+        self._track_artist_name: str | None = None
         self._album_artist_name: str | None = None
         self._album_name: str | None = None
 
@@ -63,25 +64,39 @@ class TrackMetadataMapper(MapperBase):
 
     def update_track_title(self):
         rb_track_title = self.get_track_title()
-        if self.plex_track.track_title != rb_track_title:
+        if self.plex_track.track_title != rb_track_title:  # Check for changes
             logger.debug(f'Setting track title to "{rb_track_title}"')
             self.add_change("title.value", rb_track_title)
+        else:
+            logger.debug(f'Track title already set to "{rb_track_title}"')
         if not field_is_locked(self.plex_track.track_object, "title"):
             logger.debug(f'Locking track title for "{rb_track_title}"')
             self.add_change("title.locked", 1)
 
     # --- Track Artist ---
     def update_track_artist(self):
-        rb_track_artist_name = self.rb_item.artist.name if self.rb_item.artist else ""
+        rb_track_artist_name = self.get_track_artist_name()
         rb_track_title = self.get_track_title()
-        if self.plex_track.track_artist_name != rb_track_artist_name:
+        if self.plex_track.track_artist_name != rb_track_artist_name:  # Check for changes
             logger.debug(
                 f'Setting track artist to "{rb_track_artist_name}" for track "{rb_track_title}"'
             )
             self.add_change("originalTitle.value", rb_track_artist_name)
+        else:
+            logger.debug(f'Track artist already set to "{rb_track_artist_name}"')
+        self.ensure_track_artist_locked()
+
+    def get_track_artist_name(self) -> str:
+        if not self._track_artist_name:
+            self._track_artist_name = (
+                self.rb_item.artist.name if self.rb_item.artist else ""
+            )
+        return self._track_artist_name
+
+    def ensure_track_artist_locked(self):
         if not field_is_locked(self.plex_track.track_object, "originalTitle"):
             logger.debug(
-                f'Locking track artist for "{rb_track_artist_name}" for track "{rb_track_title}"'
+                f'Locking track artist for "{self.get_track_artist_name()}" for track "{self.get_track_title()}"'
             )
             self.add_change("originalTitle.locked", 1)
 
@@ -114,13 +129,18 @@ class TrackMetadataMapper(MapperBase):
     def update_album_artist_with_id(self, plex_artist: PlexArtist):
         rb_track_title = self.get_track_title()
         current_album_artist_id = self.plex_track.album_artist_id
+        current_album_artist_name = self.plex_track.album_artist_name
+        self.album_artist_id = plex_artist.ratingKey
         if plex_artist.ratingKey != current_album_artist_id:  # Check for changes
             logger.debug(
                 f'Setting album artist to "{plex_artist.title}" (ID "{plex_artist.ratingKey}") for track "{rb_track_title}"'
             )
             self.album_artist_did_change = True
-            self.album_artist_id = plex_artist.ratingKey
             self.add_change("artist.id.value", plex_artist.ratingKey)
+        else:
+            logger.debug(
+                f'Album already set to "{current_album_artist_name}" (ID "{current_album_artist_id}") for track "{rb_track_title}"'
+            )
 
     def update_album_artist_with_name(self, force_update: bool = False):
         rb_album_artist_name = self.get_album_artist_name()
@@ -135,6 +155,10 @@ class TrackMetadataMapper(MapperBase):
             )
             self.album_artist_did_change = True
             self.add_change("artist.title.value", rb_album_artist_name)
+        else:
+            logger.debug(
+                f'Album artist already set to "{current_album_artist_name}" for track "{rb_track_title}"'
+            )
 
     def get_album_artist_name(self) -> str:
         if not self._album_artist_name:
@@ -143,12 +167,10 @@ class TrackMetadataMapper(MapperBase):
             )
         return self._album_artist_name
 
-    def ensure_album_artist_locked(self):
-        rb_album_artist_name = self.get_album_artist_name()
-        rb_track_title = self.get_track_title()
+    def ensure_album_artist_locked(self) -> None:
         if not field_is_locked(self.plex_track.track_object, "artist"):
             logger.debug(
-                f'Locking album artist for "{rb_album_artist_name}" for track "{rb_track_title}"'
+                f'Locking album artist for "{self.get_album_artist_name()}" for track "{self.get_track_title()}"'
             )
             self.add_change("artist.locked", 1)
 
@@ -176,14 +198,19 @@ class TrackMetadataMapper(MapperBase):
     def update_album_with_id(self, plex_album: PlexAlbum) -> bool:
         rb_track_title = self.get_track_title()
         current_album_id = self.plex_track.album_id
+        current_album_name = self.plex_track.album_name
         logger.debug(f'Album artist ID is just set to "{self.album_artist_id}"')
-
-        if plex_album and plex_album.ratingKey != current_album_id:  # Check for changes
-            self.album_did_change = True
-            logger.debug(
-                f'Setting album to "{plex_album.title}" (ID "{plex_album.ratingKey}") for track "{rb_track_title}"'
-            )
-            self.add_change("album.id.value", plex_album.ratingKey)
+        if plex_album:
+            if plex_album.ratingKey != current_album_id:  # Check for changes
+                self.album_did_change = True
+                logger.debug(
+                    f'Setting album to "{plex_album.title}" (ID "{plex_album.ratingKey}") for track "{rb_track_title}"'
+                )
+                self.add_change("album.id.value", plex_album.ratingKey)
+            else:
+                logger.debug(
+                    f'Album already set to "{current_album_name}" (ID "{current_album_id}") for track "{rb_track_title}"'
+                )
             return True
         return False
 
@@ -202,6 +229,10 @@ class TrackMetadataMapper(MapperBase):
                 f'Setting album to "{rb_album_name}" for track "{rb_track_title}"'
             )
             self.add_change("album.title.value", rb_album_name)
+        else:
+            logger.debug(
+                f'Album already set to "{current_album_name}" for track "{rb_track_title}"'
+            )
 
     def resolve_album_id(self, rb_album_name: str) -> None | PlexAlbum:
         if self.album_artist_id:
@@ -215,12 +246,10 @@ class TrackMetadataMapper(MapperBase):
             self._album_name = self.rb_item.album.name if self.rb_item.album else ""
         return self._album_name
 
-    def ensure_album_locked(self):
-        rb_album_name = self.get_album_name()
-        rb_track_title = self.get_track_title()
+    def ensure_album_locked(self) -> None:
         if not field_is_locked(self.plex_track.track_object, "album"):
             logger.debug(
-                f'Locking album for "{rb_album_name}" for track "{rb_track_title}"'
+                f'Locking album for "{self.get_album_name()}" for track "{self.get_track_title()}"'
             )
             self.add_change("album.locked", 1)
 
@@ -247,24 +276,29 @@ class TrackMetadataMapper(MapperBase):
             "OVERWRITE_EXISTING_TRACK_ARTWORK", True
         ):
             logger.debug(
-                f"Artwork already exists for track {rb_track_title}, skipping artwork update"
+                f'Artwork already exists for track "{rb_track_title}", skipping artwork update'
             )
             return
         artwork_path = self.rb_item.track.artwork_local_path
         if not artwork_path:
             logger.debug(
-                f"No artwork path found for track {rb_track_title}, skipping artwork update"
+                f'No artwork path found for track "{rb_track_title}", skipping artwork update'
             )
             return
 
         filepath = ArtworkResolver().replace_rekordbox_root(artwork_path)
         if filepath:
-            if not field_is_locked(self.plex_track.track_object, "thumb"):
-                logger.debug(f'Locking thumb for track "{rb_track_title}"')
-                self.add_change("thumb.locked", 1)
-            if self.artworks_are_the_same(filepath):
-                logger.debug("Artwork is the same, skipping update")
+            self.ensure_thumb_locked()
+            if self.plex_track.has_artwork and self.artworks_are_the_same(filepath):
+                logger.debug(
+                    f'Artwork is the same for track "{rb_track_title}", skipping update'
+                )
                 return
             track_title = self.get_track_title()
-            logger.debug(f"Updating track artwork for track {track_title}")
+            logger.debug(f'Updating track artwork for track "{track_title}"')
             self.resolved_artwork_path = filepath
+
+    def ensure_thumb_locked(self) -> None:
+        if not field_is_locked(self.plex_track.track_object, "thumb"):
+            logger.debug(f'Locking thumb for track "{self.get_track_title()}"')
+            self.add_change("thumb.locked", 1)
