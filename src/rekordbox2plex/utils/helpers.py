@@ -2,12 +2,25 @@ import argparse
 from typing import List, Any
 from ..plex.data_types import PlexTrackWrapper
 import os
+from datetime import datetime
 
 VALID_TARGET_CHOICES = {"all", "tracks", "playlists", "albums"}
 
 
 def get_boolenv(key: str, default: bool | str) -> bool:
     return str_to_bool(os.getenv(key, default))
+
+
+def is_valid_date(date_str: str) -> bool:
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
+
+def progress_count(current_number: int, total_count: int) -> str:
+    return f"{current_number+1}/{total_count}"
 
 
 def field_is_locked(plex_item: Any, field_name: str) -> bool:

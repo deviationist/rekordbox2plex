@@ -3,7 +3,7 @@ from ..plex.data_types import PlexTrackWrapper
 from ..rekordbox.resolvers.track import resolve_track as resolve_track_in_rekordbox
 from ..rekordbox.data_types import ResolvedTrack
 from ..utils.progress_bar import progress_instance
-from ..utils.helpers import build_track_string
+from ..utils.helpers import build_track_string, progress_count
 from ..utils.logger import logger
 from typing import Literal
 
@@ -89,10 +89,12 @@ class TrackIdMapper:
                     task = progress.add_task("", total=track_count)
                     successful_mappings = 0
 
-                    for plex_track in plex_tracks:
+                    for i, plex_track in enumerate(plex_tracks):
+                        count_string = progress_count(i, track_count)
                         track_string = build_track_string(plex_track)
                         progress.update(
-                            task, description=f"[yellow]Resolving {track_string}..."
+                            task,
+                            description=f"[cyan]({count_string}) Resolving {track_string}...",
                         )
 
                         try:
@@ -111,7 +113,7 @@ class TrackIdMapper:
 
                     progress.update(
                         task,
-                        description=f"[bold green]✔ Done! Mapped {successful_mappings}/{track_count} tracks!",
+                        description=f"[bold green]({count_string}) ✔ Done! Mapped {successful_mappings}/{track_count} tracks!",
                     )
                 self._all_mapped = True
             except Exception as e:

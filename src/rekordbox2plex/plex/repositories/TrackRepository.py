@@ -3,6 +3,7 @@ from ..resolvers.track import get_track, get_all_tracks
 from ..resolvers.library import get_music_library_name
 from ...utils.progress_bar import progress_instance
 from ...utils.logger import logger
+from ...utils.helpers import progress_count
 from typing import List, Tuple
 from ..data_types import PlexTrack, PlexTrackWrapper, CacheItems
 
@@ -36,10 +37,11 @@ class TrackRepository(RepositoryBase):
             logger.info("[cyan]Fetching track metadata from Plex...")
             task = progress.add_task("", total=track_count)
             results = []
-            for track in tracks:
+            for i, track in enumerate(tracks):
+                count_string = progress_count(i, track_count)
                 progress.update(
                     task,
-                    description=f'[cyan]Fetching track metadata for "{track.title}" by "{track.originalTitle}"...',
+                    description=f'[cyan]({count_string}) Fetching track metadata for "{track.title}" by "{track.originalTitle}"...',
                 )
                 try:
                     media = track.media[0]
@@ -61,16 +63,16 @@ class TrackRepository(RepositoryBase):
                     )
                     progress.update(
                         task,
-                        description=f'[cyan]Fetched track metadata for "{track.title}" by "{track.originalTitle}"...',
+                        description=f'[cyan]({count_string}) Fetched track metadata for "{track.title}" by "{track.originalTitle}"...',
                     )
                 except (IndexError, AttributeError):
                     logger.info(f'[red]No file path found for "{track.title}"')
                 finally:
                     progress.update(task, advance=1)
-                progress.update(
-                    task,
-                    description=f"[bold green]✔ Done! Fetched metadata for {track_count} tracks!",
-                )
+            progress.update(
+                task,
+                description=f"[bold green]({count_string}) ✔ Done! Fetched metadata for {track_count} tracks!",
+            )
             if use_cache:
                 self._store_in_cache(results, self.get_track_id)
             return results, len(results)

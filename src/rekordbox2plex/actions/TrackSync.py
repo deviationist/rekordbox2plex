@@ -12,7 +12,7 @@ from ..mappers.TrackMetadataMapper import TrackMetadataMapper
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
 from ..mappers.TrackIdMapper import TrackIdMapper
-from ..utils.helpers import build_track_string, get_boolenv
+from ..utils.helpers import build_track_string, get_boolenv, progress_count
 from ._ActionBase import ActionBase
 from typing import List, Tuple
 import os
@@ -50,11 +50,12 @@ class TrackSync(ActionBase):
             task = progress.add_task("", total=track_count)
             resolved_tracks = []
             orphaned_tracks = []
-            for plex_track in plex_tracks:
+            for i, plex_track in enumerate(plex_tracks):
+                count_string = progress_count(i, track_count)
                 track_string = build_track_string(plex_track)
                 progress.update(
                     task,
-                    description=f"[yellow]Resolving Rekordbox track metadata {track_string}...",
+                    description=f"[cyan]({count_string}) Resolving Rekordbox track metadata {track_string}...",
                 )
                 rb_item = resolve_track_in_rekordbox(plex_track, progress, task)
                 if rb_item:
@@ -63,7 +64,7 @@ class TrackSync(ActionBase):
                     progress.update(
                         task,
                         advance=1,
-                        description=f"[yellow]Resolved Rekordbox track metadata {track_string}...",
+                        description=f"[cyan]({count_string}) Resolved Rekordbox track metadata {track_string}...",
                     )
                 else:
                     orphaned_tracks.append(
@@ -72,14 +73,14 @@ class TrackSync(ActionBase):
                     progress.update(
                         task,
                         advance=1,
-                        description=f"[red]Could not resolve track metadata {track_string}...",
+                        description=f"[red]({count_string}) Could not resolve track metadata {track_string}...",
                     )
             self.trackIdMapper.all_tracks_mapped()
             track_count = len(resolved_tracks)
             orphaned_tracks_count = len(orphaned_tracks)
             progress.update(
                 task,
-                description=f"[bold green]✔ Done! Resolved Rekordbox metadata for {track_count} tracks!",
+                description=f"[bold green]({count_string}) ✔ Done! Resolved Rekordbox metadata for {track_count} tracks!",
             )
         if orphaned_tracks_count > 0:
             logger.info(
@@ -95,11 +96,13 @@ class TrackSync(ActionBase):
         with progress_instance() as progress:
             logger.info("[cyan]Updating track metadata in Plex...")
             task = progress.add_task("", total=track_count)
-            for track_wrapper in resolved_tracks:
+            for i, track_wrapper in enumerate(resolved_tracks):
+                count_string = progress_count(i, track_count)
                 plex_track, rb_item = track_wrapper
                 track_string = build_track_string(plex_track)
                 progress.update(
-                    task, description=f"[yellow]Processing track {track_string}..."
+                    task,
+                    description=f"[cyan]({count_string}) Processing track {track_string}...",
                 )
                 if rb_item:
                     updater = TrackMetadataMapper(plex_track, rb_item).transfer()
@@ -108,11 +111,11 @@ class TrackSync(ActionBase):
                 progress.update(
                     task,
                     advance=1,
-                    description=f"[yellow]Procesed track {track_string}...",
+                    description=f"[cyan]({count_string}) Procesed track {track_string}...",
                 )
             progress.update(
                 task,
-                description=f"[bold green]✔ Done! Updated metadata for {track_count} tracks!",
+                description=f"[bold green]({count_string}) ✔ Done! Updated metadata for {track_count} tracks!",
             )
 
     def add_new_tracks(self):
@@ -140,7 +143,7 @@ class TrackSync(ActionBase):
                 if plex_folder_path not in folders_to_update:
                     folders_to_update.append(plex_folder_path)
                     logger.debug(
-                        f"[yellow]Adding folder {plex_folder_path} to update list for new tracks."
+                        f"[cyan]Adding folder {plex_folder_path} to update list for new tracks."
                     )
 
         folders_to_update_count = len(folders_to_update)
@@ -157,7 +160,7 @@ class TrackSync(ActionBase):
 
         for folder_to_update in folders_to_update:
             logger.debug(
-                f"[yellow]Re-indexing folder {folder_to_update} to add new tracks."
+                f"[cyan]Re-indexing folder {folder_to_update} to add new tracks."
             )
             if not self.dry_run:
                 update_library(folder_to_update)
