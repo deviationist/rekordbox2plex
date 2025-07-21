@@ -90,8 +90,7 @@ cp .env.example .env
 | `PLEX_PLAYLIST_FLATTENING_DELIMITER` | string | `/` | Delimiter for flattening nested Rekordbox playlists |
 | `MAP_TRACK_TITLE` | bool | `true` | Sync track title to Plex |
 | `MAP_TRACK_ARTIST` | bool | `true` | Sync track artist to Plex |
-| `MAP_TRACK_ALBUM_ARTIST` | bool | `true` | Sync album artist to Plex |
-| `MAP_TRACK_ALBUM` | bool | `true` | Sync album name to Plex |
+| `MAP_TRACK_ALBUM` | bool | `true` | Sync album to Plex |
 | `MAP_TRACK_ARTWORK` | bool | `true` | Sync track artwork to Plex |
 | `OVERWRITE_EXISTING_TRACK_ARTWORK` | bool | `true` | Overwrite existing Plex track artwork |
 | `ADD_NEW_TRACKS` | bool | `true` | Add tracks from Rekordbox missing in Plex and reindex |

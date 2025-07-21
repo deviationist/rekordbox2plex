@@ -17,9 +17,11 @@ from ._ActionBase import ActionBase
 from typing import List, Tuple
 import os
 
+ResolvedTrackWrapper = Tuple[PlexTrackWrapper, ResolvedTrack]
+
 
 class TrackSync(ActionBase):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("Track sync")
         self.trackIdMapper = TrackIdMapper()
 
@@ -42,9 +44,7 @@ class TrackSync(ActionBase):
 
     def resolve_tracks_in_rekordbox(
         self, plex_tracks: List[PlexTrackWrapper], track_count: int
-    ) -> Tuple[
-        List[Tuple[PlexTrackWrapper, ResolvedTrack]], int, List[PlexTrackWrapper]
-    ]:
+    ) -> Tuple[List[ResolvedTrackWrapper], int, List[PlexTrackWrapper]]:
         with progress_instance() as progress:
             logger.info("[cyan]Resolving track metadata in Rekordbox database...")
             task = progress.add_task("", total=track_count)
@@ -95,7 +95,8 @@ class TrackSync(ActionBase):
         with progress_instance() as progress:
             logger.info("[cyan]Updating track metadata in Plex...")
             task = progress.add_task("", total=track_count)
-            for plex_track, rb_item in resolved_tracks:
+            for track_wrapper in resolved_tracks:
+                plex_track, rb_item = track_wrapper
                 track_string = build_track_string(plex_track)
                 progress.update(
                     task, description=f"[yellow]Processing track {track_string}..."

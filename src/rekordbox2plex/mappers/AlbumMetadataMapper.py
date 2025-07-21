@@ -15,6 +15,7 @@ class AlbumMetadataMapper(MapperBase):
         self.plex_album = plex_album
 
     def transfer(self):
+        logger.debug(f'Mapping metadata for album "{self.plex_album.title}"')
         self.ensure_locked_fields()
         if get_boolenv("MAP_ALBUM_RELEASE_YEAR", True):
             self.update_release_year()
