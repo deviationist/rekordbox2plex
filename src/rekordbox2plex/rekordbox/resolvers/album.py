@@ -14,20 +14,24 @@ def get_album_with_tracks(
         query = """
         SELECT
             al.ID AS album_ID, al.Name AS album_Name,
-            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.FolderPath AS track_FolderPath, c.Label AS track_Label,
+            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.ReleaseDate AS track_ReleaseDate, c.FolderPath AS track_FolderPath, c.StockDate AS track_AddedAt,
             a.ID AS artist_ID, a.Name AS artist_Name,
             aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name,
-            cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path
+            cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path,
+            l.Name AS track_Label
         FROM djmdContent AS c
-        INNER JOIN
+        LEFT JOIN
             djmdArtist AS a
             ON c.ArtistID = a.ID
-        INNER JOIN
+        LEFT JOIN
             djmdAlbum AS al
             ON al.ID = c.AlbumID
-        INNER JOIN
+        LEFT JOIN
             djmdArtist AS aa
             ON aa.ID = al.AlbumArtistID
+        LEFT JOIN
+            djmdLabel as l
+            ON l.ID = c.LabelID
         LEFT JOIN
             contentFile AS cf
             ON c.ImagePath = cf.Path
@@ -58,6 +62,8 @@ def get_album_with_tracks(
                         title=row_dict["track_Title"],
                         label=row_dict["track_Label"],
                         release_year=int(row_dict["track_ReleaseYear"]),
+                        release_date=row_dict["track_ReleaseDate"],
+                        added_at=row_dict.get("track_AddedAt"),
                         folder_path=row_dict.get("track_FolderPath"),
                         artwork_id=row_dict.get("artwork_ID"),
                         artwork_path=row_dict.get("artwork_Path"),

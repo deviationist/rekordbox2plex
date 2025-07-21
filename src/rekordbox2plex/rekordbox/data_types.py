@@ -6,6 +6,8 @@ class Track(NamedTuple):
     title: str
     label: str | None
     release_year: int | None
+    release_date: str | None
+    added_at: str | None
     folder_path: str | None
 
 
@@ -19,7 +21,9 @@ class TrackWithArtwork(NamedTuple):
     id: int
     title: str
     label: str | None
-    release_year: int
+    release_year: int | None
+    release_date: str | None
+    added_at: str | None
     folder_path: str | None
     artwork_id: int | None
     artwork_path: str | None
