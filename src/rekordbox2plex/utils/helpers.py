@@ -3,8 +3,28 @@ from typing import List, Any
 from ..plex.data_types import PlexTrackWrapper
 import os
 from datetime import datetime
+from .. import config
+from .confirm import confirm_warning
 
 VALID_TARGET_CHOICES = {"all", "tracks", "playlists", "albums"}
+
+
+def check_for_dangerous_config():
+    if config.plex_track_lookup_override() and config.should_delete_orphaned_tracks():
+        confirm_warning(
+            "You have overriden the Plex track lookup (env PLEX_TRACK_LOOKUP_OVERRIDE), and orphaned track deletion is active. (env DELETE_ORPHANED_TRACKS). Do you want to continue?"
+        )
+    if (
+        config.plex_playlist_lookup_override()
+        and config.should_delete_orphaned_playlists()
+    ):
+        confirm_warning(
+            "You have overriden the Plex playlist lookup (env PLEX_PLAYLIST_LOOKUP_OVERRIDE), and orphaned trplaylistack deletion is active. (env DELETE_ORPHANED_PLAYLISTS). Do you want to continue?"
+        )
+    if config.plex_album_lookup_override() and config.should_delete_orphaned_albums():
+        confirm_warning(
+            "You have overriden the Plex album lookup (env PLEX_ALBUM_LOOKUP_OVERRIDE), and orphaned track deletion is active. (env DELETE_ORPHANED_ALBUMS). Do you want to continue?"
+        )
 
 
 def get_boolenv(key: str, default: bool | str) -> bool:

@@ -94,7 +94,7 @@ class AlbumArtworkResolver(ArtworkResolver):
 
         return unique_artworks
 
-    def resolve(self) -> Optional[Tuple[TrackWithArtwork, str]]:
+    def resolve(self) -> Optional[Tuple[Tuple[TrackWithArtwork, str], bool]]:
         """
         Resolve artwork for an album.
 
@@ -115,18 +115,12 @@ class AlbumArtworkResolver(ArtworkResolver):
         unique_artworks = self.resolve_unique_artworks(unique_artwork_paths)
         unique_artworks_count = len(unique_artworks)
 
-        if unique_artworks_count == 1:
-            logger.debug("Found exactly 1 unique artwork")
-            return unique_artworks[0]
-        elif unique_artworks_count == 0:
+        if unique_artworks_count == 0:
             logger.debug("No valid unique artworks found")
             return None
         else:
-            logger.debug(
-                f"Found {unique_artworks_count} different artworks, cannot determine single album artwork"
-            )
-            # Optionally, you could return the first one or implement additional logic
-            return None
+            logger.debug("Found exactly 1 unique artwork")
+            return unique_artworks[0], unique_artworks_count == 1
 
     def get_all_unique_artworks(self) -> List[Tuple[TrackWithArtwork, str]]:
         """Get all unique artworks (useful for debugging or when multiple artworks are expected)."""

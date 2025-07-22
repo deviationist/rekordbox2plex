@@ -36,7 +36,7 @@ class TrackSync(ActionBase):
         self.update_tracks_metadata_in_plex(resolved_tracks, resolved_track_count)
         if get_boolenv("ADD_NEW_TRACKS", True):
             self.add_new_tracks()
-        if get_boolenv("DELETE_ORPHANED_TRACKS", False):
+        if config.should_delete_orphaned_tracks():
             self.delete_orphaned_tracks(orphaned_tracks)
         logger.info(
             "[bold green]✔ Process complete! Rekordbox and Plex metadata should now be in sync!"

@@ -1,49 +1,111 @@
 from ..RekordboxDB import RekordboxDB
 from ...utils.logger import logger
+from ...plex.data_types import PlexAlbum
 from ..data_types import TrackWithArtwork, Artist, Album, ResolvedAlbumWithTracks
-from typing import Literal
+from typing import Literal, Tuple, Any
+
+
+def get_album_with_tracks_by_album_track_artists(
+    plex_album: PlexAlbum,
+) -> ResolvedAlbumWithTracks | Literal[False]:
+    """Attempt to get a Rekordbox album and it's track by album name and the track artist (not the album artists) from the tracks already existing in the album in Plex"""
+    artist_names = [item.originalTitle for item in plex_album.tracks()]
+
+    for artist_name in artist_names:
+        lookup = get_album_with_tracks_by_artist(plex_album.title, artist_name)
+        if lookup:
+            return lookup
+    return False
+
+
+def get_album_with_tracks_by_artist(
+    album_name: str, artist_name: str
+) -> ResolvedAlbumWithTracks | Literal[False]:
+    """Attempt to get a Rekordbox album and it's track by album name and the track artist (not the album artists)"""
+    query = """
+    SELECT
+        al.ID AS album_ID, al.Name AS album_Name,
+        c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.ReleaseDate AS track_ReleaseDate, c.FolderPath AS track_FolderPath, c.StockDate AS track_AddedAt,
+        a.ID AS artist_ID, a.Name AS artist_Name,
+        aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name,
+        cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path,
+        l.Name AS track_Label
+    FROM djmdContent AS c
+    LEFT JOIN
+        djmdArtist AS a
+        ON c.ArtistID = a.ID
+    LEFT JOIN
+        djmdAlbum AS al
+        ON al.ID = c.AlbumID
+    LEFT JOIN
+        djmdArtist AS aa
+        ON aa.ID = al.AlbumArtistID
+    LEFT JOIN
+        djmdLabel as l
+        ON l.ID = c.LabelID
+    LEFT JOIN
+        contentFile AS cf
+        ON c.ImagePath = cf.Path
+    WHERE
+        al.Name = ?
+        AND a.Name = ?
+        AND a.rb_local_deleted = 0
+        AND al.rb_local_deleted = 0
+        AND c.rb_local_deleted = 0
+        AND c.rb_file_id != 0
+    """
+
+    return get_album_with_tracks(query, (album_name, artist_name))
+
+
+def get_album_with_tracks_by_album_artist(
+    album_name: str, album_artist_name: str
+) -> ResolvedAlbumWithTracks | Literal[False]:
+    """Attempt to get a Rekordbox album and it's track by album name and the album artist"""
+    query = """
+    SELECT
+        al.ID AS album_ID, al.Name AS album_Name,
+        c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.ReleaseDate AS track_ReleaseDate, c.FolderPath AS track_FolderPath, c.StockDate AS track_AddedAt,
+        a.ID AS artist_ID, a.Name AS artist_Name,
+        aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name,
+        cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path,
+        l.Name AS track_Label
+    FROM djmdContent AS c
+    LEFT JOIN
+        djmdArtist AS a
+        ON c.ArtistID = a.ID
+    LEFT JOIN
+        djmdAlbum AS al
+        ON al.ID = c.AlbumID
+    LEFT JOIN
+        djmdArtist AS aa
+        ON aa.ID = al.AlbumArtistID
+    LEFT JOIN
+        djmdLabel as l
+        ON l.ID = c.LabelID
+    LEFT JOIN
+        contentFile AS cf
+        ON c.ImagePath = cf.Path
+    WHERE
+        al.Name = ?
+        AND aa.Name = ?
+        AND a.rb_local_deleted = 0
+        AND al.rb_local_deleted = 0
+        AND c.rb_local_deleted = 0
+        AND c.rb_file_id != 0
+    """
+
+    return get_album_with_tracks(query, (album_name, album_artist_name))
 
 
 def get_album_with_tracks(
-    album_name: str, artist_name: str
+    query: str, args: Tuple[Any, ...] = ()
 ) -> ResolvedAlbumWithTracks | Literal[False]:
     db = RekordboxDB()
     cursor = db.cursor
 
     try:
-        query = """
-        SELECT
-            al.ID AS album_ID, al.Name AS album_Name,
-            c.ID AS track_ID, c.Title AS track_Title, c.ReleaseYear AS track_ReleaseYear, c.ReleaseDate AS track_ReleaseDate, c.FolderPath AS track_FolderPath, c.StockDate AS track_AddedAt,
-            a.ID AS artist_ID, a.Name AS artist_Name,
-            aa.ID AS albumArtist_ID, aa.Name AS albumArtist_Name,
-            cf.ID AS artwork_ID, cf.Path AS artwork_Path, cf.rb_local_path AS artwork_rb_local_path,
-            l.Name AS track_Label
-        FROM djmdContent AS c
-        LEFT JOIN
-            djmdArtist AS a
-            ON c.ArtistID = a.ID
-        LEFT JOIN
-            djmdAlbum AS al
-            ON al.ID = c.AlbumID
-        LEFT JOIN
-            djmdArtist AS aa
-            ON aa.ID = al.AlbumArtistID
-        LEFT JOIN
-            djmdLabel as l
-            ON l.ID = c.LabelID
-        LEFT JOIN
-            contentFile AS cf
-            ON c.ImagePath = cf.Path
-        WHERE
-            al.Name = ?
-            AND aa.Name = ?
-            AND a.rb_local_deleted = 0
-            AND al.rb_local_deleted = 0
-            AND c.rb_local_deleted = 0
-            AND c.rb_file_id != 0
-    """
-        cursor.execute(query, (album_name, artist_name))
+        cursor.execute(query, args)
 
         rows = cursor.fetchall()
         if rows:

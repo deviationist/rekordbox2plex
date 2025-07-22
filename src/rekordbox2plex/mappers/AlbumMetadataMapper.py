@@ -1,4 +1,4 @@
-from ..utils.logger import logger
+from ..utils.logger import logger, print_debug_hr
 from ..utils.helpers import (
     get_boolenv,
     field_is_locked,
@@ -64,6 +64,7 @@ class AlbumMetadataMapper(MapperBase):
         return False
 
     def update_release_year(self):
+        print_debug_hr()
         logger.debug("[UPDATE RELEASE YEAR]")
         rb_release_year = self.resolve_release_year()
         if rb_release_year and rb_release_year != self.plex_album.year:
@@ -90,6 +91,7 @@ class AlbumMetadataMapper(MapperBase):
         return False
 
     def update_release_date(self):
+        print_debug_hr()
         logger.debug("[UPDATE RELEASE DATE]")
         rb_release_date = self.resolve_release_date()
         if (
@@ -120,6 +122,7 @@ class AlbumMetadataMapper(MapperBase):
         return False
 
     def update_label(self):
+        print_debug_hr()
         logger.debug("[UPDATE LABEL]")
         rb_label = self.resolve_label()
         if rb_label and rb_label != self.plex_album.studio:
@@ -135,14 +138,22 @@ class AlbumMetadataMapper(MapperBase):
             self.add_change("studio.locked", 1)
 
     def update_artwork(self):
+        print_debug_hr()
         logger.debug("[UPDATE ARTWORK]")
-        if self.plex_album.thumb and not get_boolenv(
-            "OVERWRITE_EXISTING_ALBUM_ARTWORK", True
-        ):
+        has_thumb = bool(self.plex_album.thumb)
+        if has_thumb and not get_boolenv("OVERWRITE_EXISTING_ALBUM_ARTWORK", True):
             return  # Album has artwork already
-        rb_artwork = AlbumArtworkResolver(self.rb_item.tracks).resolve()
-        if not rb_artwork:
+        artwork_resolver = AlbumArtworkResolver(self.rb_item.tracks).resolve()
+        if not artwork_resolver:
             return  # Could not resolve artwork
+        rb_artwork, exact_match = artwork_resolver
+
+        should_update = (
+            exact_match or has_thumb
+        )  # Update either if we found an exact match, or if there's not artwork in Plex
+        if not should_update:
+            return
+
         artwork_track, artwork_path = rb_artwork
         self.did_change = True
         logger.debug(

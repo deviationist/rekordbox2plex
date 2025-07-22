@@ -1,12 +1,16 @@
 from ..plex.repositories.AlbumRepository import AlbumRepository as PlexAlbumRepository
 from ..plex.repositories.ArtistRepository import get_artist
-from ..plex.data_types import PlexAlbum, PlexAlbums
+from ..plex.data_types import PlexAlbum, PlexAlbums, PlexArtist
 from ..rekordbox.data_types import ResolvedAlbumWithTracks
+from .. import config
 from ..mappers.AlbumMetadataMapper import AlbumMetadataMapper
-from ..rekordbox.resolvers.album import get_album_with_tracks
+from ..rekordbox.resolvers.album import (
+    get_album_with_tracks_by_album_artist,
+    get_album_with_tracks_by_album_track_artists,
+)
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
-from ..utils.helpers import get_boolenv, progress_count
+from ..utils.helpers import progress_count
 from ._ActionBase import ActionBase
 from typing import List, Literal
 
@@ -24,7 +28,7 @@ class AlbumSync(ActionBase):
         plex_albums = PlexAlbumRepository().get_all_albums()
         album_count = len(plex_albums)
         if album_count == 0:
-            logger.info("[cyan]No playlists in Plex.")
+            logger.info("[cyan]No albums in Plex.")
             return
         else:
             logger.info(
@@ -32,19 +36,38 @@ class AlbumSync(ActionBase):
             )
             self.synchronize_albums(album_count, plex_albums)
         logger.info(f"[bold green]✔ Result: {self.update_count} albums updated.")
-        if get_boolenv("DELETE_ORPHANED_ALBUMS", False):
+        if config.should_delete_orphaned_albums():
             self.delete_orphaned_albums()
         logger.info(
             "[bold green]✔ Process complete! Rekordbox and Plex albums should now be in sync!"
         )
 
-    def resolve_album_with_tracks(
-        self, album_title: str, artist_title: str
+    def resolve_album_with_tracks_using_album_artist(
+        self, plex_album: PlexAlbum, plex_album_artist: PlexArtist
     ) -> ResolvedAlbumWithTracks | Literal[False]:
-        lookup = get_album_with_tracks(album_title, artist_title)
+        lookup = get_album_with_tracks_by_album_artist(
+            plex_album.title, plex_album_artist.title
+        )
         if lookup:
             return lookup
         return False
+
+    def resolve_album_with_tracks_using_album_tracks_artists(
+        self, plex_album: PlexAlbum
+    ) -> ResolvedAlbumWithTracks | Literal[False]:
+        lookup = get_album_with_tracks_by_album_track_artists(plex_album)
+        if lookup:
+            return lookup
+        return False
+
+    def handle_resolved_album(
+        self, plex_album: PlexAlbum, lookup: ResolvedAlbumWithTracks
+    ):
+        updater = AlbumMetadataMapper(plex_album, lookup).transfer()
+        if not self.dry_run:
+            updater.save()
+        if updater.did_change:
+            self.update_count += 1
 
     def synchronize_albums(self, plex_album_count: int, plex_albums: PlexAlbums):
         with progress_instance() as progress:
@@ -56,27 +79,37 @@ class AlbumSync(ActionBase):
                         task,
                         description=f'[cyan]({count_string}) Procesing album "{plex_album.title}"...',
                     )
-                    album_artist_id = plex_album.parentRatingKey
+                    plex_album_artist_id = plex_album.parentRatingKey
                     logger.debug(
-                        f'Attempting to resolve artist with ID "{album_artist_id}"'
+                        f'Attempting to resolve artist with ID "{plex_album_artist_id}"'
                     )
-                    artist = get_artist(album_artist_id)
-                    if artist:
+                    plex_album_artist = get_artist(plex_album_artist_id)
+                    if plex_album_artist:
                         logger.debug(
-                            f'Resolved artist "{artist.title}" from ID "{album_artist_id}"'
+                            f'Resolved artist "{plex_album_artist.title}" from ID "{plex_album_artist_id}"'
                         )
                         logger.debug(
-                            f'Attempting to resolve the Rekordbox tracks for album "{plex_album.title}"...'
+                            f'Attempting to resolve the Rekordbox tracks for album "{plex_album.title}" with album artist "{plex_album_artist.title}"...'
                         )
-                        lookup = self.resolve_album_with_tracks(
-                            plex_album.title, artist.title
-                        )
-                        if lookup:
-                            updater = AlbumMetadataMapper(plex_album, lookup).transfer()
-                            if not self.dry_run:
-                                updater.save()
-                            if updater.did_change:
-                                self.update_count += 1
+
+                        if lookup_by_album_artist := self.resolve_album_with_tracks_using_album_artist(
+                            plex_album, plex_album_artist
+                        ):
+                            logger.debug(
+                                f'Album "{plex_album.title}" was resolved in Rekordbox using the album artist "{plex_album_artist.title}"'
+                            )
+                            self.handle_resolved_album(
+                                plex_album, lookup_by_album_artist
+                            )  # We found the corresponding Rekordbox album using album name and album artist
+                        elif lookup_by_album_track_artists := self.resolve_album_with_tracks_using_album_tracks_artists(
+                            plex_album
+                        ):
+                            logger.debug(
+                                f'Album "{plex_album.title}" was resolved in Rekordbox using one of the track artists on the existing tracks in the plex album."'
+                            )
+                            self.handle_resolved_album(
+                                plex_album, lookup_by_album_track_artists
+                            )  # We found the corresponding Rekordbox album using album name and track artist name(s)
                         else:
                             self.orphaned_albums.append(plex_album)
                             logger.debug(
@@ -84,7 +117,7 @@ class AlbumSync(ActionBase):
                             )
                     else:
                         logger.debug(
-                            f'Could not resolve artist with ID "{album_artist_id}"'
+                            f'Could not resolve artist with ID "{plex_album_artist_id}"'
                         )
 
                     progress.update(

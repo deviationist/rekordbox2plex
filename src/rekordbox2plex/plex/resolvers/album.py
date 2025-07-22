@@ -1,5 +1,6 @@
 from .library import get_music_library
 from ..data_types import PlexAlbum, PlexAlbums
+from ...config import plex_album_lookup_override
 
 
 def get_album(album_id: int) -> PlexAlbum:
@@ -9,4 +10,5 @@ def get_album(album_id: int) -> PlexAlbum:
 
 def get_all_albums() -> PlexAlbums:
     music_library, _ = get_music_library()
-    return music_library.search(libtype="album")
+    title_search = plex_album_lookup_override()
+    return music_library.search(libtype="album", title=title_search)
