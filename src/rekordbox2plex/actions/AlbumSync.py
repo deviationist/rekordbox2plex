@@ -44,14 +44,6 @@ class AlbumSync(ActionBase):
         lookup = get_album_with_tracks(album_title, artist_title)
         if lookup:
             return lookup
-        album_name_delimiters = [",", ";"]
-        for delimiter in album_name_delimiters:
-            artists = artist_title.split(delimiter)
-            if len(artists) > 1:
-                for artist in artists:
-                    lookup = get_album_with_tracks(album_title, artist.strip())
-                    if lookup:
-                        return lookup
         return False
 
     def synchronize_albums(self, plex_album_count: int, plex_albums: PlexAlbums):

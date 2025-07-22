@@ -23,6 +23,10 @@ def progress_count(current_number: int, total_count: int) -> str:
     return f"{current_number+1}/{total_count}"
 
 
+def should_lock_fields() -> bool:
+    return get_boolenv("PLEX_LOCK_FIELDS", True)
+
+
 def field_is_locked(plex_item: Any, field_name: str) -> bool:
     field = next((p for p in plex_item.fields if p.name == field_name), None)
     if not field:
