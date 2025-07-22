@@ -37,10 +37,10 @@ class ArtistRepository(RepositoryBase):
             return results
         return []
 
-    def search_for_artist(self, artist_name: str, exact: bool = True) -> PlexArtist:
+    def search_for_artist(self, artist_name: str, exact_match: bool = True) -> PlexArtist:
         results = self.search_for_artists(artist_name)
         if results and len(results) > 0:
-            if exact:
+            if exact_match:
                 exact_matches = [artist for artist in results if artist.title == artist_name]
                 if exact_matches and len(exact_matches) > 0:
                     return exact_matches[0] # We got at least one hit, return it

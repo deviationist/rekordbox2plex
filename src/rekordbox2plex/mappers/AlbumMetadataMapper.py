@@ -38,9 +38,9 @@ class AlbumMetadataMapper(MapperBase):
     def ensure_locked_fields(self) -> None:
         if not should_lock_fields():
             return
-        if get_boolenv("LOCK_ALBUM_TITLE", True) and should_lock_fields() and not field_is_locked(self.plex_album, "title"):
+        if get_boolenv("LOCK_ALBUM_TITLE", True) and not field_is_locked(self.plex_album, "title"):
             self.add_change("title.locked", 1)
-        if get_boolenv("LOCK_ALBUM_SORT_TITLE", True) and should_lock_fields() and not field_is_locked(self.plex_album, "titleSort"):
+        if get_boolenv("LOCK_ALBUM_SORT_TITLE", True) and not field_is_locked(self.plex_album, "titleSort"):
             self.add_change("titleSort.locked", 1)
 
     def resolve_release_year(self) -> Literal[False] | int:
