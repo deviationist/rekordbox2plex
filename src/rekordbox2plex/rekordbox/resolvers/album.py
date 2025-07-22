@@ -41,6 +41,7 @@ def get_album_with_tracks(
             AND a.rb_local_deleted = 0
             AND al.rb_local_deleted = 0
             AND c.rb_local_deleted = 0
+            AND c.rb_file_id != 0
     """
         cursor.execute(query, (album_name, artist_name))
 

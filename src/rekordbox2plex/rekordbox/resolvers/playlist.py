@@ -20,6 +20,7 @@ def get_playlist_tracks(playlist_id: int) -> List[PlaylistTrack] | Literal[False
         pl.PlaylistID = ?
         AND pl.rb_data_status = 0
         AND c.rb_data_status = 0
+        AND c.rb_file_id != 0
 """
     cursor.execute(query, (playlist_id,))
     rows = cursor.fetchall()
