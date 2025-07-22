@@ -56,11 +56,12 @@ But even if all the metadata in Rekordbox is correct there are still some challe
 ### Field Locking
 Plex supports field locking, meaning that Plex will not touch then when reindexing etc. This is useful since we want the data to come from Rekordbox, and leave all the other metadata out. This behaviour can be granularly controlled using the environment variables.
 
-### Plex Configuration
-These are the recommended settings for your music library:
-
-#### Prefer local metadata
-Find your music library, click "Manage Library" -> "Edit..." -> "Advanced" -> check "Prefer local metadata"
+### Plex Library Configuration
+When you create your library you should select:
+Scanner: Plex Music
+Agent: Plex Personal Media
+You can also uncheck "Include related content from shared libraries" if you want your library metadata to be isolated from other music libraries on your server.
+If you have already created a library you can always change the settings by finding your music library, click "Manage Library" -> "Edit..." -> "Advanced" -> check "Prefer local metadata".
 
 ### Other comments
 This solution is made for a library that only contains music from Rekordbox. I have not yet tested combining multiple "sources" of music files. It might work, but the safest solution is to have a dedicated library for your Rekordbox music.
