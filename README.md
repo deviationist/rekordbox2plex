@@ -2,9 +2,7 @@
 
 **rekordbox2plex** is a Python script that syncs your **track metadata**, **album metadata** and **playlists** from Rekordbox to Plex using [`python-plexapi`](https://github.com/pkkid/python-plexapi). This is especially useful for DJs who manage their music library in Rekordbox and want to reflect the same structure in Plex or Plexamp.
 
-![Plexamp playlist screenshot](https://raw.githubusercontent.com/deviationist/rekordbox2plex/main/screenshots/plexamp.png)
-![Rekordbox playlist screenshot](https://raw.githubusercontent.com/deviationist/rekordbox2plex/main/screenshots/rekordbox.png)
-![rekordbox2plex screenshot](https://raw.githubusercontent.com/deviationist/rekordbox2plex/main/screenshots/rekordbox2plex.png)
+![rekordbox2plex screenshot](https://raw.githubusercontent.com/deviationist/rekordbox2plex/main/screenshot.png)
 
 ## Features
 
