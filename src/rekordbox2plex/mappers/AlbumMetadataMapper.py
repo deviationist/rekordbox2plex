@@ -1,5 +1,10 @@
 from ..utils.logger import logger
-from ..utils.helpers import get_boolenv, field_is_locked, should_lock_fields, is_valid_date
+from ..utils.helpers import (
+    get_boolenv,
+    field_is_locked,
+    should_lock_fields,
+    is_valid_date,
+)
 from typing import Literal
 from ..rekordbox.data_types import ResolvedAlbumWithTracks
 from ..plex.data_types import Album
@@ -38,9 +43,13 @@ class AlbumMetadataMapper(MapperBase):
     def ensure_locked_fields(self) -> None:
         if not should_lock_fields():
             return
-        if get_boolenv("LOCK_ALBUM_TITLE", True) and not field_is_locked(self.plex_album, "title"):
+        if get_boolenv("LOCK_ALBUM_TITLE", True) and not field_is_locked(
+            self.plex_album, "title"
+        ):
             self.add_change("title.locked", 1)
-        if get_boolenv("LOCK_ALBUM_SORT_TITLE", True) and not field_is_locked(self.plex_album, "titleSort"):
+        if get_boolenv("LOCK_ALBUM_SORT_TITLE", True) and not field_is_locked(
+            self.plex_album, "titleSort"
+        ):
             self.add_change("titleSort.locked", 1)
 
     def resolve_release_year(self) -> Literal[False] | int:
@@ -62,7 +71,11 @@ class AlbumMetadataMapper(MapperBase):
             logger.debug(
                 f'Setting album release year to "{rb_release_year}" for album "{self.plex_album.title}"'
             )
-        if get_boolenv("LOCK_ALBUM_YEAR", True) and should_lock_fields() and not field_is_locked(self.plex_album, "year"):
+        if (
+            get_boolenv("LOCK_ALBUM_YEAR", True)
+            and should_lock_fields()
+            and not field_is_locked(self.plex_album, "year")
+        ):
             self.add_change("year.locked", 1)
 
     def resolve_release_date(self) -> Literal[False] | str:
@@ -88,7 +101,11 @@ class AlbumMetadataMapper(MapperBase):
             logger.debug(
                 f'Setting album release date to "{rb_release_date}" for album "{self.plex_album.title}"'
             )
-        if get_boolenv("LOCK_ALBUM_DATE", True) and should_lock_fields() and not field_is_locked(self.plex_album, "originallyAvailableAt"):
+        if (
+            get_boolenv("LOCK_ALBUM_DATE", True)
+            and should_lock_fields()
+            and not field_is_locked(self.plex_album, "originallyAvailableAt")
+        ):
             self.add_change("originallyAvailableAt.locked", 1)
 
     def resolve_label(self) -> Literal[False] | str:
@@ -110,7 +127,11 @@ class AlbumMetadataMapper(MapperBase):
             logger.debug(
                 f'Setting album label to "{rb_label}" for album "{self.plex_album.title}"'
             )
-        if get_boolenv("LOCK_ALBUM_LABEL", True) and should_lock_fields() and not field_is_locked(self.plex_album, "studio"):
+        if (
+            get_boolenv("LOCK_ALBUM_LABEL", True)
+            and should_lock_fields()
+            and not field_is_locked(self.plex_album, "studio")
+        ):
             self.add_change("studio.locked", 1)
 
     def update_artwork(self):
@@ -129,5 +150,9 @@ class AlbumMetadataMapper(MapperBase):
         )
         self.resolved_artwork_path = artwork_path
 
-        if get_boolenv("LOCK_ALBUM_ARTWORK", True) and should_lock_fields() and not field_is_locked(self.plex_album, "thumb"):
+        if (
+            get_boolenv("LOCK_ALBUM_ARTWORK", True)
+            and should_lock_fields()
+            and not field_is_locked(self.plex_album, "thumb")
+        ):
             self.add_change("thumb.locked", 1)

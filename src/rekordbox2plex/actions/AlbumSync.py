@@ -57,11 +57,17 @@ class AlbumSync(ActionBase):
                         description=f'[cyan]({count_string}) Procesing album "{plex_album.title}"...',
                     )
                     album_artist_id = plex_album.parentRatingKey
-                    logger.debug(f'Attempting to resolve artist with ID "{album_artist_id}"')
+                    logger.debug(
+                        f'Attempting to resolve artist with ID "{album_artist_id}"'
+                    )
                     artist = get_artist(album_artist_id)
                     if artist:
-                        logger.debug(f'Resolved artist "{artist.title}" from ID "{album_artist_id}"')
-                        logger.debug(f'Attempting to resolve the Rekordbox tracks for album "{plex_album.title}"...')
+                        logger.debug(
+                            f'Resolved artist "{artist.title}" from ID "{album_artist_id}"'
+                        )
+                        logger.debug(
+                            f'Attempting to resolve the Rekordbox tracks for album "{plex_album.title}"...'
+                        )
                         lookup = self.resolve_album_with_tracks(
                             plex_album.title, artist.title
                         )
@@ -73,9 +79,13 @@ class AlbumSync(ActionBase):
                                 self.update_count += 1
                         else:
                             self.orphaned_albums.append(plex_album)
-                            logger.debug(f'Could not resolve any Rekordbox tracks for album "{plex_album.title}"...')
+                            logger.debug(
+                                f'Could not resolve any Rekordbox tracks for album "{plex_album.title}"...'
+                            )
                     else:
-                        logger.debug(f'Could not resolve artist with ID "{album_artist_id}"')
+                        logger.debug(
+                            f'Could not resolve artist with ID "{album_artist_id}"'
+                        )
 
                     progress.update(
                         task,
