@@ -80,7 +80,7 @@ class TrackSync(ActionBase):
             orphaned_tracks_count = len(orphaned_tracks)
             progress.update(
                 task,
-                description=f"[bold green]({count_string}) ✔ Done! Resolved Rekordbox metadata for {track_count} tracks!",
+                description=f"[bold green]({count_string}) ✔ Done! Resolved metadata from Rekordbox for {track_count} tracks!",
             )
         if orphaned_tracks_count > 0:
             logger.info(
