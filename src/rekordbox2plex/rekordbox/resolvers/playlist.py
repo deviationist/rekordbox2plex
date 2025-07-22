@@ -97,8 +97,7 @@ def get_all_playlists(
             flattened_name = resolve_playlist_name(row_dict, playlist_lookup)
 
             ignore_playlist = any(
-                ignore.lower() in flattened_name.lower()
-                for ignore in playlists_to_ignore
+                ignore in flattened_name for ignore in playlists_to_ignore
             )
 
             if row_dict["TrackCount"] > 0 and not ignore_playlist:

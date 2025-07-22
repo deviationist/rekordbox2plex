@@ -102,7 +102,11 @@ class TrackMetadataMapper(MapperBase):
             self.add_change("title.value", rb_track_title)
         else:
             logger.debug(f'Track title already set to "{rb_track_title}"')
-        if get_boolenv("LOCK_TRACK_TITLE", True) and should_lock_fields() and not field_is_locked(self.plex_track.track_object, "title"):
+        if (
+            get_boolenv("LOCK_TRACK_TITLE", True)
+            and should_lock_fields()
+            and not field_is_locked(self.plex_track.track_object, "title")
+        ):
             logger.debug(f'Locking track title for "{rb_track_title}"')
             self.add_change("title.locked", 1)
 
@@ -130,7 +134,11 @@ class TrackMetadataMapper(MapperBase):
         return self._track_artist_name
 
     def ensure_track_artist_locked(self):
-        if get_boolenv("LOCK_TRACK_ARTIST", True) and should_lock_fields() and not field_is_locked(self.plex_track.track_object, "originalTitle"):
+        if (
+            get_boolenv("LOCK_TRACK_ARTIST", True)
+            and should_lock_fields()
+            and not field_is_locked(self.plex_track.track_object, "originalTitle")
+        ):
             logger.debug(
                 f'Locking track artist for "{self.get_track_artist_name()}" for track "{self.get_track_title()}"'
             )
@@ -156,15 +164,21 @@ class TrackMetadataMapper(MapperBase):
                 True
             )  # Force update payload, create new album artist
         else:
-            logger.debug(f'Searching for Plex artist by search string "{rb_album_artist_name}"')
+            logger.debug(
+                f'Searching for Plex artist by search string "{rb_album_artist_name}"'
+            )
             plex_artist = PlexArtistRepository().search_for_artist(rb_album_artist_name)
             if plex_artist:
-                logger.debug(f'Resolved Plex artist "{plex_artist.title}" (ID "{plex_artist.ratingKey}")')
+                logger.debug(
+                    f'Resolved Plex artist "{plex_artist.title}" (ID "{plex_artist.ratingKey}")'
+                )
                 self.update_album_artist_with_id(
                     plex_artist
                 )  # Assign existing album artist
             else:
-                logger.debug(f'Could not resolve Plex artist by search string "{rb_album_artist_name}"')
+                logger.debug(
+                    f'Could not resolve Plex artist by search string "{rb_album_artist_name}"'
+                )
                 self.update_album_artist_with_name()  # Create new album artist
 
     def update_album_artist_with_id(self, plex_artist: PlexArtist):
@@ -189,8 +203,7 @@ class TrackMetadataMapper(MapperBase):
         rb_track_title = self.get_track_title()
         plex_album_artist_name = self.plex_track.album_artist_name
         if force_update or (
-            rb_album_artist_name.strip().lower()
-            != (plex_album_artist_name or "").strip().lower()
+            rb_album_artist_name.strip() != (plex_album_artist_name or "").strip()
         ):
             logger.debug(
                 f'Setting album artist to "{rb_album_artist_name}" for track "{rb_track_title}"'
@@ -261,9 +274,7 @@ class TrackMetadataMapper(MapperBase):
         logger.debug(
             "Album artist ID is not set, album artist will most likely be created when we save"
         )
-        if force_update or (
-            rb_album_name.strip().lower() != (plex_album_name or "").strip().lower()
-        ):
+        if force_update or (rb_album_name.strip() != (plex_album_name or "").strip()):
             self.album_did_change = True
             logger.debug(
                 f'Setting album to "{rb_album_name}" for track "{rb_track_title}"'
@@ -333,6 +344,10 @@ class TrackMetadataMapper(MapperBase):
             self.resolved_artwork_path = filepath
 
     def ensure_thumb_locked(self) -> None:
-        if get_boolenv("LOCK_TRACK_ARTWORK", True) and should_lock_fields() and not field_is_locked(self.plex_track.track_object, "thumb"):
+        if (
+            get_boolenv("LOCK_TRACK_ARTWORK", True)
+            and should_lock_fields()
+            and not field_is_locked(self.plex_track.track_object, "thumb")
+        ):
             logger.debug(f'Locking thumb for track "{self.get_track_title()}"')
             self.add_change("thumb.locked", 1)
