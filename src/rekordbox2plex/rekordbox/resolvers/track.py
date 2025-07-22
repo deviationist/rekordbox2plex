@@ -55,6 +55,7 @@ def get_all_tracks(
             rb_local_deleted = 0
             AND rb_data_status = 0
             AND FolderPath LIKE '/%'
+            AND rb_file_id != 0
             {paths_to_ignore_str}
 """
         cursor.execute(query)
@@ -176,6 +177,7 @@ def resolve_track(
             c.rb_local_deleted = 0
             AND c.rb_data_status = 0
             AND c.folderPath = ?
+            AND c.rb_file_id != 0
         """
 
         cursor.execute(query, (rekordboxPath,))
