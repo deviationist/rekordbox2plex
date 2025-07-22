@@ -144,11 +144,9 @@ class TrackMetadataMapper(MapperBase):
         plex_album_artist_id = self.plex_track.album_artist_id
         plex_album_artist_name = self.plex_track.album_artist_name
 
-        #logger.debug(
-        #    f'Current album artist "{plex_album_artist_name}" (ID "{plex_album_artist_id}") for track "{rb_track_title}"'
-        #)
-        logger.debug(f'RB Track: "{rb_track_title}" by "{rb_album_artist_name}"')
-        logger.debug(f'Plex Track: "{self.plex_track.track_title}" by "{plex_album_artist_name}"')
+        logger.debug(
+            f'Current album artist "{plex_album_artist_name}" (ID "{plex_album_artist_id}") for track "{rb_track_title}"'
+        )
 
         if not rb_album_artist_name:
             return
