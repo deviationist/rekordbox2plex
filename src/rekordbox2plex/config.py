@@ -1,6 +1,7 @@
 import os
 import argparse
 from typing import Optional, List
+from .utils.helpers import get_boolenv
 
 _args: argparse.Namespace | None = None
 
@@ -32,6 +33,30 @@ def get_folders_to_ignore() -> List[str]:
     if not REKORDBOX_FOLDER_PATHS_TO_IGNORE:
         return []
     return [item.strip() for item in REKORDBOX_FOLDER_PATHS_TO_IGNORE.split(",")]
+
+
+def plex_track_lookup_override() -> Optional[str]:
+    return os.getenv("PLEX_TRACK_LOOKUP_OVERRIDE", None)
+
+
+def plex_playlist_lookup_override() -> Optional[str]:
+    return os.getenv("PLEX_PLAYLIST_LOOKUP_OVERRIDE", None)
+
+
+def plex_album_lookup_override() -> Optional[str]:
+    return os.getenv("PLEX_ALBUM_LOOKUP_OVERRIDE", None)
+
+
+def should_delete_orphaned_tracks() -> bool:
+    return get_boolenv("DELETE_ORPHANED_TRACKS", False)
+
+
+def should_delete_orphaned_playlists() -> bool:
+    return get_boolenv("DELETE_ORPHANED_PLAYLISTS", False)
+
+
+def should_delete_orphaned_albums() -> bool:
+    return get_boolenv("DELETE_ORPHANED_ALBUMS", False)
 
 
 def get_playlists_to_ignore() -> List[str]:

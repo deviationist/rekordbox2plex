@@ -11,7 +11,7 @@ from ..plex.data_types import Track, PlexPlaylist, PlexPlaylists
 from ..mappers.TrackIdMapper import TrackIdMapper
 from ..utils.progress_bar import progress_instance
 from ..utils.logger import logger
-from ..utils.helpers import get_boolenv, progress_count
+from ..utils.helpers import progress_count
 from ._ActionBase import ActionBase
 from typing import List, Literal
 
@@ -40,7 +40,7 @@ class PlaylistSync(ActionBase):
         logger.info(
             f"[bold green]✔ Result: {self.deleted} deleted, {self.updated} updated, and {self.created} created."
         )
-        if get_boolenv("DELETE_ORPHANED_PLAYLISTS", False):
+        if config.should_delete_orphaned_playlists():
             self.delete_orphaned_playlists(rb_playlists or [], plex_playlists)
         logger.info(
             "[bold green]✔ Process complete! Rekordbox and Plex playlists should now be in sync!"

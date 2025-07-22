@@ -2,6 +2,7 @@ from .library import get_music_library, plexapi_client
 from ..data_types import PlexTrack, PlexTracks
 import json
 from ...utils.logger import logger
+from ...config import plex_track_lookup_override
 from plexapi.utils import openOrRead
 from plexapi.audio import Track
 
@@ -13,7 +14,8 @@ def get_track(track_id: int) -> PlexTrack:
 
 def get_all_tracks() -> PlexTracks:
     music_library, _ = get_music_library()
-    return music_library.searchTracks()
+    title_search = plex_track_lookup_override()
+    return music_library.searchTracks(title=title_search)
 
 
 def update_track_poster(plex_item: Track, poster_path: str) -> bool:

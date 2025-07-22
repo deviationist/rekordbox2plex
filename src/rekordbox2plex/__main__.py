@@ -4,7 +4,11 @@ from .rekordbox.RekordboxDB import setup_db_connection
 from .actions.TrackSync import TrackSync
 from .actions.PlaylistSync import PlaylistSync
 from .actions.AlbumSync import AlbumSync
-from .utils.helpers import determine_sync_targets, parse_script_arguments
+from .utils.helpers import (
+    determine_sync_targets,
+    parse_script_arguments,
+    check_for_dangerous_config,
+)
 from .utils.logger import init_logger, logger, console
 
 dotenv.load_dotenv()
@@ -20,6 +24,8 @@ def main():
 
     if config.is_dry_run():
         logger.info("[cyan]This is a dry run! No changes will be made!")
+    else:
+        check_for_dangerous_config()
 
     for i, sync_item in enumerate(sync_targets):
         if sync_item == "tracks":

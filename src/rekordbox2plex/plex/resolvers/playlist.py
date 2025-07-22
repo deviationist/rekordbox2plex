@@ -1,4 +1,5 @@
 from ..PlexClient import plexapi_client
+from ... import config
 from .library import get_music_library
 from ..data_types import PlexPlaylist, PlexPlaylists
 
@@ -10,4 +11,14 @@ def get_playlist(playlist_id: int) -> PlexPlaylist:
 
 def get_all_playlists() -> PlexPlaylists:
     plexapi = plexapi_client()
-    return plexapi.playlists(smart=False)
+    playlists = plexapi.playlists(smart=False)
+    if playlists:
+        playlist_override = config.plex_playlist_lookup_override()
+        if playlist_override:
+            return [
+                playlist
+                for playlist in playlists
+                if playlist.title == playlist_override
+            ]
+        return playlists
+    return None
