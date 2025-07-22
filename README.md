@@ -2,12 +2,6 @@
 
 **rekordbox2plex** is a Python script that syncs your **track metadata**, **album metadata** and **playlists** from Rekordbox to Plex using [`python-plexapi`](https://github.com/pkkid/python-plexapi). This is especially useful for DJs who manage their music library in Rekordbox and want to reflect the same structure in Plex or Plexamp.
 
-### The problem
-Using Plex and Plexamp for listening to music is great, but the indexing and organizing is pretty shit tbh. I attempted to add my whole collection of tracks from my DJ collection (WAV, AIFF, MP3s) to Plex and it ended up being extremely messy. I wanted a Spotify-like experience with my own music collection, but ended up with an unorganized mess. If I could only get the neat and organized structure from Rekordbox in Plex then it would be much better!
-
-### The solution
-I created this script to get the best of two worlds - the availability of Plex/Plexamp for listening, and the structure (metadata, playlists) from Rekordbox. This script bridges this gap, by taking control over the metadata in Plex by "mapping"/mirroring the structure from Rekordbox. Because of this I finally reached my goal of getting a Spotify-like experience in Plexamp, with my own curated music. This allows me to listen on the go, to have an active listening-relationship with my collection, re-discover old tracks, or delete tracks I no longer want in my collection. I hope this tool can do the same for you!
-
 ## Features
 
 * ✅ Sync Rekordbox track metadata, album metadata and playlists to Plex
@@ -17,8 +11,13 @@ I created this script to get the best of two worlds - the availability of Plex/P
 * ❌ No concurrency yet – planned for future versions
 * 🛠️ Can be run manually or scheduled via `cron`
 
-## Hierarchical Playlist Flattening
+### The problem
+Using Plex and Plexamp for listening to music is great, but the indexing and organizing is pretty shit tbh. I attempted to add my whole collection of tracks from my DJ collection (WAV, AIFF, MP3s) to Plex and it ended up being extremely messy. I wanted a Spotify-like experience with my own music collection, but ended up with an unorganized mess. If I could only get the neat and organized structure from Rekordbox in Plex then it would be much better!
 
+### The solution
+I created this script to get the best of two worlds - the availability of Plex/Plexamp for listening, and the structure (metadata, playlists) from Rekordbox. This script bridges this gap, by taking control over the metadata in Plex by "mapping"/mirroring the structure from Rekordbox. Because of this I finally reached my goal of getting a Spotify-like experience in Plexamp, with my own curated music. This allows me to listen on the go, to have an active listening-relationship with my collection, re-discover old tracks, or delete tracks I no longer want in my collection. I hope this tool can do the same for you!
+
+## Hierarchical Playlist Flattening
 Plex does not support nested or hierarchical playlists, so we flatten the Rekordbox playlist structure during the sync process. This is done by prepending the parent playlist name to each child playlist name.
 
 Note that Plex does not allow empty playlists, so empty playlists in Rekordbox will be ignored.
@@ -46,6 +45,20 @@ Parent Playlist/Child Playlist 3/Grand-Child Playlist 1
 ```
 
 ---
+
+### Album Metadata Resolving
+So Rekordbox bases everything of tracks, and each track have a title, artist, album, album artist etc. Under the hood Rekordbox will create these artists, albums and album artists in separate tables (`djmdArtists` and `djdmAlbums`), but this is not visible in the Rekordbox GUI. But Plex works a bit different – it builds an artist index based on the artist on the album (not the artist specified on the track) which can lead to some confusion. The best way to solve this is not make sure that each track in Rekordbox has values for the title, artist, album artist and album fields.
+
+But even if all the metadata in Rekordbox is correct there are still some challenges - let's say you have an album with 4 tracks, and not all tracks have the same artwork. In Rekordbox the artwork is stored on the track, but in Plex it is stored on the album. This script will compare all the artworks of the tracks, evaluate whether they are similar, and if so then the artwork will be selected and sync'ed to album in Plex. If the artworks are not the same then no artwork will be sync'ed to Plex. The same logic works for `release year`, `release date` and `label` which are all stored on the tracks in Rekordbox, but on the album in Plex. To sum it up - when working with album metadata we try to resolve the "unison" metadata from the Rekordbox tracks and apply it to the Plex album.
+
+### Field Locking
+Plex supports field locking, meaning that Plex will not touch then when reindexing etc. This is useful since we want the data to come from Rekordbox, and leave all the other metadata out. This behaviour can be granularly controlled using the environment variables.
+
+### Plex Configuration
+These are the recommended settings for your music library:
+
+#### Prefer local metadata
+Find your music library, click "Manage Library" -> "Edit..." -> "Advanced" -> check "Prefer local metadata"
 
 ## Requirements
 
@@ -94,16 +107,26 @@ cp .env.example .env
 | `PLEX_TOKEN` | string | – | Your Plex API token |
 | `PLEX_LIBRARY_NAME` | string | – | Your Plex library name that contains your music |
 | `PLEX_PLAYLIST_FLATTENING_DELIMITER` | string | `/` | Delimiter for flattening nested Rekordbox playlists |
+| `PLEX_LOCK_FIELDS` | bool | `true` | Whether to lock the fields in Plex |
 | `MAP_TRACK_TITLE` | bool | `true` | Sync track title to Plex |
 | `MAP_TRACK_ARTIST` | bool | `true` | Sync track artist to Plex |
 | `MAP_TRACK_ALBUM` | bool | `true` | Sync album to Plex |
 | `MAP_TRACK_ARTWORK` | bool | `true` | Sync track artwork to Plex |
+| `LOCK_TRACK_TITLE` | bool | `true` | Lock track title |
+| `LOCK_TRACK_ARTIST` | bool | `true` | Lock track artist |
+| `LOCK_TRACK_ARTWORK` | bool | `true` | Lock track artwork |
 | `OVERWRITE_EXISTING_TRACK_ARTWORK` | bool | `true` | Overwrite existing Plex track artwork |
 | `ADD_NEW_TRACKS` | bool | `true` | Add tracks from Rekordbox missing in Plex and reindex |
 | `MAP_ALBUM_RELEASE_YEAR` | bool | `true` | Sync album release year |
 | `MAP_ALBUM_RELEASE_DATE` | bool | `true` | Sync album release date |
 | `MAP_ALBUM_LABEL` | bool | `true` | Sync album label |
 | `MAP_ALBUM_ARTWORKS` | bool | `true` | Sync album artwork/thumb/poster |
+| `LOCK_ALBUM_TITLE` | bool | `true` | Lock album title |
+| `LOCK_ALBUM_SORT_TITLE` | bool | `true` | Lock album sort title |
+| `LOCK_ALBUM_YEAR` | bool | `true` | Lock album year |
+| `LOCK_ALBUM_DATE` | bool | `true` | Lock album field "Originally available" |
+| `LOCK_ALBUM_LABEL` | bool | `true` | Lock album record label |
+| `LOCK_ALBUM_ARTWORK` | bool | `true` | Lock album artwork |
 | `OVERWRITE_EXISTING_ALBUM_ARTWORK` | bool | `true` | Overwrite existing Plex album artwork |
 | `DELETE_ORPHANED_TRACKS` | bool | `true` | Delete orphaned tracks in Plex |
 | `DELETE_ORPHANED_PLAYLISTS` | bool | `true` | Delete orphaned playlists in Plex |
@@ -225,7 +248,6 @@ This project is using:
 * [`python-plexapi`](https://github.com/pkkid/python-plexapi)
 * [`pysqlcipher3`](https://pypi.org/project/pysqlcipher3/)
 * [`rich`](https://github.com/Textualize/rich)
-* [`poetry`](https://python-poetry.org/)
 * [`poetry`](https://python-poetry.org/)
 * [`pytest`](https://docs.pytest.org/)
 
