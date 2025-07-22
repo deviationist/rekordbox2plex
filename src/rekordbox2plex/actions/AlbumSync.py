@@ -86,7 +86,7 @@ class AlbumSync(ActionBase):
                     progress.update(task, advance=1)
             progress.update(
                 task,
-                description=f"[bold green]({count_string}) ✔ Done! Rekordbox albums are synchronized with Plex!",
+                description=f"[bold green]({count_string}) ✔ Done! {plex_album_count} Rekordbox albums are synchronized with Plex!",
             )
 
     def delete_orphaned_albums(self):

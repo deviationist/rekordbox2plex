@@ -60,6 +60,12 @@ These are the recommended settings for your music library:
 #### Prefer local metadata
 Find your music library, click "Manage Library" -> "Edit..." -> "Advanced" -> check "Prefer local metadata"
 
+### Other comments
+This solution is made for a library that only contains music from Rekordbox. I have not yet tested combining multiple "sources" of music files. It might work, but the safest solution is to have a dedicated library for your Rekordbox music.
+
+I have not yet tested Rekordbox Intelligent Playlists, but from what I can see so far it should work as any other playlists.
+
+
 ## Requirements
 
 * Python 3.8+
@@ -115,8 +121,8 @@ cp .env.example .env
 | `LOCK_TRACK_TITLE` | bool | `true` | Lock track title |
 | `LOCK_TRACK_ARTIST` | bool | `true` | Lock track artist |
 | `LOCK_TRACK_ARTWORK` | bool | `true` | Lock track artwork |
-| `OVERWRITE_EXISTING_TRACK_ARTWORK` | bool | `true` | Overwrite existing Plex track artwork |
-| `ADD_NEW_TRACKS` | bool | `true` | Add tracks from Rekordbox missing in Plex and reindex |
+| `OVERWRITE_EXISTING_TRACK_ARTWORK` | bool | `true` | Overwrite existing Plex track artwork with Rekordbox artwork |
+| `ADD_NEW_TRACKS` | bool | `true` | Re-index folders with new tracks to add them to Plex |
 | `MAP_ALBUM_RELEASE_YEAR` | bool | `true` | Sync album release year |
 | `MAP_ALBUM_RELEASE_DATE` | bool | `true` | Sync album release date |
 | `MAP_ALBUM_LABEL` | bool | `true` | Sync album label |
@@ -127,7 +133,7 @@ cp .env.example .env
 | `LOCK_ALBUM_DATE` | bool | `true` | Lock album field "Originally available" |
 | `LOCK_ALBUM_LABEL` | bool | `true` | Lock album record label |
 | `LOCK_ALBUM_ARTWORK` | bool | `true` | Lock album artwork |
-| `OVERWRITE_EXISTING_ALBUM_ARTWORK` | bool | `true` | Overwrite existing Plex album artwork |
+| `OVERWRITE_EXISTING_ALBUM_ARTWORK` | bool | `true` | Overwrite existing Plex album artwork with Rekordbox artwork |
 | `DELETE_ORPHANED_TRACKS` | bool | `true` | Delete orphaned tracks in Plex |
 | `DELETE_ORPHANED_PLAYLISTS` | bool | `true` | Delete orphaned playlists in Plex |
 | `DELETE_ORPHANED_ALBUMS` | bool | `false` | Delete orphaned albums in Plex |

@@ -71,7 +71,7 @@ class TrackRepository(RepositoryBase):
                     progress.update(task, advance=1)
             progress.update(
                 task,
-                description=f"[bold green]({count_string}) ✔ Done! Fetched metadata for {track_count} tracks!",
+                description=f"[bold green]({count_string}) ✔ Done! Fetched metadata from Plex for {track_count} tracks!",
             )
             if use_cache:
                 self._store_in_cache(results, self.get_track_id)

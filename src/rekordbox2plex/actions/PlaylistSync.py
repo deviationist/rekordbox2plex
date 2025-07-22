@@ -97,7 +97,7 @@ class PlaylistSync(ActionBase):
                         )  # Playlist not crated (most likely empty/no tracks inside)
             progress.update(
                 task,
-                description=f"[bold green]({count_string}) ✔ Done! Rekordbox playlists are synchronized with Plex!",
+                description=f"[bold green]({count_string}) ✔ Done! {rb_playlists_count} Rekordbox playlists are synchronized with Plex!",
             )
 
     def resolve_plex_tracks_from_rb_playlist(
