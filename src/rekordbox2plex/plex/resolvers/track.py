@@ -20,7 +20,6 @@ def get_all_tracks() -> PlexTracks:
 
 def update_track_poster(plex_item: Track, poster_path: str) -> bool:
     server = plexapi_client()
-    library, _ = get_music_library()
     try:
         key = f"/library/metadata/{plex_item.ratingKey}/posters"
         data = openOrRead(poster_path)
