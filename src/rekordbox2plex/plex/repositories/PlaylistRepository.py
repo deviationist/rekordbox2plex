@@ -15,4 +15,4 @@ class PlaylistRepository(RepositoryBase):
 
     def create_playlist(self, playlist_name: str, items: List[Track]) -> None:
         music_library, _ = get_music_library()
-        music_library.createPlaylist(playlist_name, items=items)
+        music_library.createPlaylist(title=playlist_name, items=items)

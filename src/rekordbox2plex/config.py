@@ -17,6 +17,10 @@ def get_args() -> argparse.Namespace:
     return _args
 
 
+def should_wipe() -> bool:
+    return get_args().wipe
+
+
 def is_dry_run() -> bool:
     return get_args().dry_run
 
