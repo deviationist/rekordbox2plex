@@ -4,8 +4,11 @@ from .rekordbox.RekordboxDB import setup_db_connection
 from .actions.TrackSync import TrackSync
 from .actions.PlaylistSync import PlaylistSync
 from .actions.AlbumSync import AlbumSync
+from .actions.TrackWipe import TrackWipe
+from .actions.PlaylistWipe import PlaylistWipe
+from .actions.AlbumWipe import AlbumWipe
 from .utils.helpers import (
-    determine_sync_targets,
+    determine_targets,
     parse_script_arguments,
     check_for_dangerous_config,
 )
@@ -19,23 +22,35 @@ def main():
     config.set_args(args)
     init_logger(args)
     setup_db_connection()
-    sync_targets, sync_all = determine_sync_targets(args)
-    sync_target_count = len(sync_targets)
+    targets, affect_all = determine_targets(args)
+    sync_target_count = len(targets)
 
     if config.is_dry_run():
         logger.info("[cyan]This is a dry run! No changes will be made!")
     else:
         check_for_dangerous_config()
 
-    for i, sync_item in enumerate(sync_targets):
-        if sync_item == "tracks":
-            TrackSync().sync()
-        if sync_item == "playlists":
-            PlaylistSync().sync()
-        if sync_item == "albums":
-            AlbumSync().sync()
+    for i, item in enumerate(targets):
+        if item == "tracks":
+            if config.should_wipe():
+                TrackWipe().wipe()
+            else:
+                TrackSync().sync()
+        if item == "playlists":
+            if config.should_wipe():
+                PlaylistWipe().wipe()
+            else:
+                PlaylistSync().sync()
+        if item == "albums":
+            if config.should_wipe():
+                AlbumWipe().wipe()
+            else:
+                AlbumSync().sync()
         if sync_target_count > 1 and i != sync_target_count - 1:
             console.rule()
 
-    if sync_all:
-        logger.info("[bold green]✔ Full sync completed!")
+    if affect_all:
+        if config.should_wipe():
+            logger.info("[bold green]✔ Full wipe completed!")
+        else:
+            logger.info("[bold green]✔ Full sync completed!")

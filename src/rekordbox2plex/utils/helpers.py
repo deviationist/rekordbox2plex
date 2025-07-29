@@ -10,6 +10,10 @@ VALID_TARGET_CHOICES = {"all", "tracks", "playlists", "albums"}
 
 
 def check_for_dangerous_config():
+    if config.should_wipe():
+        confirm_warning(
+            "You have flagged to wipe all Plex-items. Are you want to continue?"
+        )
     if config.plex_track_lookup_override() and config.should_delete_orphaned_tracks():
         confirm_warning(
             "You have overriden the Plex track lookup (env PLEX_TRACK_LOOKUP_OVERRIDE), and orphaned track deletion is active. (env DELETE_ORPHANED_TRACKS). Do you want to continue?"
@@ -64,20 +68,20 @@ def build_track_string(plex_track: PlexTrackWrapper) -> str:
     return f'"{plex_track.track_title}" by "{plex_track.track_artist_name}"'
 
 
-def determine_sync_targets(args) -> tuple[List[str], bool]:
-    sync_all = (
-        args.sync is None
-        or "all" in args.sync
-        or len(args.sync) >= (len(VALID_TARGET_CHOICES) - 1)
+def determine_targets(args) -> tuple[List[str], bool]:
+    affect_all = (
+        args.targets is None
+        or "all" in args.targets
+        or len(args.targets) >= (len(VALID_TARGET_CHOICES) - 1)
     )
-    sync_actions = []
-    if (args.sync and "tracks" in args.sync) or sync_all:
-        sync_actions.append("tracks")
-    if (args.sync and "playlists" in args.sync) or sync_all:
-        sync_actions.append("playlists")
-    if (args.sync and "albums" in args.sync) or sync_all:
-        sync_actions.append("albums")
-    return sync_actions, sync_all
+    actions = []
+    if (args.targets and "tracks" in args.targets) or affect_all:
+        actions.append("tracks")
+    if (args.targets and "playlists" in args.targets) or affect_all:
+        actions.append("playlists")
+    if (args.targets and "albums" in args.targets) or affect_all:
+        actions.append("albums")
+    return actions, affect_all
 
 
 def parse_sync_arg(s) -> List[str]:
@@ -107,9 +111,15 @@ def parse_script_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--sync",
+        "--wipe",
+        action="store_true",
+        help="Delete all items in Plex.",
+    )
+
+    parser.add_argument(
+        "--targets",
         type=parse_sync_arg,
-        help=f'Comma-separated list of what to sync: {", ".join(VALID_TARGET_CHOICES)}',
+        help=f'Comma-separated list of what to target: {", ".join(VALID_TARGET_CHOICES)}',
     )
 
     return parser.parse_args()
