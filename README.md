@@ -110,7 +110,7 @@ cp .env.example .env
 | `REKORDBOX_MASTERDB_PATH` | string | – | Full path to your Rekordbox SQLite DB (not required if `REKORDBOX_FOLDER_PATH` is set) |
 | `REKORDBOX_MASTERDB_PASSWORD` | string | `402fd...` | Password for decrypting the SQLite DB |
 | `REKORDBOX_COPY_DB_BEFORE_SYNC` | bool | `true` | Whether to make a copy the DB file before starting sync |
-| `REKORDBOX_FOLDER_PATHS_TO_IGNORE` | string | – | Comma-separated list of folder paths to ignore (only used if `ADD_NEW_TRACKS=true`) |
+| `REKORDBOX_FOLDER_PATHS_TO_IGNORE` | string | – | Comma-separated list of folder paths to ignore (only used if `ADD_NEW_TRACKS_TO_PLEX=true`) |
 | `REKORDBOX_PLAYLISTS_TO_IGNORE` | string | – | Comma-separated list of playlist names to ignore |
 | `PLEX_URL` | string | – | Your Plex server URL (e.g., `http://localhost:32400`) |
 | `PLEX_TOKEN` | string | – | Your Plex API token |
@@ -125,7 +125,7 @@ cp .env.example .env
 | `LOCK_TRACK_ARTIST` | bool | `true` | Lock track artist |
 | `LOCK_TRACK_ARTWORK` | bool | `true` | Lock track artwork |
 | `OVERWRITE_EXISTING_TRACK_ARTWORK` | bool | `true` | Overwrite existing Plex track artwork with Rekordbox artwork |
-| `ADD_NEW_TRACKS` | bool | `true` | Re-index folders with new tracks to add them to Plex |
+| `ADD_NEW_TRACKS_TO_PLEX` | bool | `true` | Re-index folders with new tracks to add them to Plex |
 | `MAP_ALBUM_RELEASE_YEAR` | bool | `true` | Sync album release year |
 | `MAP_ALBUM_RELEASE_DATE` | bool | `true` | Sync album release date |
 | `MAP_ALBUM_LABEL` | bool | `true` | Sync album label |
