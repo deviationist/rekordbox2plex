@@ -34,7 +34,7 @@ class TrackSync(ActionBase):
             self.resolve_tracks_in_rekordbox(plex_tracks, track_count)
         )
         self.update_tracks_metadata_in_plex(resolved_tracks, resolved_track_count)
-        if get_boolenv("ADD_NEW_TRACKS", True):
+        if get_boolenv("ADD_NEW_TRACKS_TO_PLEX", True):
             self.add_new_tracks()
         if config.should_delete_orphaned_tracks():
             self.delete_orphaned_tracks(orphaned_tracks)
