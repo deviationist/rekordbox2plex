@@ -82,7 +82,7 @@ class TrackIdMapper:
 
     def ensure_mappings(self):
         if not self._all_mapped:
-            logger.info("[cyan]No track mappings found, fetching tracks...")
+            logger.info("[cyan]No tracks mapped yet, let's fetch all the tracks...")
             try:
                 plex_tracks, track_count = PlexTrackRepository().get_all_tracks()
                 with progress_instance() as progress:
