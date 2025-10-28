@@ -183,13 +183,13 @@ poetry run rekordbox2plex
 ### Arguments
 * `-v` and `-vv` - verbosity control (`-v` for info and `-vv`for debug)
 * `--dry-run` - no changes will be made
-* `--sync=` - what to sync, comma separated list, values: all, tracks, albums, playlists
+* `--targets=` - what to sync, comma separated list, values: all, tracks, albums, playlists
 
 Example:
 
 This will attempt to synchronize tracks and playlists, but in dry mode so no real changes will be made. The log level is set to debug, meaning that log output will describe each step of the process.
 ```bash
-poetry run rekordbox2plex -vv --dry-run --sync=tracks,playlists
+poetry run rekordbox2plex -vv --dry-run --targets=tracks,playlists
 ```
 
 ### Running via UNIX Cron

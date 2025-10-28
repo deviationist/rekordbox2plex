@@ -191,7 +191,7 @@ def resolve_track(
             return resolved_track
 
         else:
-            logger.debug(f"[yellow]Warning: No file found for {rekordboxPath}")
+            logger.debug(f"[yellow]Warning: No file found for \"{rekordboxPath}\"")
             return False
 
     except Exception as e:  # Changed from sqlite.Error to catch any issues
