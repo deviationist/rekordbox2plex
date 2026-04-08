@@ -11,9 +11,7 @@ class PlaylistWipe(ActionBase):
         self.delete_count = 0
 
     def wipe(self) -> None:
-        logger.info(
-            "[cyan]Attempting to wipe all playlists in Plex..."
-        )
+        logger.info("[cyan]Attempting to wipe all playlists in Plex...")
 
         plex_playlists = PlexPlaylistRepository().get_all_playlists()
         for plex_playlist in plex_playlists:

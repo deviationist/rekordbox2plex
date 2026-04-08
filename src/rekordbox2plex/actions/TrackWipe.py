@@ -8,7 +8,5 @@ class TrackWipe(ActionBase):
         self.delete_count = 0
 
     def wipe(self):
-        logger.info(
-            "[cyan]Attempting to wipe all tracks in Plex..."
-        )
+        logger.info("[cyan]Attempting to wipe all tracks in Plex...")
         pass
