@@ -1,4 +1,3 @@
-from ..PlexClient import plexapi_client
 from ... import config
 from .library import get_music_library
 from ..data_types import PlexPlaylist, PlexPlaylists

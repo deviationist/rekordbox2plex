@@ -8,6 +8,4 @@ class AlbumWipe(ActionBase):
         self.delete_count = 0
 
     def wipe(self):
-        logger.info(
-            "[cyan]Attempting to wipe all albums in Plex..."
-        )
+        logger.info("[cyan]Attempting to wipe all albums in Plex...")
