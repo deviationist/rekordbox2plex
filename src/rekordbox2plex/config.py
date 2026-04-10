@@ -70,6 +70,10 @@ def get_playlists_to_ignore() -> List[str]:
     return [item.strip() for item in REKORDBOX_PLAYLISTS_TO_IGNORE.split(",")]
 
 
+def get_folder_mappings_path() -> Optional[str]:
+    return os.getenv("FOLDER_MAPPINGS_PATH")
+
+
 def get_rekordbox_folder_path() -> Optional[str]:
     return os.getenv("REKORDBOX_FOLDER_PATH")
 
