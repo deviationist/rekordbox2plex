@@ -2,16 +2,23 @@ from ..RekordboxDB import RekordboxDB
 from ...utils.progress_bar import Progress, TaskID, NullProgress
 from ...utils.logger import logger
 from ...plex.data_types import PlexTrackWrapper
+from ...config import get_folder_mappings_path
 import json
 from ..data_types import TrackWithArtwork, Track, Artist, Album, ResolvedTrack
 from typing import Literal, List
 
 
 def convert_path_to_rekordbox(plex_path: str) -> str:
+    mappings_override = get_folder_mappings_path()
+    mappings_path = mappings_override or "folderMappings.json"
     try:
-        with open("folderMappings.json", "r") as f:
+        with open(mappings_path, "r") as f:
             folder_mappings = json.load(f)
     except FileNotFoundError:
+        if mappings_override:
+            raise FileNotFoundError(
+                f"Folder mappings file not found: {mappings_override}"
+            )
         logger.info("[red]Warning: folderMappings.json not found, using original path")
         return plex_path
 
