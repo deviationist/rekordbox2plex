@@ -1,5 +1,5 @@
 from typing import NamedTuple, Any, Dict, TypeAlias, ValuesView
-from plexapi.audio import Track, Album, Artist
+from plexapi.audio import Track
 from plexapi.playlist import Playlist
 from plexapi.base import MediaContainer
 
@@ -18,17 +18,11 @@ class PlexTrackWrapper(NamedTuple):
     has_artwork: bool
 
 
-PlexItem: TypeAlias = Track | Album | Artist | Playlist
+PlexItem: TypeAlias = Track | Playlist
 
 CacheItem: TypeAlias = PlexItem
 CacheItems: TypeAlias = ValuesView[CacheItem]
 Cache: TypeAlias = Dict[str, CacheItem]
-
-PlexArtist = Artist
-PlexArtists = MediaContainer[PlexArtist]
-
-PlexAlbum = Album
-PlexAlbums = MediaContainer[PlexAlbum]
 
 PlexTrack = Track
 PlexTracks = MediaContainer[PlexTrack]
@@ -38,8 +32,6 @@ PlexPlaylists = MediaContainer[PlexPlaylist]
 
 __all__ = [
     "Track",
-    "Album",
-    "Artist",
     "Cache",
     "CacheItem",
     "CacheItems",
@@ -47,10 +39,6 @@ __all__ = [
     "MediaContainer",
     "PlexTrackWrapper",
     "PlexItem",
-    "PlexArtist",
-    "PlexArtists",
-    "PlexAlbum",
-    "PlexAlbums",
     "PlexTrack",
     "PlexTracks",
     "PlexPlaylist",

@@ -23,11 +23,3 @@ def get_music_library() -> Tuple[LibrarySection, str]:
     music_library_name = get_music_library_name()
     library = plexapi.library.section(music_library_name)
     return library, music_library_name
-
-
-def update_library(path: str) -> None:
-    """
-    Update the Plex library for the given path.
-    """
-    library, _ = get_music_library()
-    library.update(path)
