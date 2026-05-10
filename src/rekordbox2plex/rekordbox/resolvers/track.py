@@ -1,25 +1,15 @@
 from ..RekordboxDB import RekordboxDB
 from ...utils.progress_bar import Progress, TaskID, NullProgress
 from ...utils.logger import logger
+from ...utils.folder_mappings import get_folder_mappings
 from ...plex.data_types import PlexTrackWrapper
-from ...config import get_folder_mappings_path
-import json
 from ..data_types import TrackWithArtwork, Track, Artist, Album, ResolvedTrack
-from typing import Literal, List
+from typing import Literal, List, Tuple
 
 
 def convert_path_to_rekordbox(plex_path: str) -> str:
-    mappings_override = get_folder_mappings_path()
-    mappings_path = mappings_override or "folderMappings.json"
-    try:
-        with open(mappings_path, "r") as f:
-            folder_mappings = json.load(f)
-    except FileNotFoundError:
-        if mappings_override:
-            raise FileNotFoundError(
-                f"Folder mappings file not found: {mappings_override}"
-            )
-        logger.info("[red]Warning: folderMappings.json not found, using original path")
+    folder_mappings = get_folder_mappings()
+    if not folder_mappings:
         return plex_path
 
     for plex_folder, rekordbox_folder in folder_mappings.items():
@@ -35,13 +25,12 @@ def convert_path_to_rekordbox(plex_path: str) -> str:
 
 def paths_to_ignore_query_part(
     paths_to_ignore: List[str], column_name: str = "FolderPath"
-) -> str:
+) -> Tuple[str, List[str]]:
     if len(paths_to_ignore) == 0:
-        return ""
-    query = ""
-    for path_to_ignore in paths_to_ignore:
-        query += f"AND {column_name} NOT LIKE '%{path_to_ignore}%'"
-    return query
+        return "", []
+    clauses = " ".join(f"AND {column_name} NOT LIKE ?" for _ in paths_to_ignore)
+    params = [f"%{p}%" for p in paths_to_ignore]
+    return clauses, params
 
 
 def get_all_tracks(
@@ -51,7 +40,9 @@ def get_all_tracks(
     db = RekordboxDB()
     cursor = db.cursor
 
-    paths_to_ignore_str = paths_to_ignore_query_part(paths_to_ignore)
+    paths_to_ignore_str, paths_to_ignore_params = paths_to_ignore_query_part(
+        paths_to_ignore
+    )
     try:
         query = f"""
         SELECT
@@ -65,19 +56,20 @@ def get_all_tracks(
             AND rb_file_id != 0
             {paths_to_ignore_str}
 """
-        cursor.execute(query)
+        cursor.execute(query, paths_to_ignore_params)
         rows = cursor.fetchall()
 
         if rows:
             tracks = []
             for row in rows:
                 row_dict = dict(row)
+                release_year = row_dict.get("ReleaseYear")
                 tracks.append(
                     Track(
                         id=int(row_dict["ID"]),
                         title=row_dict["Title"],
                         label=row_dict.get("Label"),
-                        release_year=int(row_dict["ReleaseYear"]),
+                        release_year=int(release_year) if release_year else None,
                         release_date=row_dict["ReleaseDate"],
                         added_at=row_dict["StockDate"],
                         folder_path=row_dict["FolderPath"],
@@ -90,7 +82,7 @@ def get_all_tracks(
             return False
 
     except Exception as e:  # Changed from sqlite.Error to catch any issues
-        logger.info("[red]Database error:", e)
+        logger.info(f"[red]Database error: {e}")
         return False
 
 
@@ -105,11 +97,12 @@ def handle_track_row(row: dict) -> ResolvedTrack:
     album_artist = None
 
     # Build track data
+    release_year = row_dict.get("track_ReleaseYear")
     track = TrackWithArtwork(
         id=int(row_dict["track_ID"]),
         title=row_dict["track_Title"],
         label=row_dict.get("track_Label"),
-        release_year=int(row_dict["track_ReleaseYear"]),
+        release_year=int(release_year) if release_year else None,
         release_date=row_dict["track_ReleaseDate"],
         added_at=row_dict.get("track_AddedAt"),
         folder_path=row_dict.get("track_FolderPath"),
@@ -202,5 +195,5 @@ def resolve_track(
             return False
 
     except Exception as e:  # Changed from sqlite.Error to catch any issues
-        logger.info("[red]Database error:", e)
+        logger.info(f"[red]Database error: {e}")
         return False

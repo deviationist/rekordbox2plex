@@ -77,7 +77,7 @@ class AlbumSync(ActionBase):
                 if plex_album.title:
                     progress.update(
                         task,
-                        description=f'[cyan]({count_string}) Procesing album "{plex_album.title}"...',
+                        description=f'[cyan]({count_string}) Processing album "{plex_album.title}"...',
                     )
                     plex_album_artist_id = plex_album.parentRatingKey
                     logger.debug(

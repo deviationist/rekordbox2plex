@@ -23,7 +23,7 @@ def check_for_dangerous_config():
         and config.should_delete_orphaned_playlists()
     ):
         confirm_warning(
-            "You have overriden the Plex playlist lookup (env PLEX_PLAYLIST_LOOKUP_OVERRIDE), and orphaned trplaylistack deletion is active. (env DELETE_ORPHANED_PLAYLISTS). Do you want to continue?"
+            "You have overriden the Plex playlist lookup (env PLEX_PLAYLIST_LOOKUP_OVERRIDE), and orphaned playlist deletion is active. (env DELETE_ORPHANED_PLAYLISTS). Do you want to continue?"
         )
     if config.plex_album_lookup_override() and config.should_delete_orphaned_albums():
         confirm_warning(

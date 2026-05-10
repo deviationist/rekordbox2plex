@@ -119,12 +119,13 @@ def get_album_with_tracks(
                 row_dict = dict(row)
 
                 # Provide None for artwork fields if they don't exist
+                release_year = row_dict.get("track_ReleaseYear")
                 tracks.append(
                     TrackWithArtwork(
                         id=int(row_dict["track_ID"]),
                         title=row_dict["track_Title"],
                         label=row_dict["track_Label"],
-                        release_year=int(row_dict["track_ReleaseYear"]),
+                        release_year=int(release_year) if release_year else None,
                         release_date=row_dict["track_ReleaseDate"],
                         added_at=row_dict.get("track_AddedAt"),
                         folder_path=row_dict.get("track_FolderPath"),
@@ -155,5 +156,5 @@ def get_album_with_tracks(
             return False
 
     except Exception as e:  # Changed from sqlite.Error to catch any issues
-        logger.info("[red]Database error:", e)
+        logger.info(f"[red]Database error: {e}")
         return False
