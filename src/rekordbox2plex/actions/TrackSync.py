@@ -111,7 +111,7 @@ class TrackSync(ActionBase):
                 progress.update(
                     task,
                     advance=1,
-                    description=f"[cyan]({count_string}) Procesed track {track_string}...",
+                    description=f"[cyan]({count_string}) Processed track {track_string}...",
                 )
             progress.update(
                 task,

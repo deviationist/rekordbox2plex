@@ -1,8 +1,8 @@
 from .library import get_music_library, plexapi_client
 from ..data_types import PlexTrack, PlexTracks
-import json
 from ...utils.logger import logger
-from ...config import plex_track_lookup_override, get_folder_mappings_path
+from ...utils.folder_mappings import get_folder_mappings
+from ...config import plex_track_lookup_override
 from plexapi.utils import openOrRead
 from plexapi.audio import Track
 
@@ -43,17 +43,8 @@ def get_track_thumb_file(track: Track) -> bytes:
 
 
 def convert_path_to_plex(rekordbox_path: str) -> str:
-    mappings_override = get_folder_mappings_path()
-    mappings_path = mappings_override or "folderMappings.json"
-    try:
-        with open(mappings_path, "r") as f:
-            folder_mappings = json.load(f)
-    except FileNotFoundError:
-        if mappings_override:
-            raise FileNotFoundError(
-                f"Folder mappings file not found: {mappings_override}"
-            )
-        logger.info("[red]Warning: folderMappings.json not found, using original path")
+    folder_mappings = get_folder_mappings()
+    if not folder_mappings:
         return rekordbox_path
 
     for plex_folder, rekordbox_folder in folder_mappings.items():

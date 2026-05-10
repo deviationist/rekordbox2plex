@@ -29,10 +29,10 @@ class PlaylistSync(ActionBase):
         self.trackIdMapper.ensure_mappings()  # Ensure we have all tracks
         playlists_to_ignore = config.get_playlists_to_ignore()
         rb_playlists = get_all_playlists_from_rekordbox(playlists_to_ignore)
+        plex_playlists = PlexPlaylistRepository().get_all_playlists()
         if rb_playlists is False or (rb_playlists_count := len(rb_playlists)) == 0:
             logger.info("[cyan]No playlists in Rekordbox.")
         else:
-            plex_playlists = PlexPlaylistRepository().get_all_playlists()
             logger.info(
                 f"[cyan]Found {len(rb_playlists)} playlists in Rekordbox, and {len(plex_playlists)} playlists in Plex, proceeding to sync them."
             )
@@ -180,23 +180,23 @@ class PlaylistSync(ActionBase):
             rb_playlist
         )
         plex_playlist_existing_items = self.resolve_playlist_tracks(plex_playlist)
-        plex_playlist_existing_item_count = len(plex_playlist_existing_items)
-        if plex_playlist_existing_item_count > 0:
-            did_add_items = self.add_items_to_playlist(
-                plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist
-            )
-            did_remove_items = self.remove_items_from_playlist(
-                plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist
-            )
-            if did_add_items or did_remove_items:
-                self.updated += 1
-                return True
-            else:
-                return False
-        else:
+        if (
+            len(plex_playlist_items_from_rb) == 0
+            and len(plex_playlist_existing_items) == 0
+        ):
             plex_playlist.delete()
             self.deleted += 1
             return False
+        did_add_items = self.add_items_to_playlist(
+            plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist
+        )
+        did_remove_items = self.remove_items_from_playlist(
+            plex_playlist_items_from_rb, plex_playlist_existing_items, plex_playlist
+        )
+        if did_add_items or did_remove_items:
+            self.updated += 1
+            return True
+        return False
 
     def delete_orphaned_playlists(
         self, rb_playlists: List[RekordboxPlaylist], plex_playlists: PlexPlaylists
