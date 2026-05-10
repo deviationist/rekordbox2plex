@@ -1,26 +1,17 @@
 from ._RepositoryBase import RepositoryBase, singleton
-from ..resolvers.track import get_track, get_all_tracks
+from ..resolvers.track import get_all_tracks
 from ..resolvers.library import get_music_library_name
 from ...utils.progress_bar import progress_instance
 from ...utils.logger import logger
 from ...utils.helpers import progress_count
 from typing import List, Tuple
-from ..data_types import PlexTrack, PlexTrackWrapper, CacheItems
+from ..data_types import PlexTrackWrapper, CacheItems
 
 
 @singleton
 class TrackRepository(RepositoryBase):
     def get_track_id(self, item) -> int:
         return item.id
-
-    def get_track(self, track_id: int, use_cache: bool = True) -> PlexTrack:
-        if use_cache and (cached_track := self._get_from_cache(str(track_id))):
-            return cached_track
-        if track := get_track(track_id):
-            if use_cache:
-                self._store_single_in_cache(track, self.get_track_id)
-            return track
-        return None
 
     def get_all_tracks(
         self, use_cache: bool = True
@@ -37,6 +28,7 @@ class TrackRepository(RepositoryBase):
             logger.info("[cyan]Fetching track metadata from Plex...")
             task = progress.add_task("", total=track_count)
             results = []
+            count_string = progress_count(0, track_count)
             for i, track in enumerate(tracks):
                 count_string = progress_count(i, track_count)
                 progress.update(

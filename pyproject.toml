@@ -1,7 +1,7 @@
 [project]
 name = "rekordbox2plex"
 version = "0.1.0"
-description = ""
+description = "Sync Rekordbox playlists to Plex."
 authors = [
     {name = "Robert Sæther",email = "robert4832@pm.me"}
 ]
@@ -12,8 +12,6 @@ dependencies = [
     "python-dotenv (>=1.1.1,<2.0.0)",
     "plexapi (>=4.17.0,<5.0.0)",
     "rich (>=14.0.0,<15.0.0)",
-    "imagehash (>=4.3.2,<5.0.0)",
-    "pillow (>=11.3.0,<12.0.0)",
 ]
 
 [tool.poetry]
