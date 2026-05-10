@@ -21,9 +21,9 @@ Playlists are the one piece of state that doesn't live in audio files — Plex s
 
 Earlier versions of `rekordbox2plex` synced track titles, artists, albums, artwork, release year, label, and triggered Plex library re-indexing for new files. It worked, but it was a constant fight with Plex.
 
-Plex's music agent re-reads file tags on every scan. To keep our pushed metadata from being clobbered, we had to use Plex's "field locks" — locking each field so Plex would leave it alone. That solved the overwrite problem but introduced a worse one: the locks made Plex's library increasingly out-of-sync with the underlying files. Album reparenting, artist re-resolution and artwork comparison all turned into special cases, and the metadata in Plex slowly drifted away from what was actually on disk.
+Plex's music agent re-reads file tags on every library scan. The initial plan here was to push the Rekordbox metadata via the Plex API and then lock each field so the next reindex couldn't overwrite our values. That partly worked — but Plex doesn't just re-read titles. It actively orchestrates the artist and album-artist hierarchy on every scan: merging duplicate artists, splitting tracks by `originalTitle`, deciding which artist node a track belongs to. Once we started locking fields, every scan became a battle. Plex would try to restructure the tree, our locks would block half the changes, and the result was a library that was neither the file's truth nor Plex's truth — just a frozen-in-time snapshot of our last sync, drifting further from disk every day.
 
-The realization: **the audio file is the source of truth.** If a track's metadata is wrong in Plex, it's because the tag in the file is wrong. Fix it in the file (Rekordbox can write tags, as can `mp3tag`, `MusicBrainz Picard`, etc.) and Plex will align on the next scan. No locks, no API writes, no drift.
+The realization: **the audio file is the source of truth.** If a track's metadata is wrong in Plex, the tag in the file is wrong. Fix it there and Plex will align on the next scan. No locks, no API writes, no drift, no battling Plex.
 
 Once that became clear, almost everything in this tool was redundant. Playlists are the one exception — they're stored in each platform's own database, not in audio files, so the only way to get Rekordbox's playlist tree into Plex is via the API.
 
@@ -33,18 +33,20 @@ If you need the old metadata-syncing version, the git history still has it.
 
 ## Recommended workflow for fixing metadata
 
-If a track shows up wrong in Plex (wrong title, missing album, no artwork, wrong year, etc.), the fix lives in the audio file's tags — not in Plex. The recommended path:
+If a track shows up wrong in Plex (wrong title, missing album, no artwork, wrong year, etc.), the fix lives in the audio file's tags — not in Plex.
 
-1. **Fix it in Rekordbox where possible.** Rekordbox can write its track metadata (title, artist, album, album artist, year, label, comments, artwork) back to the file's tags. Make sure that behaviour is enabled, edit the field in Rekordbox, and Rekordbox will save the change into the file itself.
-2. **For bulk / automatic tagging, use [MusicBrainz Picard](https://picard.musicbrainz.org/).** It looks up tracks against the MusicBrainz database and fills in album, release year, label, artwork, etc. across many files at once. Especially useful when importing a fresh batch.
-3. **For surgical manual edits, use a dedicated tag editor.**
-   - [**Mp3tag**](https://www.mp3tag.de/) — Windows / macOS, free, very popular. Handles MP3, AIFF, WAV, FLAC, etc.
-   - [**Kid3**](https://kid3.kde.org/) — cross-platform (Linux/Win/Mac), open source.
-4. **Then trigger a Plex library scan.** Plex auto-scans on a schedule, or you can manually trigger one from "Scan Library Files" in the Plex UI. Plex re-reads the file tags and updates its catalog. No locks, no API writes, no drift.
+**The recommended path is to edit the metadata in Rekordbox itself and then re-index Plex.** Rekordbox writes its track metadata (title, artist, album, album artist, year, label, comments, artwork) back to the file's tags, so once you've polished a track in Rekordbox the audio file is correct, and the next Plex scan picks it up. No external tools needed for the common case — perfecting the metadata in Rekordbox and triggering a Plex re-index is the way to go.
 
-After your tags are correct in Plex, run `rekordbox2plex` to mirror your playlists across.
+Then trigger a Plex library scan from the UI ("Scan Library Files") or wait for the auto-scan, and run `rekordbox2plex` to mirror your playlists across.
 
-> **Format gotcha**: WAV and AIFF have historically had patchy tag-writing support across tools. If you can't get a tag editor to write to a particular format, converting to FLAC (lossless, well-supported tags) is usually the cleanest fix. MP3, FLAC, and M4A all handle tags reliably.
+If you do need a dedicated tag editor — Rekordbox can't write a particular field, or you're cleaning up a fresh batch of imports outside of Rekordbox — these are the usual suspects:
+
+- **Meta** — macOS, paid. Very popular among DJs.
+- [**Mp3tag**](https://www.mp3tag.de/) — Windows / macOS, free.
+- [**Kid3**](https://kid3.kde.org/) — cross-platform (Linux / Windows / macOS), open source.
+- [**MusicBrainz Picard**](https://picard.musicbrainz.org/) — auto-tags by matching against the MusicBrainz database. Useful when importing unfamiliar music in bulk.
+
+> **Format gotcha**: WAV and AIFF have historically had patchy tag-writing support across tools. If a tag editor can't write to a particular format, converting to FLAC (lossless, well-supported tags) is usually the cleanest fix. MP3, FLAC, and M4A all handle tags reliably.
 
 ## Hierarchical Playlist Flattening
 
