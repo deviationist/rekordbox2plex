@@ -31,6 +31,21 @@ So the metadata sync, artwork sync, field locks, orphan track/album deletion, an
 
 If you need the old metadata-syncing version, the git history still has it.
 
+## Recommended workflow for fixing metadata
+
+If a track shows up wrong in Plex (wrong title, missing album, no artwork, wrong year, etc.), the fix lives in the audio file's tags — not in Plex. The recommended path:
+
+1. **Fix it in Rekordbox where possible.** Rekordbox can write its track metadata (title, artist, album, album artist, year, label, comments, artwork) back to the file's tags. Make sure that behaviour is enabled, edit the field in Rekordbox, and Rekordbox will save the change into the file itself.
+2. **For bulk / automatic tagging, use [MusicBrainz Picard](https://picard.musicbrainz.org/).** It looks up tracks against the MusicBrainz database and fills in album, release year, label, artwork, etc. across many files at once. Especially useful when importing a fresh batch.
+3. **For surgical manual edits, use a dedicated tag editor.**
+   - [**Mp3tag**](https://www.mp3tag.de/) — Windows / macOS, free, very popular. Handles MP3, AIFF, WAV, FLAC, etc.
+   - [**Kid3**](https://kid3.kde.org/) — cross-platform (Linux/Win/Mac), open source.
+4. **Then trigger a Plex library scan.** Plex auto-scans on a schedule, or you can manually trigger one from "Scan Library Files" in the Plex UI. Plex re-reads the file tags and updates its catalog. No locks, no API writes, no drift.
+
+After your tags are correct in Plex, run `rekordbox2plex` to mirror your playlists across.
+
+> **Format gotcha**: WAV and AIFF have historically had patchy tag-writing support across tools. If you can't get a tag editor to write to a particular format, converting to FLAC (lossless, well-supported tags) is usually the cleanest fix. MP3, FLAC, and M4A all handle tags reliably.
+
 ## Hierarchical Playlist Flattening
 
 Plex does not support nested playlists, so we flatten the Rekordbox playlist structure during the sync. Each child playlist's name is prepended with its parents' names, joined by `PLEX_PLAYLIST_FLATTENING_DELIMITER` (default `/`). Empty playlists in Rekordbox are skipped because Plex rejects them.
