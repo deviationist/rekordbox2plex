@@ -1,7 +1,6 @@
 from abc import ABC
 from typing import Any, Callable, Literal
 from ..data_types import PlexItem, Cache, CacheItem, CacheItems
-from ..utils.SearchCache import SearchCache
 
 
 def singleton(cls):
@@ -19,11 +18,10 @@ def singleton(cls):
 class RepositoryBase(ABC):
     """Base repository class with caching functionality"""
 
-    def __init__(self, search_cache: bool = False) -> None:
+    def __init__(self) -> None:
         self._cache: Cache = {}
         self._all_fetched = False
         self._display_progress = False
-        self._search_cache: None | SearchCache = SearchCache() if search_cache else None
 
     def progress(self, display_progress=True):
         self._display_progress = display_progress
