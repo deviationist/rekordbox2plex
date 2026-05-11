@@ -2,39 +2,39 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Scope
+
+This tool **only mirrors Rekordbox playlists into Plex**. Audio file tags are the source of truth for track and album metadata — Plex picks them up on its own scan. Do not add code that pushes track/album metadata, artwork, field locks, or library-scan triggers via the Plex API; that path was deliberately removed.
+
 ## Commands
 
-- Run sync: `poetry run rekordbox2plex` (flags: `-v`/`-vv`, `--dry-run`, `--wipe`, `--targets=tracks,playlists,albums`)
+- Run sync: `poetry run rekordbox2plex` (flags: `-v`/`-vv`, `--dry-run`, `--wipe`)
 - Tests: `poetry run pytest` — single test: `poetry run pytest tests/TrackIdMapper_test.py::test_track_mapper`
 - Lint: `poetry run ruff check .`
 - Type-check: `poetry run mypy .` (`plexapi.*` and `pysqlcipher3` are excluded via overrides in `pyproject.toml`)
 - Format: `poetry run black .`
 
-Python 3.12+ is required. Tests live next to factories in `tests/` and use `faker` plus the helpers under `tests/factories/`.
+Python 3.12+ is required. Tests live next to factories in `tests/`.
 
 ## Architecture
 
-The pipeline is **Plex-driven, not Rekordbox-driven**: each sync iterates Plex items and looks them up in Rekordbox, not the other way around. The exception is `add_new_tracks` in `TrackSync`, which finds Rekordbox tracks missing from Plex and triggers a folder re-index via `update_library`.
+The flow is **Plex-driven**: walk every Plex track once to build an in-memory `Plex ratingKey ↔ Rekordbox track ID` map, then iterate Rekordbox playlists and translate each playlist's track IDs back to Plex track objects to construct/update the corresponding Plex playlist.
 
 ### Layers (under `src/rekordbox2plex/`)
 
-- `actions/` — top-level orchestration, one class per sync target (`TrackSync`, `AlbumSync`, `PlaylistSync`, plus `*Wipe` variants). All extend `_ActionBase.ActionBase`, which captures `is_dry_run()` once at construction.
-- `mappers/` — translate a resolved Rekordbox record into Plex `edit()` payloads. `TrackMetadataMapper` and `AlbumMetadataMapper` extend `_MapperBase.MapperBase`, accumulating changes in `self.edits` and flipping `did_change`. The mapper's `transfer()` builds the diff; `save()` applies it (skipped under `--dry-run` by the calling action).
-- `plex/repositories/` — cached accessors over `plexapi`. All extend `_RepositoryBase.RepositoryBase` and are wrapped in the local `singleton` decorator. Repositories own a `_cache` dict keyed by `ratingKey` (or a custom resolver) and an optional `SearchCache` for search-by-name lookups.
-- `plex/resolvers/` and `rekordbox/resolvers/` — thin functional wrappers around the SDKs / SQL queries. Resolvers contain the actual SQL strings and `plexapi` calls; repositories cache their output.
+- `actions/` — orchestration. `PlaylistSync` (default) and `PlaylistWipe` (`--wipe`). Both extend `_ActionBase.ActionBase`, which captures `is_dry_run()` once at construction.
+- `mappers/TrackIdMapper.py` — singleton dict `rb_track_id → PlexTrackWrapper`. `ensure_mappings()` lazily walks every Plex track and resolves its Rekordbox ID via `rekordbox/resolvers/track.py::resolve_track_id` (single-column lookup by file path).
+- `plex/repositories/` — cached accessors over `plexapi`. Extend `_RepositoryBase.RepositoryBase`, wrapped in the local `singleton` decorator.
+- `plex/resolvers/` and `rekordbox/resolvers/` — thin functional wrappers around the SDKs / SQL queries.
 - `rekordbox/RekordboxDB.py` — singleton SQLCipher connection. By default (`REKORDBOX_COPY_DB_BEFORE_SYNC=true`) it copies `master.db` to a tempfile and opens it read-only (`mode=ro`) before applying `PRAGMA key`. The temp copy is deleted via `atexit`. Always treat the Rekordbox DB as read-only.
-- `config.py` — central env / CLI accessor. CLI args are stashed via `set_args(...)` in `__main__.py` and read back through `is_dry_run()`, `should_wipe()`, etc. Modules should import these helpers rather than calling `os.getenv` directly (a few places still use `os.getenv` for Plex creds and `MAP_*`/`LOCK_*` flags via `get_boolenv`).
+- `config.py` — central env / CLI accessor. CLI args are stashed via `set_args(...)` in `__main__.py` and read back through `is_dry_run()`, `should_wipe()`, etc.
 
 ### Key cross-cutting flows
 
-- **`TrackIdMapper` (singleton in `mappers/`)** is the bridge between sync stages. `TrackSync` populates it as it resolves each Plex track in Rekordbox, then `PlaylistSync` calls `ensure_mappings()` to translate Rekordbox playlist members back into Plex `Track` objects. If playlists are synced without tracks first, `ensure_mappings()` lazily rebuilds the index by walking the full Plex library.
-- **Folder path mapping** (`rekordbox/resolvers/track.py::convert_path_to_rekordbox` and `plex/resolvers/track.py::convert_path_to_plex`) translates between Plex and Rekordbox paths in both directions — Plex→Rekordbox for DB lookups, Rekordbox→Plex when telling Plex to re-index a folder. The JSON file (`folderMappings.json` or `FOLDER_MAPPINGS_PATH`) is loaded once and cached in `utils/folder_mappings.py::get_folder_mappings`; both resolvers consume it. A missing file is a one-shot soft warning unless `FOLDER_MAPPINGS_PATH` was set explicitly (then it raises).
-- **Album "unison" metadata resolution**: Rekordbox stores release year / release date / label / artwork on tracks, but Plex stores them on the album. `AlbumMetadataMapper` (and `utils/AlbumArtworkResolver.py` + `utils/ImageHashComparer.py`) compare across all tracks of an album and only apply a value to Plex when the tracks agree. Image similarity uses perceptual hashing.
-- **Field locking**: when `PLEX_LOCK_FIELDS=true` and a per-field `LOCK_*` is true, the mapper adds `<field>.locked=1` to the edit payload so Plex won't overwrite the value during reindex. `helpers.field_is_locked` checks the live state to avoid redundant writes.
-- **Reparenting in `TrackMetadataMapper.save()`** is split into two `edit()` calls: artist/album reparenting first, then remaining metadata. This is intentional — combining them in one call has been observed to drop edits in plexapi.
+- **Folder path mapping** (`rekordbox/resolvers/track.py::convert_path_to_rekordbox`) translates Plex file paths into the paths Rekordbox stored, so a Plex track can be looked up in `djmdContent` by `FolderPath`. The JSON file (`folderMappings.json` or `FOLDER_MAPPINGS_PATH`) is loaded once and cached in `utils/folder_mappings.py::get_folder_mappings`. A missing file is a one-shot soft warning unless `FOLDER_MAPPINGS_PATH` was set explicitly (then it raises).
 - **Playlist flattening**: Rekordbox supports nested playlists, Plex does not. Names are joined with `PLEX_PLAYLIST_FLATTENING_DELIMITER` (default `/`). Empty playlists are skipped because Plex rejects them.
-- **Lookup overrides** (`PLEX_TRACK_LOOKUP_OVERRIDE`, `PLEX_ALBUM_LOOKUP_OVERRIDE`, `PLEX_PLAYLIST_LOOKUP_OVERRIDE`) restrict the Plex search to a single item — useful for debugging one record. `helpers.check_for_dangerous_config` blocks combining an override with the matching `DELETE_ORPHANED_*` flag (it would delete most of the library).
+- **Wipe protection**: `--wipe` is destructive (deletes every Plex playlist). `__main__.py` requires the user to type the literal token `WIPE` (case-sensitive) via `utils/confirm.py::confirm_destructive`. `--dry-run --wipe` previews without prompting.
 
 ### Configuration
 
-Env vars are documented exhaustively in `README.md`. The defaults in `helpers.get_boolenv` calls within the codebase are the source of truth and may differ from `.env.example` — when adding a new flag, default it in both places.
+Env vars are documented in `README.md` and `.env.example`. Most are required Plex/Rekordbox connection details; the only optional sync knobs are `DELETE_ORPHANED_PLAYLISTS`, `REKORDBOX_PLAYLISTS_TO_IGNORE`, `PLEX_PLAYLIST_FLATTENING_DELIMITER`, and `FOLDER_MAPPINGS_PATH`.
