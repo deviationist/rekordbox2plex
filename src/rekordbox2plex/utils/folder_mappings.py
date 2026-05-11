@@ -2,6 +2,7 @@ import json
 from typing import Dict, Optional
 from ..config import get_folder_mappings_path
 from .logger import logger
+from .paths import PROJECT_ROOT
 
 _cache: Optional[Dict[str, str]] = None
 _warned_missing = False
@@ -13,7 +14,7 @@ def get_folder_mappings() -> Dict[str, str]:
         return _cache
 
     mappings_override = get_folder_mappings_path()
-    mappings_path = mappings_override or "folderMappings.json"
+    mappings_path = mappings_override or str(PROJECT_ROOT / "folderMappings.json")
     try:
         with open(mappings_path, "r") as f:
             _cache = json.load(f)

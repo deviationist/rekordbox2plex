@@ -7,8 +7,9 @@ from .actions.PlaylistWipe import PlaylistWipe
 from .utils.confirm import confirm_destructive
 from .utils.helpers import parse_script_arguments
 from .utils.logger import init_logger, logger
+from .utils.paths import PROJECT_ROOT
 
-dotenv.load_dotenv()
+dotenv.load_dotenv(PROJECT_ROOT / ".env")
 
 WIPE_TOKEN = "WIPE"
 
