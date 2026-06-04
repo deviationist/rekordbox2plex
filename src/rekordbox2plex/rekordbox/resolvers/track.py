@@ -21,6 +21,40 @@ def convert_path_to_rekordbox(plex_path: str) -> str:
     return plex_path
 
 
+def _query_rb_id(rekordbox_path: str) -> int | None:
+    """Look up a single Rekordbox track ID by its stored FolderPath."""
+    cursor = RekordboxDB().cursor
+    cursor.execute(
+        """
+        SELECT ID FROM djmdContent
+        WHERE FolderPath = ?
+          AND rb_local_deleted = 0
+          AND rb_data_status = 0
+          AND rb_file_id != 0
+        """,
+        (rekordbox_path,),
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    return int(dict(row)["ID"])
+
+
+def resolve_track_id_by_plex_path(plex_file_path: str) -> int | None:
+    """Resolve a Rekordbox track ID from a Plex file path (path-mapped).
+
+    Returns None if the file isn't present in the Rekordbox database. Used by
+    the `dates` command, which enumerates Plex from its DB rather than the API.
+    """
+    rekordbox_path = convert_path_to_rekordbox(plex_file_path)
+    logger.debug(f'Attempting to resolve file in Rekordbox using path "{rekordbox_path}"')
+    try:
+        return _query_rb_id(rekordbox_path)
+    except Exception as e:
+        logger.info(f"[red]Database error: {e}")
+        return None
+
+
 def resolve_track_id(
     plex_track: PlexTrackWrapper,
     progress: Progress | NullProgress | None = None,
@@ -30,9 +64,6 @@ def resolve_track_id(
 
     Returns None if the file isn't present in the Rekordbox database.
     """
-    db = RekordboxDB()
-    cursor = db.cursor
-
     rekordbox_path = convert_path_to_rekordbox(plex_track.file_path)
     logger.debug(f'Attempting to resolve file in Rekordbox using path "{rekordbox_path}"')
 
@@ -43,21 +74,10 @@ def resolve_track_id(
         )
 
     try:
-        cursor.execute(
-            """
-            SELECT ID FROM djmdContent
-            WHERE FolderPath = ?
-              AND rb_local_deleted = 0
-              AND rb_data_status = 0
-              AND rb_file_id != 0
-            """,
-            (rekordbox_path,),
-        )
-        row = cursor.fetchone()
-        if row is None:
+        rb_id = _query_rb_id(rekordbox_path)
+        if rb_id is None:
             logger.debug(f'[yellow]Warning: No file found for "{rekordbox_path}"')
-            return None
-        return int(dict(row)["ID"])
+        return rb_id
     except Exception as e:
         logger.info(f"[red]Database error: {e}")
         return None
