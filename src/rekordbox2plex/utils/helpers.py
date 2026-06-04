@@ -22,22 +22,90 @@ def build_track_string(plex_track: PlexTrackWrapper) -> str:
 
 
 def parse_script_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
+    # -v/--verbose is shared by every subcommand via this parent parser, so it
+    # can be given after the subcommand name (e.g. `rekordbox2plex dates -v`).
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
         "-v",
         "--verbose",
         action="count",
         default=0,
         help="Increase verbosity: -v = INFO, -vv = DEBUG",
     )
-    parser.add_argument(
+
+    parser = argparse.ArgumentParser(prog="rekordbox2plex")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # rekordbox2plex playlists [--dry-run] [--wipe]
+    playlists = subparsers.add_parser(
+        "playlists",
+        parents=[common],
+        help="Sync Rekordbox playlists into Plex.",
+    )
+    playlists.add_argument(
         "--dry-run",
         action="store_true",
         help="Simulate the actions without making changes.",
     )
-    parser.add_argument(
+    playlists.add_argument(
         "--wipe",
         action="store_true",
         help="Delete all playlists in Plex (requires typed confirmation).",
+    )
+
+    # rekordbox2plex dates [--write] [--validate-*] [--tracks/--albums] ...
+    dates = subparsers.add_parser(
+        "dates",
+        parents=[common],
+        help="Sync Plex 'Date Added' from Rekordbox (read-only unless --write).",
+    )
+    dates.add_argument(
+        "--validate-track",
+        default=None,
+        help="Phase 0: validate a single track by Plex ratingKey (read-only).",
+    )
+    dates.add_argument(
+        "--validate-album",
+        default=None,
+        help="Phase 0: validate a single album by Plex ratingKey (read-only).",
+    )
+    dates.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview changes without writing (this is also the default; overrides --write).",
+    )
+    dates.add_argument(
+        "--write",
+        action="store_true",
+        help="Apply the plan to the Plex DB (Plex must be stopped; requires confirmation).",
+    )
+    dates.add_argument(
+        "--allow-running",
+        action="store_true",
+        help="Bypass the container-stopped guard (only for scratch-copy testing).",
+    )
+    dates.add_argument(
+        "--plan-file",
+        default=None,
+        help="Optional: also dump the SQL plan to this file for inspection (off by default).",
+    )
+    dates.add_argument(
+        "--only",
+        default=None,
+        metavar="RATINGKEYS",
+        help="Comma-separated Plex ratingKeys to sync only those items "
+        "(track and/or album ids), e.g. --only 17779,17776.",
+    )
+    dates.add_argument(
+        "--tracks",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include track-level updates (default on; --no-tracks to skip).",
+    )
+    dates.add_argument(
+        "--albums",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include album-level updates (default on; --no-albums to skip).",
     )
     return parser.parse_args()

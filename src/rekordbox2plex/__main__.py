@@ -4,6 +4,7 @@ from . import config
 from .rekordbox.RekordboxDB import setup_db_connection
 from .actions.PlaylistSync import PlaylistSync
 from .actions.PlaylistWipe import PlaylistWipe
+from .actions.DateAddedRestore import DateAddedRestore
 from .utils.confirm import confirm_destructive
 from .utils.helpers import parse_script_arguments
 from .utils.logger import init_logger, logger
@@ -20,6 +21,12 @@ def main():
     init_logger(args)
     setup_db_connection()
 
+    if config.get_command() == "dates":
+        DateAddedRestore().run()
+        logger.info("[bold green]✔ Date-added sync finished!")
+        return
+
+    # command == "playlists"
     if config.is_dry_run():
         logger.info("[cyan]This is a dry run! No changes will be made!")
 

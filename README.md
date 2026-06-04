@@ -8,6 +8,7 @@
 
 * ✅ Read your Rekordbox playlist tree, flatten nested playlists, and create/update the equivalent playlists in Plex.
 * ✅ Optionally delete Plex playlists that no longer exist in Rekordbox.
+* ✅ **Sync "Date Added"** from Rekordbox into Plex (`rekordbox2plex dates`). Like playlists, Date Added is Plex-internal state that doesn't live in audio file tags — Rekordbox knows when each track entered your collection, Plex doesn't (especially after re-importing a library). This is **read-only by default** and writes directly to the Plex DB only with explicit opt-in. See [Syncing "Date Added"](#syncing-date-added).
 * ✅ Reads Rekordbox's encrypted SQLite database with `pysqlcipher3` in read-only mode.
 * ✅ Supports file path remapping (e.g. when Plex is running in Docker on a different mount than Rekordbox).
 * ❌ **Does not sync track or album metadata, artwork, release year, label, etc.** — this is on purpose. The right place to fix that data is in the audio file tags themselves; once the file is correct, Plex will pick it up on its next library scan. Pushing metadata via the Plex API is fragile and fights the platform.
@@ -118,6 +119,13 @@ cp .env.example .env
 | `PLEX_PLAYLIST_FLATTENING_DELIMITER` | string | `/` | Delimiter for flattening nested Rekordbox playlists. |
 | `DELETE_ORPHANED_PLAYLISTS` | bool | `false` | Delete Plex playlists that don't exist in Rekordbox. |
 | `FOLDER_MAPPINGS_PATH` | string | – | Override the path to the folder-mapping JSON (default: `./folderMappings.json`). |
+| `PLEX_DB_PATH` | string | – | (`dates` only) Host path to `com.plexapp.plugins.library.db`. Needed for the write and the read-only cross-check. |
+| `PLEX_CONTAINER_NAME` | string | `plex` | (`dates` only) Docker container checked to be **stopped** before any write. |
+| `PLEX_SQLITE_MECHANISM` | string | `docker` | (`dates` only) `docker` = bundled "Plex SQLite" in the container image (**required for Plex** — runs as the DB file's owner). `sqlite3` = stock sqlite3; does **not** work on a real Plex schema (FTS-trigger tokenizer), kept only for non-Plex/advanced use. |
+| `PLEX_DOCKER_IMAGE` | string | `linuxserver/plex` | (`dates` only) Image providing the bundled Plex SQLite binary. |
+| `PLEX_SQLITE_BIN` | string | `/usr/lib/plexmediaserver/Plex SQLite` | (`dates` only) Path to that binary inside the image. |
+| `REKORDBOX_ADDED_AT_FIELD` | string | `created_at` | (`dates` only) `djmdContent` column used as the source date. |
+| `REKORDBOX_TZ` | string | host local | (`dates` only) Timezone for interpreting *naive* Rekordbox timestamps. Ignored for offset-aware ones like `created_at`. |
 
 > 🔐 **How to find your Plex Token?** See [this guide](#how-to-find-your-plex-api-token).
 >
@@ -143,11 +151,13 @@ Map each Plex path to the corresponding Rekordbox path:
 
 ## Usage
 
+The tool has two subcommands: `playlists` and `dates`.
+
 ```bash
-poetry run rekordbox2plex
+poetry run rekordbox2plex playlists
 ```
 
-### Arguments
+### `playlists` arguments
 
 * `-v` / `-vv` — verbosity (`-v` = info, `-vv` = debug)
 * `--dry-run` — preview changes without applying them
@@ -156,8 +166,54 @@ poetry run rekordbox2plex
 ### Running via cron
 
 ```cron
-0 2 * * * cd /path/to/rekordbox2plex && poetry run rekordbox2plex >> sync.log 2>&1
+0 2 * * * cd /path/to/rekordbox2plex && poetry run rekordbox2plex playlists >> sync.log 2>&1
 ```
+
+## Syncing "Date Added"
+
+Plex stores a track's/album's "Date Added" as `metadata_items.added_at`. There's **no Plex HTTP API to set it**, so this is the one place the tool writes directly to Plex's SQLite database. The `dates` subcommand reads the Plex library **straight from that DB** (reusing the same Rekordbox path→date resolver as playlist sync), computes the changes **in memory**, and is built to be cautious:
+
+* **Read-only by default.** `rekordbox2plex dates` (or `--dry-run`) resolves every Plex track to Rekordbox, computes the proposed `added_at` from `djmdContent.created_at`, and prints a summary + sample of the changes. It never touches the DB. **No SQL file is written** — the plan lives in memory. (Pass `--plan-file <path>` if you *want* a SQL dump to inspect.)
+* **Idempotent.** It only changes rows whose date actually differs, so re-running after adding new tracks in Rekordbox just tops up what changed.
+* **Writing is opt-in and guarded.** `--write` proceeds only when (1) you pass it explicitly, (2) the Plex container is stopped (verified via `docker inspect`), and (3) you type the confirmation token `WRITE-DATES`. The SQL is streamed to the bundled Plex SQLite over stdin — still no file on disk.
+* **The DB backup is your job, not the tool's.** The script *checks* that Plex is stopped, but never stops Plex and never backs up the database for you.
+
+### Workflow
+
+```bash
+# 1. Preview (Plex can stay running). Prints what would change — no file, no writes.
+poetry run rekordbox2plex dates --dry-run
+#    Scope flags: --no-albums (tracks only), --no-tracks (albums only).
+#    Inspect a single item in detail: --validate-track <ratingKey> --validate-album <ratingKey>
+#    Want the full SQL to eyeball? add: --plan-file /tmp/plan.sql
+
+# 2. Stop Plex and BACK UP THE DATABASE (manual, required).
+cd /home/xavi/docker-root/plex && docker compose down
+#    Back up the DB plus its -wal and -shm siblings (a clean shutdown usually
+#    checkpoints the -wal/-shm away, leaving just the .db):
+DB="database/Library/Application Support/Plex Media Server/Plug-in Support/Databases/com.plexapp.plugins.library.db"
+cp "$DB"      "$DB.bak"
+cp "$DB-wal"  "$DB-wal.bak"   # if present
+cp "$DB-shm"  "$DB-shm.bak"   # if present
+
+# 3. Write (Plex stopped). Recomputes and applies; prompts for WRITE-DATES.
+cd /path/to/rekordbox2plex && poetry run rekordbox2plex dates --write
+
+# 4. Start Plex again.
+cd /home/xavi/docker-root/plex && docker compose up -d
+```
+
+> **Tip — verify on a copy first.** Copy the DB to a scratch path, point `PLEX_DB_PATH` at it, and run `dates --write --allow-running` (keep the default `docker` mechanism). Re-query a few `added_at` values to confirm before touching the real DB. Note: the `sqlite3` mechanism **cannot** be used against a real Plex schema — Plex's full-text-search triggers reference a custom tokenizer only the bundled "Plex SQLite" build provides (and that build must run as the DB file's owner), so writes must go through the `docker` mechanism.
+
+### `dates` arguments
+
+* `--dry-run` — preview changes without writing (also the default; overrides `--write` if both are given).
+* `--validate-track <ratingKey>` / `--validate-album <ratingKey>` — read-only single-item view; prints the Rekordbox-vs-Plex timestamps and the exact UPDATE that *would* run.
+* `--only <ratingKeys>` — comma-separated Plex ratingKeys to sync only those items, e.g. `--only 17779,17776`. A **track** id updates that track; an **album** id updates that album (its date is still the earliest across *all* its tracks). Works with `--dry-run` and `--write`.
+* `--no-tracks` / `--no-albums` — restrict scope (both included by default). Album `added_at` is the **earliest** of its tracks.
+* `--plan-file <path>` — optional: also dump the SQL plan to a file for inspection (off by default).
+* `--write` — apply the changes to the Plex DB (Plex must be stopped; prompts for `WRITE-DATES`).
+* `--allow-running` — bypass the stopped-check (**only** for scratch-copy testing).
 
 ---
 
