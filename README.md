@@ -131,6 +131,7 @@ cp .env.example .env
 | `PLEX_SQLITE_BIN` | string | `/usr/lib/plexmediaserver/Plex SQLite` | (`dates` only) Path to that binary inside the image. |
 | `REKORDBOX_ADDED_AT_FIELD` | string | `created_at` | (`dates` only) `djmdContent` column used as the source date. |
 | `REKORDBOX_TZ` | string | host local | (`dates` only) Timezone for interpreting *naive* Rekordbox timestamps. Ignored for offset-aware ones like `created_at`. |
+| `LOGGER_NAME` | string | `rekordbox2plex` | Logger name used for log output. |
 
 > 🔐 **How to find your Plex Token?** See [this guide](#how-to-find-your-plex-api-token).
 >
