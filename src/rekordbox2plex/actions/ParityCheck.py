@@ -44,6 +44,7 @@ class ParityReport:
     """Outcome of a parity scan, held entirely in memory (read-only command)."""
 
     def __init__(self) -> None:
+        self.scanned = 0  # total Plex tracks walked (= compared + unmatched + ignored)
         self.compared = 0
         self.ignored = 0  # tracks skipped via REKORDBOX_FOLDER_PATHS_TO_IGNORE
         # each: {rk, field, plex, rb, label}
@@ -81,13 +82,18 @@ class ParityCheck(ActionBase):
             tracks = [t for t in tracks if t["rk"] in filter_ids]
 
         report = ParityReport()
+        report.scanned = len(tracks)
         with progress_instance(enabled=not self.as_json) as progress:
             task = progress.add_task("", total=len(tracks))
             for t in tracks:
                 progress.update(
                     task,
                     advance=1,
-                    description=f'[cyan]Checking "{t["title"]}"...',
+                    description=(
+                        f'[cyan]Checking "{t["title"]}" '
+                        f"[dim](mapped {report.compared}, "
+                        f"unmatched {len(report.plex_orphans)})"
+                    ),
                 )
                 rb_path = convert_path_to_rekordbox(t["file"]) if t["file"] else None
                 if is_ignored_rb_path(rb_path, self.ignore_paths):
@@ -152,16 +158,25 @@ class ParityCheck(ActionBase):
             self._render_json(report)
             return
 
+        ignored_suffix = f", {report.ignored} ignored" if report.ignored else ""
+        console.print(
+            f"[bold green]✔ Scanned {report.scanned} Plex track(s):[/bold green] "
+            f"{report.compared} mapped to Rekordbox, "
+            f"{len(report.plex_orphans)} unmatched{ignored_suffix}.\n"
+        )
+
         if report.mismatches:
             table = Table(title="Metadata mismatches (Rekordbox ↔ Plex)")
+            table.add_column("#", justify="right", style="dim")
             table.add_column("ratingKey", justify="right", style="dim")
             table.add_column("Track")
             table.add_column("Field", style="yellow")
             table.add_column("Plex", style="cyan")
             table.add_column("Rekordbox", style="magenta")
             table.add_column("File", style="dim", overflow="fold")
-            for m in report.mismatches:
+            for i, m in enumerate(report.mismatches, 1):
                 table.add_row(
+                    str(i),
                     str(m["rk"]),
                     m["label"],
                     FIELD_LABELS[m["field"]],
@@ -211,11 +226,12 @@ class ParityCheck(ActionBase):
                 title=f"Plex tracks with no Rekordbox match "
                 f"(showing up to {self.orphan_limit})"
             )
+            table.add_column("#", justify="right", style="dim")
             table.add_column("ratingKey", justify="right", style="dim")
             table.add_column("Title")
             table.add_column("File", style="dim")
-            for o in report.plex_orphans[: self.orphan_limit]:
-                table.add_row(str(o["rk"]), _fmt(o["title"]), _fmt(o["file"]))
+            for i, o in enumerate(report.plex_orphans[: self.orphan_limit], 1):
+                table.add_row(str(i), str(o["rk"]), _fmt(o["title"]), _fmt(o["file"]))
             console.print(table)
 
         if report.rb_orphan_ids:
@@ -223,13 +239,15 @@ class ParityCheck(ActionBase):
                 title=f"Rekordbox tracks with no Plex match "
                 f"(showing up to {self.orphan_limit})"
             )
+            table.add_column("#", justify="right", style="dim")
             table.add_column("RB ID", justify="right", style="dim")
             table.add_column("Title")
             table.add_column("Artist", style="magenta")
             table.add_column("Path", style="dim", overflow="fold")
-            for rb_id in report.rb_orphan_ids[: self.orphan_limit]:
+            for i, rb_id in enumerate(report.rb_orphan_ids[: self.orphan_limit], 1):
                 meta = get_rb_metadata(rb_id) or {}
                 table.add_row(
+                    str(i),
                     str(rb_id),
                     _fmt(meta.get("title")),
                     _fmt(meta.get("artist")),
@@ -242,6 +260,7 @@ class ParityCheck(ActionBase):
         (the --orphan-limit cap is a table-display concern only)."""
         payload: Dict = {
             "fields": [f for f in FIELD_LABELS if f in self.fields],
+            "scanned": report.scanned,
             "compared": report.compared,
             "ignored": report.ignored,
             "mismatches": [
