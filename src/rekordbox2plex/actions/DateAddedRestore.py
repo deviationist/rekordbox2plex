@@ -258,8 +258,8 @@ class DateAddedRestore(ActionBase):
         if state == "running" and not should_allow_running():
             logger.error(
                 f"[red]Refusing to write: container '{container}' is running. "
-                f"Stop it first:[/red]\n"
-                f"  cd /home/xavi/docker-root/plex && docker compose down\n"
+                f"Stop the Plex container first (e.g. `docker compose down` in "
+                f"your Plex stack directory), then re-run.[/red]\n"
                 f"[dim](or pass --allow-running only when targeting a scratch copy)[/dim]"
             )
             return

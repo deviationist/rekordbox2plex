@@ -27,10 +27,10 @@ def apply_plan_docker(
 
     Mounts the database directory to /db and runs the binary (overriding the
     image entrypoint so it bypasses the s6 init). The container is run as the
-    DB file's own uid:gid (`--user`) so it can write — this host's Docker does
-    not give container-root a DAC bypass over host files, and the live Plex DB
-    is owned by the hardened c-plex UID, not root. Plex must be stopped: this
-    opens the DB for writing."""
+    DB file's own uid:gid (`--user`) so it can write — some Docker setups don't
+    give container-root a DAC bypass over host files, and the live Plex DB is
+    typically owned by the Plex container's (non-root) UID. Plex must be stopped:
+    this opens the DB for writing."""
     db_dir = os.path.dirname(db_path)
     db_name = os.path.basename(db_path)
     st = os.stat(db_path)

@@ -31,13 +31,13 @@ def test_date_only_naive_utc():
 
 
 def test_naive_tz_shifts_by_offset():
-    # Same wall-clock interpreted in Oslo summer (UTC+2) is 2h earlier in UTC
-    # than the same interpreted as UTC.
+    # Same wall-clock interpreted at UTC+2 is 2h earlier in UTC than the same
+    # interpreted as UTC. Etc/GMT-2 is a fixed UTC+2 zone (no city, no DST).
     naive = "2020-07-01 12:00:00"
     utc = to_epoch(parse_rb_timestamp(naive, "UTC"))
-    oslo = to_epoch(parse_rb_timestamp(naive, "Europe/Oslo"))
-    assert utc is not None and oslo is not None
-    assert utc - oslo == 2 * 3600
+    plus2 = to_epoch(parse_rb_timestamp(naive, "Etc/GMT-2"))
+    assert utc is not None and plus2 is not None
+    assert utc - plus2 == 2 * 3600
 
 
 def test_space_before_offset_is_handled():
