@@ -6,7 +6,7 @@ Keep the two in sync (or keep detail in `CLAUDE.md` and only a summary here).
 
 ## Scope guardrails
 
-This tool has two subcommands:
+This tool has three subcommands:
 
 - **`playlists`** — mirrors Rekordbox playlists into Plex over the HTTP API. **Do not** add
   code that pushes track/album metadata, artwork, field locks, or scan triggers via the Plex
@@ -15,6 +15,10 @@ This tool has two subcommands:
   `djmdContent.created_at` via a **direct, guarded write to the Plex SQLite DB** (the HTTP API
   has no `added_at` setter). Read-only by default; `--write` requires Plex stopped + the
   `WRITE-DATES` token. This DB write is sanctioned and distinct from the removed API path.
+- **`parity`** — **strictly read-only** audit comparing Title/Artist/Album/AlbumArtist 1:1
+  between Rekordbox and Plex, plus one-system-only orphans. Reads Plex from the DB and
+  Rekordbox read-only; **never writes** to either (no `PlexDBWriter`, no `--write`,
+  `SELECT`-only). Comparison is normalized; raw values are shown.
 
 Always treat the Rekordbox DB as read-only.
 
@@ -24,6 +28,8 @@ Always treat the Rekordbox DB as read-only.
 poetry run rekordbox2plex playlists [--dry-run] [--wipe]
 poetry run rekordbox2plex dates [--dry-run] [--only <ratingKeys>] [--no-tracks|--no-albums]
 poetry run rekordbox2plex dates --write            # Plex must be stopped; prompts WRITE-DATES
+poetry run rekordbox2plex parity [--fields title,artist,album,albumartist] [--only <ratingKeys>] [--no-orphans] [--orphan-limit N] [--json]
+#   read-only audit; env REKORDBOX_FOLDER_PATHS_TO_IGNORE excludes folder-path prefixes
 
 poetry run pytest          # tests
 poetry run ruff check .    # lint

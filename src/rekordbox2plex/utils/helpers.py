@@ -108,4 +108,46 @@ def parse_script_arguments() -> argparse.Namespace:
         default=True,
         help="Include album-level updates (default on; --no-albums to skip).",
     )
+
+    # rekordbox2plex parity [--fields ...] [--only ...] [--no-orphans] ...
+    parity = subparsers.add_parser(
+        "parity",
+        parents=[common],
+        help="Read-only check that Title/Artist/Album/AlbumArtist match between "
+        "Rekordbox and Plex (reads both DBs, never writes).",
+    )
+    parity.add_argument(
+        "--fields",
+        default=None,
+        metavar="FIELDS",
+        help="Comma-separated subset of title,artist,album,albumartist to "
+        "compare (default: all four).",
+    )
+    parity.add_argument(
+        "--only",
+        default=None,
+        metavar="RATINGKEYS",
+        help="Comma-separated Plex track ratingKeys to check only those.",
+    )
+    parity.add_argument(
+        "--orphans",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Report tracks present in one system but not the other "
+        "(default on; --no-orphans to skip).",
+    )
+    parity.add_argument(
+        "--orphan-limit",
+        type=int,
+        default=50,
+        metavar="N",
+        dest="orphan_limit",
+        help="Cap the per-side orphan sample shown (counts are always full).",
+    )
+    parity.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the full report as JSON on stdout instead of tables "
+        "(orphan lists are complete, not capped).",
+    )
     return parser.parse_args()
