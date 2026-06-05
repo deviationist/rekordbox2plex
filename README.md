@@ -7,7 +7,7 @@
 
 It's designed for DJs who curate in Rekordbox and want the same playlists — and the real collection-entry dates — available for listening in Plex / Plexamp.
 
-![rekordbox2plex screenshot](https://raw.githubusercontent.com/deviationist/rekordbox2plex/main/screenshot.png)
+![rekordbox2plex screenshot](screenshot.png)
 
 ## What this does (and doesn't) do
 
