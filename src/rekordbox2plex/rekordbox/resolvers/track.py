@@ -40,19 +40,38 @@ def _query_rb_id(rekordbox_path: str) -> int | None:
     return int(dict(row)["ID"])
 
 
+def is_ignored_rb_path(rb_path: str | None, ignore_fragments: list[str]) -> bool:
+    """True if a Rekordbox FolderPath contains one of the ignored fragments.
+
+    Used by the `parity` check to honour ``REKORDBOX_FOLDER_PATHS_TO_IGNORE``.
+    Substring match against the Rekordbox FolderPath (same convention as
+    ``REKORDBOX_PLAYLISTS_TO_IGNORE``), so a value like ``Memes`` matches
+    ``/Volumes/REKORDBOX/on-hold/Memes/x.mp3``. Empty inputs never match.
+    """
+    if not rb_path or not ignore_fragments:
+        return False
+    return any(fragment in rb_path for fragment in ignore_fragments)
+
+
+def resolve_track_id_by_rb_path(rekordbox_path: str) -> int | None:
+    """Resolve a Rekordbox track ID from an already-mapped Rekordbox FolderPath."""
+    logger.debug(
+        f'Attempting to resolve file in Rekordbox using path "{rekordbox_path}"'
+    )
+    try:
+        return _query_rb_id(rekordbox_path)
+    except Exception as e:
+        logger.info(f"[red]Database error: {e}")
+        return None
+
+
 def resolve_track_id_by_plex_path(plex_file_path: str) -> int | None:
     """Resolve a Rekordbox track ID from a Plex file path (path-mapped).
 
     Returns None if the file isn't present in the Rekordbox database. Used by
     the `dates` command, which enumerates Plex from its DB rather than the API.
     """
-    rekordbox_path = convert_path_to_rekordbox(plex_file_path)
-    logger.debug(f'Attempting to resolve file in Rekordbox using path "{rekordbox_path}"')
-    try:
-        return _query_rb_id(rekordbox_path)
-    except Exception as e:
-        logger.info(f"[red]Database error: {e}")
-        return None
+    return resolve_track_id_by_rb_path(convert_path_to_rekordbox(plex_file_path))
 
 
 def resolve_track_id(
@@ -65,7 +84,9 @@ def resolve_track_id(
     Returns None if the file isn't present in the Rekordbox database.
     """
     rekordbox_path = convert_path_to_rekordbox(plex_track.file_path)
-    logger.debug(f'Attempting to resolve file in Rekordbox using path "{rekordbox_path}"')
+    logger.debug(
+        f'Attempting to resolve file in Rekordbox using path "{rekordbox_path}"'
+    )
 
     if progress and task:
         progress.update(
