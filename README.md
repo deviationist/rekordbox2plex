@@ -198,7 +198,7 @@ poetry run rekordbox2plex dates --dry-run
 #    Want the full SQL to eyeball? add: --plan-file /tmp/plan.sql
 
 # 2. Stop Plex and BACK UP THE DATABASE (manual, required).
-cd /home/xavi/docker-root/plex && docker compose down
+cd /path/to/your/plex-stack && docker compose down
 #    Back up the DB plus its -wal and -shm siblings (a clean shutdown usually
 #    checkpoints the -wal/-shm away, leaving just the .db):
 DB="database/Library/Application Support/Plex Media Server/Plug-in Support/Databases/com.plexapp.plugins.library.db"
@@ -210,7 +210,7 @@ cp "$DB-shm"  "$DB-shm.bak"   # if present
 cd /path/to/rekordbox2plex && poetry run rekordbox2plex dates --write
 
 # 4. Start Plex again.
-cd /home/xavi/docker-root/plex && docker compose up -d
+cd /path/to/your/plex-stack && docker compose up -d
 ```
 
 > **Tip — verify on a copy first.** Copy the DB to a scratch path, point `PLEX_DB_PATH` at it, and run `dates --write --allow-running` (keep the default `docker` mechanism). Re-query a few `added_at` values to confirm before touching the real DB. Note: the `sqlite3` mechanism **cannot** be used against a real Plex schema — Plex's full-text-search triggers reference a custom tokenizer only the bundled "Plex SQLite" build provides (and that build must run as the DB file's owner), so writes must go through the `docker` mechanism.
