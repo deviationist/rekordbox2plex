@@ -1,6 +1,11 @@
 # rekordbox2plex
 
-**rekordbox2plex** mirrors your Rekordbox **playlists** into Plex using [`python-plexapi`](https://github.com/pkkid/python-plexapi). It's designed for DJs who curate playlists in Rekordbox and want the same playlists available for listening in Plex / Plexamp.
+**rekordbox2plex** keeps Plex in sync with Rekordbox. It does two things, each its own subcommand:
+
+- **`playlists`** — mirror your Rekordbox playlist tree into Plex (with nested-playlist flattening), using [`python-plexapi`](https://github.com/pkkid/python-plexapi).
+- **`dates`** — restore Plex **"Date Added"** from when each track actually entered your Rekordbox collection (Plex has no API for this, so it's a guarded direct write to the Plex DB).
+
+It's designed for DJs who curate in Rekordbox and want the same playlists — and the real collection-entry dates — available for listening in Plex / Plexamp.
 
 ![rekordbox2plex screenshot](https://raw.githubusercontent.com/deviationist/rekordbox2plex/main/screenshot.png)
 
@@ -151,11 +156,16 @@ Map each Plex path to the corresponding Rekordbox path:
 
 ## Usage
 
-The tool has two subcommands: `playlists` and `dates`.
+The tool has two subcommands — **`playlists`** and **`dates`** — which you can run independently:
 
 ```bash
-poetry run rekordbox2plex playlists
+poetry run rekordbox2plex playlists          # mirror Rekordbox playlists into Plex
+poetry run rekordbox2plex dates --dry-run     # preview the "Date Added" sync (read-only)
+poetry run rekordbox2plex dates --write       # apply it (Plex must be stopped; see below)
 ```
+
+- **`playlists`** — arguments below.
+- **`dates`** — full read-only-preview → write workflow in [Syncing "Date Added"](#syncing-date-added).
 
 ### `playlists` arguments
 
