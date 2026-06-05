@@ -196,6 +196,11 @@ def test_plex_track_without_rekordbox_match_is_a_plex_orphan(action):
     report = action.compute_report(None)
     assert [o["rk"] for o in report.plex_orphans] == [14]
     assert report.compared == 4  # 11, 12, 13, 15 matched; 14 is an orphan
+    # scanned counts every walked track; the three buckets sum back to it.
+    assert report.scanned == 5
+    assert report.scanned == (
+        report.compared + len(report.plex_orphans) + report.ignored
+    )
 
 
 def test_rekordbox_track_without_plex_match_is_an_rb_orphan(action):
@@ -221,6 +226,7 @@ def test_ignored_folder_excludes_track_from_both_sides(action, monkeypatch):
     # Track 15 is neither compared nor reported as an orphan, and is counted.
     assert report.ignored == 1
     assert report.compared == 3  # 11, 12, 13 (15 skipped)
+    assert report.scanned == 5  # 15 is still scanned, then ignored
     assert 15 not in report.matched_rb_ids
     assert all(o["rk"] != 15 for o in report.plex_orphans)
     # ...and it must not surface as an RB-side orphan either.
