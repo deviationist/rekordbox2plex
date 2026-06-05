@@ -1,9 +1,10 @@
 # rekordbox2plex
 
-**rekordbox2plex** keeps Plex in sync with Rekordbox. It does two things, each its own subcommand:
+**rekordbox2plex** keeps Plex in sync with Rekordbox. It does three things, each its own subcommand:
 
 - **`playlists`** — mirror your Rekordbox playlist tree into Plex (with nested-playlist flattening), using [`python-plexapi`](https://github.com/pkkid/python-plexapi).
 - **`dates`** — restore Plex **"Date Added"** from when each track actually entered your Rekordbox collection (Plex has no API for this, so it's a guarded direct write to the Plex DB).
+- **`parity`** — a **read-only** audit that checks whether Title / Artist / Album / AlbumArtist match 1:1 between Rekordbox and Plex, and lists tracks present in one system but not the other. Writes nothing.
 
 It's designed for DJs who curate in Rekordbox and want the same playlists — and the real collection-entry dates — available for listening in Plex / Plexamp.
 
@@ -14,6 +15,7 @@ It's designed for DJs who curate in Rekordbox and want the same playlists — an
 * ✅ Read your Rekordbox playlist tree, flatten nested playlists, and create/update the equivalent playlists in Plex.
 * ✅ Optionally delete Plex playlists that no longer exist in Rekordbox.
 * ✅ **Sync "Date Added"** from Rekordbox into Plex (`rekordbox2plex dates`). Like playlists, Date Added is Plex-internal state that doesn't live in audio file tags — Rekordbox knows when each track entered your collection, Plex doesn't (especially after re-importing a library). This is **read-only by default** and writes directly to the Plex DB only with explicit opt-in. See [Syncing "Date Added"](#syncing-date-added).
+* ✅ **Audit metadata parity** between Rekordbox and Plex (`rekordbox2plex parity`) — surfaces tag drift (Title/Artist/Album/AlbumArtist) and coverage gaps without changing anything. Comparison is whitespace/case-insensitive so only real divergence shows. See [Checking parity](#checking-parity).
 * ✅ Reads Rekordbox's encrypted SQLite database with `pysqlcipher3` in read-only mode.
 * ✅ Supports file path remapping (e.g. when Plex is running in Docker on a different mount than Rekordbox).
 * ❌ **Does not sync track or album metadata, artwork, release year, label, etc.** — this is on purpose. The right place to fix that data is in the audio file tags themselves; once the file is correct, Plex will pick it up on its next library scan. Pushing metadata via the Plex API is fragile and fights the platform.
@@ -118,6 +120,7 @@ cp .env.example .env
 | `REKORDBOX_MASTERDB_PASSWORD` | string | `402fd...` | Password for decrypting the SQLite DB. |
 | `REKORDBOX_COPY_DB_BEFORE_SYNC` | bool | `true` | Copy `master.db` to a tempfile before syncing (recommended). |
 | `REKORDBOX_PLAYLISTS_TO_IGNORE` | string | – | Comma-separated list of playlist names to skip. |
+| `REKORDBOX_FOLDER_PATHS_TO_IGNORE` | string | – | (`parity` only) Comma-separated **substrings**; a track whose Rekordbox `FolderPath` contains any of them is skipped on both sides (e.g. `Memes` matches `/Volumes/REKORDBOX/on-hold/Memes/x.mp3`). Same substring convention as `REKORDBOX_PLAYLISTS_TO_IGNORE`. |
 | `PLEX_URL` | string | – | Your Plex server URL (e.g., `http://localhost:32400`). |
 | `PLEX_TOKEN` | string | – | Your Plex API token. |
 | `PLEX_LIBRARY_NAME` | string | – | The Plex library that contains your music. |
@@ -157,16 +160,18 @@ Map each Plex path to the corresponding Rekordbox path:
 
 ## Usage
 
-The tool has two subcommands — **`playlists`** and **`dates`** — which you can run independently:
+The tool has three subcommands — **`playlists`**, **`dates`**, and **`parity`** — which you can run independently:
 
 ```bash
 poetry run rekordbox2plex playlists          # mirror Rekordbox playlists into Plex
 poetry run rekordbox2plex dates --dry-run     # preview the "Date Added" sync (read-only)
 poetry run rekordbox2plex dates --write       # apply it (Plex must be stopped; see below)
+poetry run rekordbox2plex parity              # audit metadata parity (read-only)
 ```
 
 - **`playlists`** — arguments below.
 - **`dates`** — full read-only-preview → write workflow in [Syncing "Date Added"](#syncing-date-added).
+- **`parity`** — read-only metadata audit; see [Checking parity](#checking-parity).
 
 ### `playlists` arguments
 
@@ -225,6 +230,36 @@ cd /path/to/your/plex-stack && docker compose up -d
 * `--plan-file <path>` — optional: also dump the SQL plan to a file for inspection (off by default).
 * `--write` — apply the changes to the Plex DB (Plex must be stopped; prompts for `WRITE-DATES`).
 * `--allow-running` — bypass the stopped-check (**only** for scratch-copy testing).
+
+---
+
+## Checking parity
+
+`rekordbox2plex parity` is a **read-only** audit. It reads the Plex library straight from the Plex DB (`PLEX_DB_PATH`, opened read-only — safe whether Plex is running or stopped) and the Rekordbox DB read-only, matches each Plex track to its Rekordbox entry by file path (the same path resolver the other commands use), and reports two kinds of finding:
+
+* **Field mismatches** — where **Title**, **Artist**, **Album**, or **AlbumArtist** differ between the two. Comparison is normalized (trimmed, whitespace-collapsed, case-insensitive), so trivial tag-formatting differences don't show up — only real divergence does. The report prints the **raw** values side by side so you can see exactly what differs.
+* **Orphans** — Plex tracks with no matching Rekordbox entry, and Rekordbox collection tracks with no matching Plex track (1:1 coverage gaps).
+
+It **never writes** to either database and takes no destructive flags. Use it to find tags you've fixed in one system but not re-scanned into the other, before running `playlists`. The mismatch table includes the offending file's path, and the Rekordbox-orphan table includes each track's `FolderPath`, so you can jump straight to the file.
+
+```bash
+poetry run rekordbox2plex parity                      # full audit (all four fields + orphans)
+poetry run rekordbox2plex parity --fields artist,album   # only compare some fields
+poetry run rekordbox2plex parity --only 17779         # check specific Plex track ratingKeys
+poetry run rekordbox2plex parity --no-orphans         # mismatches only
+poetry run rekordbox2plex parity --orphan-limit 200   # show more orphan rows (default 50)
+poetry run rekordbox2plex parity --json > report.json # machine-readable output
+```
+
+It reuses the `dates` command's `PLEX_DB_PATH` (and `PLEX_LIBRARY_NAME`, folder mappings). To exclude folders you don't expect to be in Plex (unsorted, on-hold, meme/SFX dirs) so they don't dominate the orphan list, set `REKORDBOX_FOLDER_PATHS_TO_IGNORE` to a comma-separated list of substrings — any track whose Rekordbox `FolderPath` contains one is skipped (e.g. `Memes` matches `…/on-hold/Memes/x.mp3`).
+
+### `parity` arguments
+
+* `--fields <list>` — comma-separated subset of `title,artist,album,albumartist` to compare (default: all four).
+* `--only <ratingKeys>` — comma-separated Plex track ratingKeys to check only those. (Rekordbox-orphan detection is skipped on a scoped run, since it only walks part of the library.)
+* `--no-orphans` — skip the one-system-only coverage report (on by default).
+* `--orphan-limit <N>` — cap the per-side orphan **sample** printed (default 50; the counts shown are always the full totals). Ignored under `--json`, where orphan lists are complete.
+* `--json` — emit the full report as JSON on stdout (clean — no banner/progress) instead of tables. Mismatches carry the `file`; Rekordbox orphans carry the `path`. Good for piping into `jq` or other tooling.
 
 ---
 

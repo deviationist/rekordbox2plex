@@ -39,6 +39,52 @@ def read_metadata_row(db_path: str, metadata_id: int) -> Dict[str, Any] | None:
         con.close()
 
 
+def read_tracks_metadata(db_path: str, library_name: str) -> List[Dict[str, Any]]:
+    """Read every track's display metadata from a Plex music library.
+
+    Returns a list of dicts ``{rk, title, track_artist, album, album_artist,
+    file}`` (rk == metadata_items.id). ``track_artist`` is the per-track artist
+    override Plex stores in ``original_title`` and may be ``None`` when it equals
+    the album artist — callers should fall back to ``album_artist`` in that case
+    (mirrors plexapi's ``Track.originalTitle`` semantics).
+
+    Album/album-artist titles come from walking the Plex hierarchy: a track
+    (type 10)'s ``parent_id`` is its album (type 9), whose ``parent_id`` is the
+    artist (type 8). Read-only; reuses ``_connect_ro``. Raises ValueError if the
+    named library doesn't exist."""
+    con = _connect_ro(db_path)
+    try:
+        sec = con.execute(
+            "SELECT id FROM library_sections WHERE name = ?", (library_name,)
+        ).fetchone()
+        if sec is None:
+            raise ValueError(f"Plex library {library_name!r} not found")
+        sid = int(sec["id"])
+
+        return [
+            dict(r)
+            for r in con.execute(
+                """
+                SELECT t.id AS rk, t.title AS title,
+                       t.original_title AS track_artist,
+                       al.title AS album, ar.title AS album_artist,
+                       (SELECT mp.file
+                          FROM media_items med
+                          JOIN media_parts mp ON mp.media_item_id = med.id
+                         WHERE med.metadata_item_id = t.id
+                         ORDER BY mp.id LIMIT 1) AS file
+                FROM metadata_items t
+                LEFT JOIN metadata_items al ON al.id = t.parent_id
+                LEFT JOIN metadata_items ar ON ar.id = al.parent_id
+                WHERE t.metadata_type = 10 AND t.library_section_id = ?
+                """,
+                (sid,),
+            )
+        ]
+    finally:
+        con.close()
+
+
 def read_library(
     db_path: str, library_name: str
 ) -> Tuple[int, List[Dict[str, Any]], Dict[int, Dict[str, Any]]]:
