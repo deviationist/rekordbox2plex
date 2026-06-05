@@ -2,6 +2,7 @@
 name = "rekordbox2plex"
 version = "0.1.0"
 description = "Sync Rekordbox playlists to Plex."
+license = "MIT"
 authors = [
     {name = "Robert Sæther",email = "robert4832@pm.me"}
 ]
