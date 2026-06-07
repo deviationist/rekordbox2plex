@@ -6,7 +6,7 @@ Keep the two in sync (or keep detail in `CLAUDE.md` and only a summary here).
 
 ## Scope guardrails
 
-This tool has three subcommands:
+This tool has four subcommands:
 
 - **`playlists`** — mirrors Rekordbox playlists into Plex over the HTTP API. **Do not** add
   code that pushes track/album metadata, artwork, field locks, or scan triggers via the Plex
@@ -19,6 +19,12 @@ This tool has three subcommands:
   between Rekordbox and Plex, plus one-system-only orphans. Reads Plex from the DB and
   Rekordbox read-only; **never writes** to either (no `PlexDBWriter`, no `--write`,
   `SELECT`-only). Comparison is normalized; raw values are shown.
+- **`aiff-titles`** — repairs AIFF/AIFF-C files whose legacy native `NAME` chunk (which Plex
+  reads for the title) shadows the correct ID3 `TIT2` (which Rekordbox/OneTagger use). A
+  **direct edit of the audio file on disk** (not via the Plex API) — it fixes the source tag
+  so Plex picks it up. Read-only by default; `--write` requires the `WRITE-TITLES` token,
+  backs up every original, and leaves the audio (`SSND`) + ID3 chunk byte-identical. Needs
+  `PLEX_MEDIA_PATH_MAP` to map Plex container paths → host paths.
 
 Always treat the Rekordbox DB as read-only.
 
@@ -30,6 +36,9 @@ poetry run rekordbox2plex dates [--dry-run] [--only <ratingKeys>] [--no-tracks|-
 poetry run rekordbox2plex dates --write            # Plex must be stopped; prompts WRITE-DATES
 poetry run rekordbox2plex parity [--fields title,artist,album,albumartist] [--only <ratingKeys>] [--no-orphans] [--orphan-limit N] [--json]
 #   read-only audit; env REKORDBOX_FOLDER_PATHS_TO_IGNORE excludes folder-path prefixes
+poetry run rekordbox2plex aiff-titles [--dry-run] [--only <ratingKeys>]
+poetry run rekordbox2plex aiff-titles --write [--remove-name] [--refresh-plex] [--backup-dir <dir>]
+#   fixes AIFF/AIFF-C NAME-chunk titles shadowing ID3; prompts WRITE-TITLES; env PLEX_MEDIA_PATH_MAP required
 
 poetry run pytest          # tests
 poetry run ruff check .    # lint
