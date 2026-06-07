@@ -1,7 +1,7 @@
 [project]
 name = "rekordbox2plex"
 version = "0.1.0"
-description = "Sync Rekordbox into Plex: playlists, Date Added, and a read-only metadata parity audit."
+description = "Sync Rekordbox into Plex: playlists, Date Added, a read-only metadata parity audit, and an AIFF/AIFF-C title fixer."
 license = "MIT"
 authors = [
     {name = "deviationist"}
