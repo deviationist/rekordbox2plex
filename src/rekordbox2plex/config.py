@@ -106,6 +106,24 @@ def should_output_json() -> bool:
     return getattr(get_args(), "json", False)
 
 
+def should_remove_name() -> bool:
+    """`aiff-titles`: delete the AIFF NAME chunk instead of setting it to the
+    ID3 title."""
+    return getattr(get_args(), "remove_name", False)
+
+
+def should_refresh_plex() -> bool:
+    """`aiff-titles`: after writing, trigger album-level Refresh Metadata via
+    the Plex API so Plex re-reads the corrected tags."""
+    return getattr(get_args(), "refresh_plex", False)
+
+
+def get_aiff_backup_dir() -> Optional[str]:
+    """`aiff-titles`: where originals are backed up before editing. CLI
+    --backup-dir wins, then AIFF_BACKUP_DIR; None lets the action pick a default."""
+    return getattr(get_args(), "backup_dir", None) or os.getenv("AIFF_BACKUP_DIR")
+
+
 def get_plex_db_path() -> Optional[str]:
     """Host path to com.plexapp.plugins.library.db. Optional: when unset the
     read-only DB cross-check is skipped and the write phase will error."""
@@ -114,6 +132,14 @@ def get_plex_db_path() -> Optional[str]:
 
 def get_plex_container_name() -> str:
     return os.getenv("PLEX_CONTAINER_NAME", "plex")
+
+
+def get_plex_media_path_map() -> Optional[str]:
+    """Comma-separated ``container=host`` path-prefix pairs that map Plex's
+    stored file paths (e.g. ``/data/music``) to host filesystem paths (e.g.
+    ``/tank/music``), so `aiff-titles` can open the audio files on disk. Longest
+    matching prefix wins. Example: ``/data/music=/tank/music``."""
+    return os.getenv("PLEX_MEDIA_PATH_MAP")
 
 
 def get_rekordbox_tz() -> Optional[str]:

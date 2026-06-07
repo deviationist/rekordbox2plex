@@ -150,4 +150,48 @@ def parse_script_arguments() -> argparse.Namespace:
         help="Emit the full report as JSON on stdout instead of tables "
         "(orphan lists are complete, not capped).",
     )
+
+    # rekordbox2plex aiff-titles [--write] [--remove-name] [--refresh-plex] ...
+    aiff_titles = subparsers.add_parser(
+        "aiff-titles",
+        parents=[common],
+        help="Fix AIFF titles where the legacy NAME chunk shadows ID3 in Plex "
+        "(read-only unless --write).",
+    )
+    aiff_titles.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview the NAME→ID3 title diff as a table without writing "
+        "(also the default; overrides --write).",
+    )
+    aiff_titles.add_argument(
+        "--write",
+        action="store_true",
+        help="Rewrite the AIFF NAME chunk on disk (requires confirmation).",
+    )
+    aiff_titles.add_argument(
+        "--remove-name",
+        action="store_true",
+        dest="remove_name",
+        help="Delete the NAME chunk instead of setting it to the ID3 title.",
+    )
+    aiff_titles.add_argument(
+        "--refresh-plex",
+        action="store_true",
+        dest="refresh_plex",
+        help="After writing, trigger album-level Refresh Metadata via the Plex API.",
+    )
+    aiff_titles.add_argument(
+        "--only",
+        default=None,
+        metavar="RATINGKEYS",
+        help="Comma-separated Plex track ratingKeys to limit to, e.g. --only 11553.",
+    )
+    aiff_titles.add_argument(
+        "--backup-dir",
+        default=None,
+        dest="backup_dir",
+        help="Directory to back up originals before editing "
+        "(default: ./aiff-title-backups).",
+    )
     return parser.parse_args()

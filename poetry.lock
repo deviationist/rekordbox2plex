@@ -267,6 +267,18 @@ files = [
 ]
 
 [[package]]
+name = "mutagen"
+version = "1.47.0"
+description = "read and write audio tags for many formats"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "mutagen-1.47.0-py3-none-any.whl", hash = "sha256:edd96f50c5907a9539d8e5bba7245f62c9f520aef333d13392a79a4f70aca719"},
+    {file = "mutagen-1.47.0.tar.gz", hash = "sha256:719fadef0a978c31b4cf3c956261b3c58b6948b32023078a2117b1de09f0fc99"},
+]
+
+[[package]]
 name = "mypy"
 version = "1.16.1"
 description = "Optional static typing for Python"
@@ -584,4 +596,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "782f742abec0fb8de060a0534f27cf90a08a2a47dee74481b83980d14d5f2447"
+content-hash = "fca8571028e8f1762719d1d4b497ddc01998c9432b09d6b38dcf27dec8dad65f"

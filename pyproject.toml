@@ -13,6 +13,7 @@ dependencies = [
     "python-dotenv (>=1.1.1,<2.0.0)",
     "plexapi (>=4.17.0,<5.0.0)",
     "rich (>=14.0.0,<15.0.0)",
+    "mutagen (>=1.47.0,<2.0.0)",
 ]
 
 [tool.poetry]
@@ -39,6 +40,11 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "pysqlcipher3"
+ignore_errors = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "mutagen.*"
 ignore_errors = true
 ignore_missing_imports = true
 
