@@ -134,6 +134,8 @@ cp .env.example .env
 | `PLEX_SQLITE_BIN` | string | `/usr/lib/plexmediaserver/Plex SQLite` | (`dates` only) Path to that binary inside the image. |
 | `REKORDBOX_ADDED_AT_FIELD` | string | `created_at` | (`dates` only) `djmdContent` column used as the source date. |
 | `REKORDBOX_TZ` | string | host local | (`dates` only) Timezone for interpreting *naive* Rekordbox timestamps. Ignored for offset-aware ones like `created_at`. |
+| `PLEX_MEDIA_PATH_MAP` | string | – | (`aiff-titles` only) **Required.** Comma-separated `container=host` path-prefix pairs mapping Plex's stored file paths to host paths so the audio files can be opened (e.g. `/data/music=/tank/music`). Longest prefix wins. |
+| `AIFF_BACKUP_DIR` | string | `./aiff-title-backups` | (`aiff-titles` only) Where originals are backed up before `--write` edits them. |
 | `LOGGER_NAME` | string | `rekordbox2plex` | Logger name used for log output. |
 
 > 🔐 **How to find your Plex Token?** See [this guide](#how-to-find-your-plex-api-token).
@@ -160,18 +162,21 @@ Map each Plex path to the corresponding Rekordbox path:
 
 ## Usage
 
-The tool has three subcommands — **`playlists`**, **`dates`**, and **`parity`** — which you can run independently:
+The tool has four subcommands — **`playlists`**, **`dates`**, **`parity`**, and **`aiff-titles`** — which you can run independently:
 
 ```bash
-poetry run rekordbox2plex playlists          # mirror Rekordbox playlists into Plex
+poetry run rekordbox2plex playlists           # mirror Rekordbox playlists into Plex
 poetry run rekordbox2plex dates --dry-run     # preview the "Date Added" sync (read-only)
 poetry run rekordbox2plex dates --write       # apply it (Plex must be stopped; see below)
 poetry run rekordbox2plex parity              # audit metadata parity (read-only)
+poetry run rekordbox2plex aiff-titles --dry-run   # preview AIFF NAME-chunk title fixes (read-only)
+poetry run rekordbox2plex aiff-titles --write     # repair them (file edits; see below)
 ```
 
 - **`playlists`** — arguments below.
 - **`dates`** — full read-only-preview → write workflow in [Syncing "Date Added"](#syncing-date-added).
 - **`parity`** — read-only metadata audit; see [Checking parity](#checking-parity).
+- **`aiff-titles`** — fix AIFF titles where the legacy `NAME` chunk shadows ID3; see [Fixing AIFF titles](#fixing-aiff-titles).
 
 ### `playlists` arguments
 
@@ -260,6 +265,35 @@ It reuses the `dates` command's `PLEX_DB_PATH` (and `PLEX_LIBRARY_NAME`, folder 
 * `--no-orphans` — skip the one-system-only coverage report (on by default).
 * `--orphan-limit <N>` — cap the per-side orphan **sample** printed (default 50; the counts shown are always the full totals). Ignored under `--json`, where orphan lists are complete.
 * `--json` — emit the full report as JSON on stdout (clean — no banner/progress) instead of tables. Mismatches carry the `file`; Rekordbox orphans carry the `path`. Good for piping into `jq` or other tooling.
+
+---
+
+## Fixing AIFF titles
+
+AIFF files can carry **two** title fields: a native AIFF `NAME` chunk **and** an embedded ID3 `TIT2` frame. **Plex reads the `NAME` chunk** for an AIFF track's title, while **Rekordbox (and OneTagger) use ID3 `TIT2`** — so when the two disagree, Plex shows a stale/legacy title (often baked in at file-conversion time and never updated, since OneTagger only writes ID3). This typically surfaces as a batch of `title` mismatches in `parity` on `.aiff` files.
+
+`rekordbox2plex aiff-titles` repairs this. It enumerates the Plex library's AIFF tracks (read-only, from `PLEX_DB_PATH`), opens each file on disk, and where the `NAME` chunk differs from ID3 `TIT2` it shows a **diff table** of what Plex shows vs. the correct ID3 title. **Read-only by default** — it only writes with `--write`, behind a typed `WRITE-TITLES` confirmation, and backs up every original first. The audio (`SSND`) and the ID3 chunk are left byte-for-byte untouched (verified per file).
+
+Because Plex stores *container* file paths (e.g. `/data/music/...`) but the tool must open the files on the **host**, set `PLEX_MEDIA_PATH_MAP` to one or more `container=host` prefix pairs (e.g. `PLEX_MEDIA_PATH_MAP="/data/music=/tank/music"`).
+
+```bash
+poetry run rekordbox2plex aiff-titles --dry-run            # inspect the NAME → ID3 diff table (read-only)
+poetry run rekordbox2plex aiff-titles --write             # set NAME = ID3 title (backs up originals)
+poetry run rekordbox2plex aiff-titles --write --remove-name   # delete the NAME chunk so Plex falls back to ID3
+poetry run rekordbox2plex aiff-titles --write --refresh-plex  # also album-refresh in Plex so it re-reads tags
+poetry run rekordbox2plex aiff-titles --only 11553 --write     # limit to specific Plex track ratingKeys
+```
+
+After a write, Plex still shows the old title until it re-reads the file: either pass `--refresh-plex` (album-level Refresh Metadata via the API) or run "Refresh Metadata" on the affected albums in Plex. **Set vs. remove:** setting `NAME = TIT2` is the default and is guaranteed correct; `--remove-name` is more durable (a future retag in OneTagger can't make `NAME` drift again) but relies on Plex falling back to ID3 — verify on one file (`--only`) first.
+
+### `aiff-titles` arguments
+
+* `--dry-run` — preview the diff table without writing (also the default).
+* `--write` — rewrite the `NAME` chunk on disk (requires the `WRITE-TITLES` token).
+* `--remove-name` — delete the `NAME` chunk instead of setting it to the ID3 title.
+* `--refresh-plex` — after writing, trigger album-level Refresh Metadata via the Plex API.
+* `--only <ratingKeys>` — limit to specific Plex track ratingKeys.
+* `--backup-dir <dir>` — where to back up originals (default `./aiff-title-backups`, or `AIFF_BACKUP_DIR`).
 
 ---
 

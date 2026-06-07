@@ -6,6 +6,7 @@ from .actions.PlaylistSync import PlaylistSync
 from .actions.PlaylistWipe import PlaylistWipe
 from .actions.DateAddedRestore import DateAddedRestore
 from .actions.ParityCheck import ParityCheck
+from .actions.AiffTitleFix import AiffTitleFix
 from .utils.confirm import confirm_destructive
 from .utils.helpers import parse_script_arguments
 from .utils.logger import init_logger, logger
@@ -30,6 +31,11 @@ def main():
     if config.get_command() == "parity":
         ParityCheck().run()
         logger.info("[bold green]✔ Parity check finished!")
+        return
+
+    if config.get_command() == "aiff-titles":
+        AiffTitleFix().run()
+        logger.info("[bold green]✔ AIFF title fix finished!")
         return
 
     # command == "playlists"
