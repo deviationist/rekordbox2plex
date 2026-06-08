@@ -219,6 +219,18 @@ def get_artist_image_limit() -> Optional[int]:
     return int(v) if v else None
 
 
+def get_collab_primary_separators() -> List[str]:
+    """`artist-images`: the always-on primary collab separators. Default comma +
+    feat/ft/featuring. Env ARTIST_COLLAB_PRIMARY_SEPARATORS, **whitespace-separated**
+    so ',' can be a token (e.g. ", feat ft featuring & +")."""
+    from .artwork.collab import DEFAULT_PRIMARY_SEPARATORS
+
+    raw = os.getenv("ARTIST_COLLAB_PRIMARY_SEPARATORS")
+    if not raw:
+        return list(DEFAULT_PRIMARY_SEPARATORS)
+    return [tok for tok in re.split(r"\s+", raw.strip()) if tok]
+
+
 def get_collab_ambiguous_separators() -> List[str]:
     """`artist-images`: extra *ambiguous* separators (e.g. ``&``, ``+``) the matcher
     may split a collab name on **as a last resort** — only after the full string and
