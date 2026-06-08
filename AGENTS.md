@@ -56,10 +56,11 @@ poetry run rekordbox2plex parity [--fields title,artist,album,albumartist] [--on
 poetry run rekordbox2plex aiff-titles [--dry-run] [--only <ratingKeys>]
 poetry run rekordbox2plex aiff-titles --write [--remove-name] [--refresh-plex] [--backup-dir <dir>]
 #   fixes AIFF/AIFF-C NAME-chunk titles shadowing ID3; prompts WRITE-TITLES; env PLEX_MEDIA_PATH_MAP required
-poetry run rekordbox2plex artist-images [--dry-run] [--overwrite] [--collab-mode skip|primary|collage] [--providers ...] [--only <ratingKeys>] [--limit N] [--threads N]
+poetry run rekordbox2plex artist-images [--dry-run] [--overwrite] [--collab-mode skip|primary|collage] [--collab-extra-seps "& +"] [--providers ...] [--only <ratingKeys>] [--limit N] [--threads N]
 poetry run rekordbox2plex artist-images --write    # uploads posters; prompts WRITE-IMAGES
 #   sets ARTIST posters: MBID from Plex match → fanart.tv,TheAudioDB,Deezer,Spotify,Bandcamp,Discogs;
 #   name-verified; rejects placeholder/blank(single-color) images; collage mode composites collabs.
+#   last-resort split: whole-string first; comma/feat, opt-in &/+ (--collab-extra-seps); whole "&"-artists kept.
 #   env: PLEX_ARTIST_IMAGE_PROVIDERS, DISCOGS_TOKEN|KEY/SECRET, FANARTTV_API_KEY, SPOTIFY_CLIENT_ID/SECRET, THEAUDIODB_API_KEY
 poetry run rekordbox2plex clear-art [--kind artist|album|both] [--only <ratingKeys>] [--keep-files]
 poetry run rekordbox2plex clear-art --write        # Plex stopped; prompts CLEAR-IMAGES

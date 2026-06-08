@@ -254,6 +254,16 @@ def parse_script_arguments() -> argparse.Namespace:
         "skip (default), primary (first member's portrait), or collage "
         "(composite each member's portrait into one poster).",
     )
+    artist_images.add_argument(
+        "--collab-extra-seps",
+        dest="collab_extra_seps",
+        default=None,
+        metavar="SEPS",
+        help='Opt-in last-resort separators (e.g. "& +") to also split a collab '
+        "name on, but ONLY after the full string and each component miss every "
+        "source (so 'Above & Beyond' stays whole). Empty/unset = off. Overrides "
+        "ARTIST_COLLAB_EXTRA_SEPARATORS.",
+    )
 
     # rekordbox2plex clear-art [--kind ...] [--write] [--only ...] [--allow-running]
     clear_art = subparsers.add_parser(
