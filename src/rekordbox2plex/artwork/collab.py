@@ -2,46 +2,65 @@
 
 Plex's local agent makes one artist entity per album-artist string, so a track
 tagged ``A, B, C`` becomes a single artist ``A, B, C`` that no image source has.
-``split_collab`` splits **conservatively** — only on commas and ``feat./ft./
-featuring`` — so genuine single names that merely contain ``&`` / ``/`` / ``x``
-(e.g. ``Above & Beyond``, ``A/B Sides``, ``AC/DC``) are left intact.
 
-``split_ambiguous`` is the opt-in, *last-resort* tier: it splits on ambiguous
-separators like ``&`` / ``+`` that CAN join two artists but also appear inside
-real names. It's only ever applied by the matcher to a component that already
-missed every source as a whole, so genuine ``&``-artists (which resolve whole)
-never reach it."""
+Two tiers, both **fully configurable** (the lists come from config):
+- ``split_collab`` — the primary, always-on separators (default comma + ``feat./
+  ft./featuring``). Applied first; each component is then resolved.
+- ``split_ambiguous`` — the opt-in, *last-resort* separators (``&`` / ``+`` /
+  ``x`` / ``vs`` …) that CAN join two artists but also appear inside real names.
+  Only ever applied by the matcher to a component that already missed every source
+  as a whole, so genuine ``&``-artists (which resolve whole) never reach it.
+
+Separator regex is shared: a **word** separator (``feat``, ``x``, ``vs``) requires
+surrounding whitespace (and tolerates a trailing dot, e.g. ``feat.``) so it never
+matches inside a token (``Aphex Twin``, ``Max``); a **symbol** separator (``,``,
+``&``, ``+``) allows optional whitespace, so both ``A + B`` and ``A+B`` split."""
 
 import re
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
-_SPLIT = re.compile(
-    r"\s*,\s*|\s+feat\.?\s+|\s+ft\.?\s+|\s+featuring\s+",
-    re.IGNORECASE,
-)
+#: default primary (always-on) separators — override via ARTIST_COLLAB_PRIMARY_SEPARATORS
+DEFAULT_PRIMARY_SEPARATORS = [",", "feat", "ft", "featuring"]
 
 
-def split_collab(name: str):
-    """Return the component artist names if ``name`` is a multi-artist collab
-    string (2+ parts), else ``[]`` (not a collab — handle normally)."""
-    parts = [p.strip() for p in _SPLIT.split(name or "") if p.strip()]
-    return parts if len(parts) > 1 else []
+def _sep_pattern(sep: str) -> str:
+    """Regex fragment for one separator (word vs symbol — see module docstring)."""
+    if sep.isalnum():  # word separator: needs spaces, tolerate a trailing dot
+        return r"\s+" + re.escape(sep) + r"\.?\s+"
+    return r"\s*" + re.escape(sep) + r"\s*"  # symbol separator: optional spaces
 
 
-def split_ambiguous(name: str, separators: Iterable[str]) -> List[str]:
-    """Split ``name`` on the given ambiguous separators (e.g. ``["&", "+"]``),
-    with **optional surrounding whitespace**, so both ``A + B`` and ``A+B`` break.
-
-    Safety does NOT come from the split being conservative (it isn't) — it comes
-    from the *caller*: this is only ever applied to a component that already missed
-    every source as a whole, and each returned piece must then name-verify against
-    a real source artist. So an over-eager split (e.g. ``AT&T`` → ``AT``/``T``)
-    just yields pieces that don't resolve → no image, not a wrong one. Empty pieces
-    are dropped and we require 2+ real parts, so ``D+`` / ``C++`` don't split.
-    Returns the parts if it splits into 2+, else ``[]``."""
+def _split_on(name: str, separators: Iterable[str]) -> List[str]:
     seps = [s.strip() for s in separators if s and s.strip()]
     if not seps:
         return []
-    pattern = "|".join(r"\s*" + re.escape(s) + r"\s*" for s in seps)
-    parts = [p.strip() for p in re.split(pattern, name or "") if p.strip()]
+    pattern = "|".join(_sep_pattern(s) for s in seps)
+    parts = [
+        p.strip()
+        for p in re.split(pattern, name or "", flags=re.IGNORECASE)
+        if p.strip()
+    ]
     return parts if len(parts) > 1 else []
+
+
+def split_collab(name: str, separators: Optional[Iterable[str]] = None):
+    """Return the component artist names if ``name`` splits on the (configurable)
+    primary separators into 2+ parts, else ``[]`` (not a collab — handle normally)."""
+    return _split_on(
+        name, DEFAULT_PRIMARY_SEPARATORS if separators is None else separators
+    )
+
+
+def split_ambiguous(name: str, separators: Iterable[str]) -> List[str]:
+    """Split ``name`` on the given opt-in ambiguous separators (e.g.
+    ``["&", "+", "x"]``). Returns the parts if it splits into 2+, else ``[]``.
+
+    Safety does NOT come from the split being conservative — it comes from the
+    *caller*: this is only applied to a component that already missed every source
+    as a whole, and each piece must then name-verify against a real source artist.
+    So an over-eager split (e.g. ``AT&T`` → ``AT``/``T``) just yields pieces that
+    don't resolve → no image, not a wrong one. Empty pieces are dropped and 2+ real
+    parts are required, so ``D+`` / ``C++`` don't split; word separators (``x``/
+    ``vs``) need spaces on both sides, so ``Aphex Twin`` is safe but ``A x B`` is not.
+    """
+    return _split_on(name, separators)
