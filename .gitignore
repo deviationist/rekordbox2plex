@@ -107,3 +107,9 @@ env/
 
 # Local notebooks outputs
 *.nbconvert.ipynb
+
+# Generated report worklists (parity, etc.)
+parity-*.tsv
+
+# Artwork backups / scratch output
+aiff-title-backups/

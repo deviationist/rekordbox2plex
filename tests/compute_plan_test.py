@@ -52,8 +52,12 @@ def _build_db(path: str) -> None:
     )
     con.executemany(
         "INSERT INTO media_parts VALUES (?,?,?)",
-        [(1, 1011, "/m/a1.mp3"), (2, 1012, "/m/a2.mp3"),
-         (3, 1021, "/m/b1.mp3"), (4, 1031, "/m/c1.mp3")],
+        [
+            (1, 1011, "/m/a1.mp3"),
+            (2, 1012, "/m/a2.mp3"),
+            (3, 1021, "/m/b1.mp3"),
+            (4, 1031, "/m/c1.mp3"),
+        ],
     )
     con.commit()
     con.close()
@@ -79,14 +83,27 @@ def action(tmp_path, monkeypatch):
     monkeypatch.setenv("PLEX_LIBRARY_NAME", "TestMusic")
     config.set_args(
         argparse.Namespace(
-            command="dates", dry_run=False, write=False, tracks=True, albums=True,
-            only=None, validate_track=None, validate_album=None, plan_file=None,
-            allow_running=False, verbose=0, wipe=False,
+            command="dates",
+            dry_run=False,
+            write=False,
+            tracks=True,
+            albums=True,
+            only=None,
+            validate_track=None,
+            validate_album=None,
+            plan_file=None,
+            allow_running=False,
+            verbose=0,
+            wipe=False,
         )
     )
     mod = "rekordbox2plex.actions.DateAddedRestore"
-    monkeypatch.setattr(f"{mod}.resolve_track_id_by_plex_path", lambda p: FILE_TO_RB.get(p))
-    monkeypatch.setattr(f"{mod}.resolve_rb_added_at", lambda rb, *a, **k: RB_TO_EPOCH.get(rb))
+    monkeypatch.setattr(
+        f"{mod}.resolve_track_id_by_plex_path", lambda p: FILE_TO_RB.get(p)
+    )
+    monkeypatch.setattr(
+        f"{mod}.resolve_rb_added_at", lambda rb, *a, **k: RB_TO_EPOCH.get(rb)
+    )
     monkeypatch.setattr(f"{mod}.progress_instance", _no_progress)
     return DateAddedRestore()
 

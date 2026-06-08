@@ -7,6 +7,8 @@ from .actions.PlaylistWipe import PlaylistWipe
 from .actions.DateAddedRestore import DateAddedRestore
 from .actions.ParityCheck import ParityCheck
 from .actions.AiffTitleFix import AiffTitleFix
+from .actions.ArtistImageSync import ArtistImageSync
+from .actions.ArtworkClear import ArtworkClear
 from .utils.confirm import confirm_destructive
 from .utils.helpers import parse_script_arguments
 from .utils.logger import init_logger, logger
@@ -36,6 +38,16 @@ def main():
     if config.get_command() == "aiff-titles":
         AiffTitleFix().run()
         logger.info("[bold green]✔ AIFF title fix finished!")
+        return
+
+    if config.get_command() == "artist-images":
+        ArtistImageSync().run()
+        logger.info("[bold green]✔ Artist image sync finished!")
+        return
+
+    if config.get_command() == "clear-art":
+        ArtworkClear().run()
+        logger.info("[bold green]✔ Clear artwork finished!")
         return
 
     # command == "playlists"

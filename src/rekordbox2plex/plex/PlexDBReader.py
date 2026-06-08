@@ -85,6 +85,40 @@ def read_tracks_metadata(db_path: str, library_name: str) -> List[Dict[str, Any]
         con.close()
 
 
+def read_upload_posters(
+    db_path: str, library_name: str, metadata_types: Tuple[int, ...] = (8,)
+) -> List[Dict[str, Any]]:
+    """Items of the given metadata_type(s) in the library whose selected poster is
+    an *uploaded* image (``user_thumb_url`` like ``upload://…`` — i.e. one set by a
+    tool/manually, never embedded APIC art or an agent thumb). metadata_type 8 =
+    artist, 9 = album. Returns ``{id, title, metadata_type, guid,
+    user_thumb_url}`` (guid locates the on-disk bundle). Read-only; used to build
+    the poster-clear plan. Raises if the library is unknown."""
+    if not metadata_types:
+        return []
+    con = _connect_ro(db_path)
+    try:
+        sec = con.execute(
+            "SELECT id FROM library_sections WHERE name = ?", (library_name,)
+        ).fetchone()
+        if sec is None:
+            raise ValueError(f"Plex library {library_name!r} not found")
+        sid = int(sec["id"])
+        placeholders = ",".join("?" for _ in metadata_types)
+        return [
+            dict(r)
+            for r in con.execute(
+                f"SELECT id, title, metadata_type, guid, user_thumb_url "
+                f"FROM metadata_items "
+                f"WHERE metadata_type IN ({placeholders}) AND library_section_id = ? "
+                f"AND user_thumb_url LIKE 'upload://%'",
+                (*[int(t) for t in metadata_types], sid),
+            )
+        ]
+    finally:
+        con.close()
+
+
 def read_library(
     db_path: str, library_name: str
 ) -> Tuple[int, List[Dict[str, Any]], Dict[int, Dict[str, Any]]]:

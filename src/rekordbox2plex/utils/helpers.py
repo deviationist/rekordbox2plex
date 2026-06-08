@@ -194,4 +194,109 @@ def parse_script_arguments() -> argparse.Namespace:
         help="Directory to back up originals before editing "
         "(default: ./aiff-title-backups).",
     )
+
+    # rekordbox2plex artist-images [--write] [--overwrite] [--providers ...] ...
+    artist_images = subparsers.add_parser(
+        "artist-images",
+        parents=[common],
+        help="Set Plex artist posters from external sources "
+        "(driver-based; read-only unless --write).",
+    )
+    artist_images.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview which posters would be set, without uploading (default).",
+    )
+    artist_images.add_argument(
+        "--write",
+        action="store_true",
+        help="Upload the resolved posters to Plex (requires confirmation).",
+    )
+    artist_images.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Also replace artists that already have a poster "
+        "(default: only fill artists with none).",
+    )
+    artist_images.add_argument(
+        "--providers",
+        default=None,
+        metavar="LIST",
+        help="Comma-separated provider order, overriding PLEX_ARTIST_IMAGE_PROVIDERS "
+        "(known: fanarttv,theaudiodb,deezer,spotify,discogs).",
+    )
+    artist_images.add_argument(
+        "--only",
+        default=None,
+        metavar="RATINGKEYS",
+        help="Comma-separated Plex artist ratingKeys to limit to.",
+    )
+    artist_images.add_argument(
+        "--limit",
+        default=None,
+        type=int,
+        metavar="N",
+        help="Process at most N artists this run.",
+    )
+    artist_images.add_argument(
+        "--threads",
+        default=None,
+        type=int,
+        metavar="N",
+        help="Concurrent workers for matching + uploading (default 8; 1 = serial).",
+    )
+    artist_images.add_argument(
+        "--collab-mode",
+        dest="collab_mode",
+        choices=["skip", "primary", "collage"],
+        default="skip",
+        help="Handle multi-artist 'A, B, C' strings that match no single artist: "
+        "skip (default), primary (first member's portrait), or collage "
+        "(composite each member's portrait into one poster).",
+    )
+
+    # rekordbox2plex clear-art [--kind ...] [--write] [--only ...] [--allow-running]
+    clear_art = subparsers.add_parser(
+        "clear-art",
+        parents=[common],
+        help="Remove uploaded artist/album posters via a direct Plex DB write "
+        "(Plex must be stopped; read-only unless --write).",
+    )
+    clear_art.add_argument(
+        "--kind",
+        choices=["artist", "album", "both"],
+        default="artist",
+        help="Which uploaded posters to clear: artist (default), album, or both.",
+    )
+    clear_art.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="List the posters that would be cleared, without writing "
+        "(also the default; overrides --write).",
+    )
+    clear_art.add_argument(
+        "--write",
+        action="store_true",
+        help="Clear the posters in the Plex DB (Plex must be stopped; "
+        "requires the CLEAR-IMAGES token).",
+    )
+    clear_art.add_argument(
+        "--only",
+        default=None,
+        metavar="RATINGKEYS",
+        help="Comma-separated Plex ratingKeys to clear only those "
+        "(default: every item of the selected kind with an uploaded poster).",
+    )
+    clear_art.add_argument(
+        "--keep-files",
+        action="store_true",
+        dest="keep_files",
+        help="Only clear the DB selection; leave the uploaded image file on disk "
+        "(default: also delete the orphaned file from the Plex bundle).",
+    )
+    clear_art.add_argument(
+        "--allow-running",
+        action="store_true",
+        help="Bypass the container-stopped guard (only for scratch-copy testing).",
+    )
     return parser.parse_args()
