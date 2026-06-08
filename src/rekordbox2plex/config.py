@@ -139,7 +139,7 @@ def get_artist_image_providers() -> List[str]:
     if not raw:
         raw = (
             os.getenv("PLEX_ARTIST_IMAGE_PROVIDERS")
-            or "fanarttv,theaudiodb,deezer,spotify,discogs"
+            or "fanarttv,theaudiodb,deezer,spotify,bandcamp,discogs"
         )
     return [p.strip() for p in str(raw).split(",") if p.strip()]
 

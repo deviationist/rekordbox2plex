@@ -15,6 +15,7 @@ from ..config import (
 from ..utils.logger import logger
 from .providers import (
     ArtistImageProvider,
+    BandcampProvider,
     DeezerProvider,
     DiscogsProvider,
     FanartTvProvider,
@@ -23,7 +24,7 @@ from .providers import (
 )
 
 # Known driver names. Add new sources here + a branch in build_providers().
-_KNOWN = ("fanarttv", "theaudiodb", "deezer", "spotify", "discogs")
+_KNOWN = ("fanarttv", "theaudiodb", "deezer", "spotify", "bandcamp", "discogs")
 
 
 def build_providers(names: List[str]) -> List[ArtistImageProvider]:
@@ -55,6 +56,8 @@ def build_providers(names: List[str]) -> List[ArtistImageProvider]:
             providers.append(TheAudioDBProvider(get_theaudiodb_api_key()))
         elif n == "deezer":
             providers.append(DeezerProvider(get_musicbrainz_user_agent()))
+        elif n == "bandcamp":
+            providers.append(BandcampProvider())
         elif n == "spotify":
             cid, secret = get_spotify_client_id(), get_spotify_client_secret()
             if not (cid and secret):
