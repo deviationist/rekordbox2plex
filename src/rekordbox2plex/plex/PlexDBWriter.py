@@ -71,6 +71,19 @@ def count_updates(plan_sql: str) -> int:
     )
 
 
+def build_clear_posters_sql(ids) -> str:
+    """Build the UPDATE script that clears an uploaded poster (artist or album) by
+    emptying ``user_thumb_url`` (which is what selects the poster). ids are forced
+    to int, so nothing item-supplied reaches the SQL. Fed to Plex SQLite via stdin."""
+    lines = ["BEGIN TRANSACTION;", "-- clear uploaded poster (user_thumb_url)"]
+    for i in ids:
+        lines.append(
+            f"UPDATE metadata_items SET user_thumb_url = '' WHERE id = {int(i)};"
+        )
+    lines.append("COMMIT;")
+    return "\n".join(lines) + "\n"
+
+
 def _safe_comment(text: str) -> str:
     return str(text).replace("\n", " ").replace("--", "—")
 
