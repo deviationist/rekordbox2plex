@@ -3,7 +3,7 @@ import io
 from PIL import Image
 
 from rekordbox2plex.artwork import collage as collage_mod
-from rekordbox2plex.artwork.collab import split_collab
+from rekordbox2plex.artwork.collab import split_ambiguous, split_collab
 
 
 # --- split_collab -------------------------------------------------------------
@@ -24,6 +24,31 @@ def test_split_collab_leaves_single_names_intact():
     # '&', '/', 'x' are NOT split — these are single artists, not collabs.
     for s in ["Above & Beyond", "A/B Sides", "AC/DC", "Solo Artist", "", "  "]:
         assert split_collab(s) == []
+
+
+# --- split_ambiguous ----------------------------------------------------------
+
+
+def test_split_ambiguous_splits_with_or_without_spaces():
+    seps = ["&", "+"]
+    assert split_ambiguous("Lane 8 & Kasablanca", seps) == ["Lane 8", "Kasablanca"]
+    assert split_ambiguous("Bendik Baksaas + Fredrik Høyer", seps) == [
+        "Bendik Baksaas",
+        "Fredrik Høyer",
+    ]
+    # no whitespace around the separator still splits
+    assert split_ambiguous("Artist A+Artist B", seps) == ["Artist A", "Artist B"]
+    assert split_ambiguous("Bz & Cumber", seps) == ["Bz", "Cumber"]
+
+
+def test_split_ambiguous_single_or_empty_yields_nothing():
+    seps = ["&", "+"]
+    # trailing separator → one real part → not a split
+    assert split_ambiguous("D+", seps) == []
+    assert split_ambiguous("C++", seps) == []
+    assert split_ambiguous("Solo Artist", seps) == []
+    # no configured separators → never splits
+    assert split_ambiguous("Lane 8 & Kasablanca", []) == []
 
 
 # --- compose_strips -----------------------------------------------------------

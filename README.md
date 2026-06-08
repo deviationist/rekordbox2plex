@@ -313,7 +313,9 @@ It stays aligned with Plex without depending on the online agent: each artist's 
 
 Name-based hits are **verified** against your tag or Plex's canonical name (so a same-named different artist is rejected), and **unusable images are rejected centrally** for every source: known placeholders (e.g. Deezer's grey "no photo" silhouette, by content fingerprint) and blank/single-color images (e.g. Spotify's solid-black no-photo image). Real portraits are size-gated, so they're never downloaded just to check.
 
-**Multi-artist names** (e.g. `A, B, C` — Plex makes these one "artist") are handled with `--collab-mode`: `skip` (default, leave blank), `primary` (the first member's portrait), or `collage` (a single composite image built from each member's portrait — Plex has no native collage, so the tool composites it with Pillow and uploads the result).
+**Multi-artist names** (e.g. `A, B, C` — Plex makes these one "artist") are handled with `--collab-mode`: `skip` (default, leave blank), `primary` (the first member's portrait), or `collage` (a single composite image built from each member's portrait — Plex has no native collage, so the tool composites it with Pillow and uploads the result). Splitting is **always a last resort** — the full artist string is tried across *every* source first; only if that misses is it split (comma/`feat.` by default), each piece resolved, and a collage built.
+
+**Ambiguous separators (`&` / `+`)** are opt-in via `--collab-extra-seps "& +"` (or `ARTIST_COLLAB_EXTRA_SEPARATORS`), because some artists genuinely contain them (`Above & Beyond`). They're safe because a genuine `&`-artist resolves on the *whole* name and is never split — only a name (or comma component) that misses every source as a whole is split on `&`/`+`. So `Bendik Baksaas + Fredrik Høyer` → collage of the two, while `Above & Beyond` stays whole. Split pieces use a **stricter MusicBrainz score** (`ARTIST_COLLAB_MIN_SCORE`, default 95) and a **minimum segment length** (`ARTIST_COLLAB_MIN_SEGMENT_LEN`, default 2 — raise to 3+ to drop fragments like `Bz`).
 
 ```bash
 poetry run rekordbox2plex artist-images --dry-run                  # preview the posters to set (read-only)
@@ -339,6 +341,7 @@ poetry run rekordbox2plex artist-images --only 26135 --dry-run    # limit to spe
 * `--write` — upload the resolved posters (requires the `WRITE-IMAGES` token).
 * `--overwrite` — also replace artists that already have a poster (default: fill only those with none).
 * `--collab-mode skip|primary|collage` — how to handle multi-artist strings (default `skip`).
+* `--collab-extra-seps "& +"` — opt-in last-resort separators to also split on (default off; env `ARTIST_COLLAB_EXTRA_SEPARATORS`). Genuine `&`-artists that resolve whole are never split.
 * `--providers <list>` — override `PLEX_ARTIST_IMAGE_PROVIDERS` for this run.
 * `--only <ratingKeys>` — limit to specific Plex artist ratingKeys.
 * `--limit <N>` — process at most N artists.
