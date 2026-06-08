@@ -32,7 +32,7 @@ This tool has six subcommands:
   artist art (the one **sanctioned artwork-via-API exception** — artist posters only, never
   track/album art). Identity (MBID + canonical name) comes from Plex's own agent match
   (read-only, no rebind) with a MusicBrainz fallback; the portrait is fetched from providers
-  in order — **fanart.tv → TheAudioDB → Deezer → Spotify → Discogs** — with name-verification
+  in order — **fanart.tv → TheAudioDB → Deezer → Spotify → Bandcamp → Discogs** — with name-verification
   (no wrong-artist matches) and content-based placeholder rejection. `--collab-mode` handles
   multi-artist "A, B" strings (`primary` or `collage`). Read-only by default; `--write`
   prompts `WRITE-IMAGES`.
@@ -58,7 +58,7 @@ poetry run rekordbox2plex aiff-titles --write [--remove-name] [--refresh-plex] [
 #   fixes AIFF/AIFF-C NAME-chunk titles shadowing ID3; prompts WRITE-TITLES; env PLEX_MEDIA_PATH_MAP required
 poetry run rekordbox2plex artist-images [--dry-run] [--overwrite] [--collab-mode skip|primary|collage] [--providers ...] [--only <ratingKeys>] [--limit N] [--threads N]
 poetry run rekordbox2plex artist-images --write    # uploads posters; prompts WRITE-IMAGES
-#   sets ARTIST posters: MBID from Plex match → fanart.tv,TheAudioDB,Deezer,Spotify,Discogs;
+#   sets ARTIST posters: MBID from Plex match → fanart.tv,TheAudioDB,Deezer,Spotify,Bandcamp,Discogs;
 #   name-verified; rejects placeholder/blank(single-color) images; collage mode composites collabs.
 #   env: PLEX_ARTIST_IMAGE_PROVIDERS, DISCOGS_TOKEN|KEY/SECRET, FANARTTV_API_KEY, SPOTIFY_CLIENT_ID/SECRET, THEAUDIODB_API_KEY
 poetry run rekordbox2plex clear-art [--kind artist|album|both] [--only <ratingKeys>] [--keep-files]

@@ -4,7 +4,12 @@ import io
 from PIL import Image
 
 from rekordbox2plex.artwork import placeholder as ph_mod
-from rekordbox2plex.artwork.providers import DeezerProvider, SpotifyProvider
+from rekordbox2plex.artwork.providers import (
+    BandcampProvider,
+    DeezerProvider,
+    SpotifyProvider,
+)
+from rekordbox2plex.artwork.providers import bandcamp as bandcamp_mod
 from rekordbox2plex.artwork.providers import deezer as deezer_mod
 from rekordbox2plex.artwork.providers import spotify as spotify_mod
 from rekordbox2plex.artwork.providers.base import HIT, MISS, RATE_LIMITED, SKIPPED
@@ -131,6 +136,51 @@ def test_spotify_rejects_wrong_name(monkeypatch):
         ),
     )
     assert SpotifyProvider("id", "sec").find("10bz").status == MISS
+
+
+# --- Bandcamp -----------------------------------------------------------------
+
+
+def _bc_results(results):
+    return FakeResp({"auto": {"results": results}})
+
+
+def test_bandcamp_returns_full_res_band_photo(monkeypatch):
+    monkeypatch.setattr(
+        bandcamp_mod.cffi,
+        "post",
+        lambda *a, **k: _bc_results(
+            [
+                {
+                    "type": "b",
+                    "name": "A/B Sides",
+                    "img": "https://f4.bcbits.com/img/0041637995_23.jpg",
+                }
+            ]
+        ),
+    )
+    r = BandcampProvider().find("A/B Sides")
+    assert r.status == HIT and r.image.source == "bandcamp"
+    # search thumbnail (_23) upgraded to the full 1200x1200 band photo (_10)
+    assert r.image.url == "https://f4.bcbits.com/img/0041637995_10.jpg"
+
+
+def test_bandcamp_rejects_wrong_name(monkeypatch):
+    monkeypatch.setattr(
+        bandcamp_mod.cffi,
+        "post",
+        lambda *a, **k: _bc_results(
+            [{"type": "b", "name": "Some Other Band", "img": "x_23.jpg"}]
+        ),
+    )
+    assert BandcampProvider().find("A/B Sides").status == MISS
+
+
+def test_bandcamp_rate_limit(monkeypatch):
+    monkeypatch.setattr(
+        bandcamp_mod.cffi, "post", lambda *a, **k: FakeResp({}, status=429)
+    )
+    assert BandcampProvider().find("X").status == RATE_LIMITED
 
 
 # --- registry -----------------------------------------------------------------

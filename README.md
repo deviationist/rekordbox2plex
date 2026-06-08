@@ -309,7 +309,7 @@ If you run a Plex music library on the **local-metadata agent** (so it doesn't f
 
 It stays aligned with Plex without depending on the online agent: each artist's identity (**MusicBrainz ID + canonical name**) comes from Plex's *own* match (`Artist.matches`, a read-only candidate search — it does **not** rebind the artist), with a MusicBrainz text-search fallback. The portrait is then fetched from a chain of providers, **curated portraits first, broad coverage last**:
 
-**fanart.tv → TheAudioDB → Deezer → Spotify → Discogs**
+**fanart.tv → TheAudioDB → Deezer → Spotify → Bandcamp → Discogs**
 
 Name-based hits are **verified** against your tag or Plex's canonical name (so a same-named different artist is rejected), and **unusable images are rejected centrally** for every source: known placeholders (e.g. Deezer's grey "no photo" silhouette, by content fingerprint) and blank/single-color images (e.g. Spotify's solid-black no-photo image). Real portraits are size-gated, so they're never downloaded just to check.
 
@@ -325,7 +325,8 @@ poetry run rekordbox2plex artist-images --only 26135 --dry-run    # limit to spe
 
 **Provider credentials** (set what you have; unconfigured ones are skipped — Deezer needs none):
 
-- `PLEX_ARTIST_IMAGE_PROVIDERS` — comma-separated order (default `fanarttv,theaudiodb,deezer,spotify,discogs`).
+- `PLEX_ARTIST_IMAGE_PROVIDERS` — comma-separated order (default `fanarttv,theaudiodb,deezer,spotify,bandcamp,discogs`).
+- **Bandcamp** — no key needed; strong for underground/electronic acts. Uses a browser-impersonating fetch (`curl_cffi`) because Bandcamp's edge blocks non-browser TLS fingerprints. Returns the artist's own Bandcamp image (photo or logo).
 - `FANARTTV_API_KEY` — free key from [fanart.tv](https://fanart.tv/get-an-api-key/).
 - `DISCOGS_TOKEN` (or `DISCOGS_KEY` + `DISCOGS_SECRET`) — from [Discogs developer settings](https://www.discogs.com/settings/developers).
 - `SPOTIFY_CLIENT_ID` + `SPOTIFY_CLIENT_SECRET` — a free app at [developer.spotify.com](https://developer.spotify.com/dashboard) (client-credentials flow; the redirect URI is unused).

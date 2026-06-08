@@ -16,6 +16,7 @@ dependencies = [
     "mutagen (>=1.47.0,<2.0.0)",
     "requests (>=2.31.0,<3.0.0)",
     "pillow (>=11.0,<12.0)",
+    "curl-cffi (>=0.15.0,<0.16.0)",
 ]
 
 [tool.poetry]
@@ -52,6 +53,11 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "requests.*"
+ignore_errors = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "curl_cffi.*"
 ignore_errors = true
 ignore_missing_imports = true
 

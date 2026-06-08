@@ -1,3 +1,4 @@
+from .bandcamp import BandcampProvider
 from .base import ArtistImage, ArtistImageProvider, ProviderResult
 from .deezer import DeezerProvider
 from .discogs import DiscogsProvider
@@ -14,4 +15,5 @@ __all__ = [
     "DiscogsProvider",
     "DeezerProvider",
     "SpotifyProvider",
+    "BandcampProvider",
 ]
