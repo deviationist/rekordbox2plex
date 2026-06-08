@@ -37,6 +37,7 @@ def _action(providers, collab_mode="skip", ambiguous_seps=None, min_seg_len=2):
     a = ArtistImageSync.__new__(ArtistImageSync)  # bypass __init__/config/network
     a.providers = providers
     a.collab_mode = collab_mode
+    a.primary_seps = [",", "feat", "ft", "featuring"]
     a.ambiguous_seps = ambiguous_seps or []
     a.collab_min_score = 95
     a.collab_min_seg_len = min_seg_len
