@@ -22,7 +22,9 @@ def _normalize(raw: str) -> str:
     return re.sub(r"\s+([+-]\d{2}:?\d{2})$", r"\1", s)
 
 
-def parse_rb_timestamp(raw: Optional[str], tz_name: Optional[str] = None) -> Optional[datetime]:
+def parse_rb_timestamp(
+    raw: Optional[str], tz_name: Optional[str] = None
+) -> Optional[datetime]:
     """Parse a Rekordbox timestamp string into a UTC-aware datetime.
 
     Offset-aware inputs are converted straight to UTC. Naive inputs (e.g. the

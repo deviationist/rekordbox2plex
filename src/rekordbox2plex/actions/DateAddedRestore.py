@@ -49,7 +49,9 @@ from ..utils.progress_bar import progress_instance
 def _fmt_epoch(epoch: Optional[int]) -> str:
     if epoch is None:
         return "[dim]—[/dim]"
-    return f"{epoch} ({datetime.fromtimestamp(epoch, timezone.utc):%Y-%m-%d %H:%M:%S} UTC)"
+    return (
+        f"{epoch} ({datetime.fromtimestamp(epoch, timezone.utc):%Y-%m-%d %H:%M:%S} UTC)"
+    )
 
 
 class Plan:
@@ -298,7 +300,9 @@ class DateAddedRestore(ActionBase):
 
         if mechanism == "sqlite3":
             apply_plan_sqlite3(self.plex_db_path, sql)
-            console.print(f"[bold green]✔ Applied {n} UPDATEs via stock sqlite3.[/bold green]")
+            console.print(
+                f"[bold green]✔ Applied {n} UPDATEs via stock sqlite3.[/bold green]"
+            )
             return
 
         proc = apply_plan_docker(
@@ -324,7 +328,9 @@ class DateAddedRestore(ActionBase):
         if not is_album:
             row = next((t for t in tracks if t["rk"] == rating_key), None)
             if row is None:
-                logger.error(f"[red]No track with id {rating_key} in the music library.")
+                logger.error(
+                    f"[red]No track with id {rating_key} in the music library."
+                )
                 return
             console.rule(f"[bold]TRACK  {row['title']} — id {rating_key}")
             console.print(f"file_path      : {row['file']}")
@@ -336,7 +342,9 @@ class DateAddedRestore(ActionBase):
                 return
             self._timestamp_table(rb_id)
             proposed = resolve_rb_added_at(rb_id)
-            console.print(f"\n[bold]Proposed[/bold] ({self.field}): {_fmt_epoch(proposed)}")
+            console.print(
+                f"\n[bold]Proposed[/bold] ({self.field}): {_fmt_epoch(proposed)}"
+            )
             console.print(
                 f"[bold yellow]WOULD RUN (no write):[/bold yellow] "
                 f"UPDATE metadata_items SET added_at = {proposed} WHERE id = {rating_key};\n"

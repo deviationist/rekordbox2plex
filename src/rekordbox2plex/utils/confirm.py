@@ -7,7 +7,9 @@ import sys
 console = Console()
 
 
-def confirm_destructive(message: str, token: str, title: str = "Destructive action") -> bool:
+def confirm_destructive(
+    message: str, token: str, title: str = "Destructive action"
+) -> bool:
     """Prompt the user to type a literal token to confirm a destructive action.
 
     Returns True only when the user types `token` exactly (case-sensitive).
