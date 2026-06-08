@@ -25,13 +25,18 @@ from PIL import Image
 # Known placeholder image fingerprints (md5 of the exact bytes), keyed by the
 # provider that serves them. Add new ones (provider → md5) as discovered.
 _PLACEHOLDER_MD5 = {
-    # Deezer "no photo" grey silhouette (16802 bytes), served under many URLs.
-    "deezer": {"3a0adf20e5abdafa2c1f954ca4537f36"},
+    # Deezer "no photo" grey silhouette, served under many URLs and at several
+    # sizes — each render has its own md5, so list every size we've seen.
+    "deezer": {
+        "3a0adf20e5abdafa2c1f954ca4537f36",  # smaller render (16802 bytes)
+        "cf0b6a5247e606f67470140451774cb5",  # 1000x1000 render (32022 bytes)
+    },
 }
 _TIMEOUT = 15
 # Only fetch+inspect images at or below this size; larger ⇒ assumed real (a
-# blank/placeholder image compresses tiny, a real portrait does not).
-_MAX_SUSPECT_BYTES = 30000
+# blank/placeholder image compresses small, a real portrait does not). Note the
+# Deezer xl placeholder is ~32 KB, so this must sit above that.
+_MAX_SUSPECT_BYTES = 50000
 # Max per-channel (max-min) spread to still count as "single color".
 _UNIFORM_TOL = 12
 

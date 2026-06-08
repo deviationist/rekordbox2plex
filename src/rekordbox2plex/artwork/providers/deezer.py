@@ -1,3 +1,4 @@
+import re
 from typing import Iterable, Optional
 
 import requests
@@ -12,6 +13,10 @@ from .base import (
 
 _SEARCH = "https://api.deezer.com/search/artist"
 _TIMEOUT = 15
+# Deezer's "no photo" grey silhouette is served at an EMPTY-id URL — the picture
+# fields come back as ".../images/artist//<size>-...jpg" (note the double slash).
+# That's the deterministic no-image signal, independent of the file's size/md5.
+_EMPTY_PICTURE = re.compile(r"/images/[a-z]+//")
 
 
 class DeezerProvider(ArtistImageProvider):
@@ -56,8 +61,8 @@ class DeezerProvider(ArtistImageProvider):
                 continue
             had_name_match = True
             url = res.get("picture_xl") or res.get("picture_big") or res.get("picture")
-            if url:
-                # Usability (placeholder / blank / single-color) is validated
+            if url and not _EMPTY_PICTURE.search(url):
+                # Usability (placeholder / blank / single-color) is also validated
                 # centrally by the action, uniformly across all providers.
                 return ProviderResult.hit(
                     ArtistImage(
