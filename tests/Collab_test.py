@@ -26,6 +26,13 @@ def test_split_collab_leaves_single_names_intact():
         assert split_collab(s) == []
 
 
+def test_split_collab_separators_are_configurable():
+    # custom primary separator set (comma stays a valid token)
+    assert split_collab("A; B", [";"]) == ["A", "B"]
+    assert split_collab("A & B", [","]) == []  # '&' not in the set → no split
+    assert split_collab("A, B", [",", "feat"]) == ["A", "B"]
+
+
 # --- split_ambiguous ----------------------------------------------------------
 
 
@@ -49,6 +56,27 @@ def test_split_ambiguous_single_or_empty_yields_nothing():
     assert split_ambiguous("Solo Artist", seps) == []
     # no configured separators → never splits
     assert split_ambiguous("Lane 8 & Kasablanca", []) == []
+
+
+def test_split_segments_are_trimmed():
+    # messy spacing → each segment ltrim/rtrim'd, empties dropped
+    assert split_ambiguous("  A   &   B  ", ["&"]) == ["A", "B"]
+    assert split_collab("  A , ,  B  ", [","]) == ["A", "B"]
+
+
+def test_split_ambiguous_word_separator_requires_spaces():
+    seps = ["&", "+", "x"]
+    # " x " splits (case-insensitive); but 'x' inside a token never does
+    assert split_ambiguous("Madeon x Porter Robinson", seps) == [
+        "Madeon",
+        "Porter Robinson",
+    ]
+    assert split_ambiguous("A X B", seps) == ["A", "B"]
+    for whole in ["Aphex Twin", "Max", "Lxst", "Maxx", "MxMxM"]:
+        assert split_ambiguous(whole, seps) == []
+    # 'vs' behaves the same (word separator, needs spaces)
+    assert split_ambiguous("Sasha vs Digweed", ["vs"]) == ["Sasha", "Digweed"]
+    assert split_ambiguous("Elvis", ["vs"]) == []
 
 
 # --- compose_strips -----------------------------------------------------------

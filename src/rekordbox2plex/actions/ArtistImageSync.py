@@ -23,6 +23,7 @@ from ..config import (
     get_collab_min_score,
     get_collab_min_segment_len,
     get_collab_mode,
+    get_collab_primary_separators,
     get_musicbrainz_user_agent,
     get_only_rating_keys,
     get_verbosity,
@@ -84,7 +85,8 @@ class ArtistImageSync(ActionBase):
         self.threads = get_artist_image_threads()
         self.verbose = get_verbosity() > 0
         self.collab_mode = get_collab_mode()
-        # Opt-in last-resort separators (e.g. & +) + stricter MB score for pieces.
+        # Configurable separators: primary (always-on) + opt-in ambiguous (& + x).
+        self.primary_seps = get_collab_primary_separators()
         self.ambiguous_seps = get_collab_ambiguous_separators()
         self.collab_min_score = get_collab_min_score()
         self.collab_min_seg_len = get_collab_min_segment_len()
@@ -157,7 +159,7 @@ class ArtistImageSync(ActionBase):
         # LAST RESORT — only now that the full string missed EVERY source: if it's
         # a multi-artist collab string, split and resolve the pieces.
         if self.collab_mode != "skip":
-            has_top = bool(split_collab(name))
+            has_top = bool(split_collab(name, self.primary_seps))
             has_amb = bool(self.ambiguous_seps) and bool(
                 split_ambiguous(name, self.ambiguous_seps)
             )
@@ -186,7 +188,7 @@ class ArtistImageSync(ActionBase):
         component WHOLE first (so genuine '&'-artists like 'Above & Beyond' stay
         intact); only a component that *also* misses every source is split again on
         the opt-in ambiguous separators (& +). Pieces use a stricter MB score."""
-        components = split_collab(name) or [name]
+        components = split_collab(name, self.primary_seps) or [name.strip()]
         members: List[Tuple[str, ArtistImage]] = []
         for c in components:
             if len(c) >= self.collab_min_seg_len:
