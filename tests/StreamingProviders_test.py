@@ -83,6 +83,26 @@ def test_deezer_rejects_wrong_name(monkeypatch):
     assert DeezerProvider().find("10bz").status == MISS
 
 
+def test_deezer_skips_empty_id_placeholder(monkeypatch):
+    # Deezer's no-photo silhouette comes back as an empty-id URL (".../artist//...")
+    monkeypatch.setattr(
+        deezer_mod.requests,
+        "get",
+        lambda *a, **k: FakeResp(
+            {
+                "data": [
+                    {
+                        "name": "DM Binxter",
+                        "picture_xl": "https://cdn-images.dzcdn.net/images/artist//1000x1000-000000-80-0-0.jpg",
+                    }
+                ]
+            }
+        ),
+    )
+    # name matched but the only picture is the empty-id placeholder → miss
+    assert DeezerProvider().find("DM Binxter").status == MISS
+
+
 def test_deezer_rate_limit(monkeypatch):
     monkeypatch.setattr(
         deezer_mod.requests, "get", lambda *a, **k: FakeResp({}, status=429)
