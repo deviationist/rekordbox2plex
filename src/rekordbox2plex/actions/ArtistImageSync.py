@@ -8,7 +8,7 @@ from typing import Any, List, Optional, Tuple
 from rich.table import Table
 
 from ._ActionBase import ActionBase
-from ..artwork.collab import split_collab
+from ..artwork.collab import split_ambiguous, split_collab
 from ..artwork.collage import compose_strips
 from ..artwork.mbid import PlexMbidResolver
 from ..artwork.musicbrainz import MusicBrainzResolver
@@ -19,6 +19,9 @@ from ..config import (
     get_artist_image_limit,
     get_artist_image_providers,
     get_artist_image_threads,
+    get_collab_ambiguous_separators,
+    get_collab_min_score,
+    get_collab_min_segment_len,
     get_collab_mode,
     get_musicbrainz_user_agent,
     get_only_rating_keys,
@@ -81,6 +84,10 @@ class ArtistImageSync(ActionBase):
         self.threads = get_artist_image_threads()
         self.verbose = get_verbosity() > 0
         self.collab_mode = get_collab_mode()
+        # Opt-in last-resort separators (e.g. & +) + stricter MB score for pieces.
+        self.ambiguous_seps = get_collab_ambiguous_separators()
+        self.collab_min_score = get_collab_min_score()
+        self.collab_min_seg_len = get_collab_min_segment_len()
         self.plex_mbid = PlexMbidResolver()
         # MusicBrainz text search is the fallback MBID source — needed when a
         # provider can't work without an MBID (fanart.tv) or to resolve collab
@@ -147,20 +154,25 @@ class ArtistImageSync(ActionBase):
             attempts.append((p.name, r.status, r.detail))
             if r.image:
                 return r.image, attempts
-        # No whole-name match — if this is a multi-artist collab string, fall back
-        # to per-member resolution (primary member's portrait, or a composite).
+        # LAST RESORT — only now that the full string missed EVERY source: if it's
+        # a multi-artist collab string, split and resolve the pieces.
         if self.collab_mode != "skip":
-            parts = split_collab(name)
-            if parts:
-                img = self._resolve_collab(parts, attempts)
+            has_top = bool(split_collab(name))
+            has_amb = bool(self.ambiguous_seps) and bool(
+                split_ambiguous(name, self.ambiguous_seps)
+            )
+            if has_top or has_amb:
+                img = self._resolve_collab(name, attempts)
                 if img:
                     return img, attempts
         return None, attempts
 
-    def _resolve_member(self, name: str) -> Optional[ArtistImage]:
+    def _resolve_member(
+        self, name: str, min_score: Optional[int] = None
+    ) -> Optional[ArtistImage]:
         """Resolve one collab member by name (no Plex artist object → MBID via
-        MusicBrainz, then the same providers, name-verified)."""
-        mbid = self._mb.mbid_for(name) if self._mb else None
+        MusicBrainz at ``min_score``, then the same providers, name-verified)."""
+        mbid = self._mb.mbid_for(name, min_score=min_score) if self._mb else None
         for p in self.providers:
             r = p.find(name, mbid=mbid, accept_names=[name])
             if r.image and not is_unusable_url(r.image.url, source=p.name):
@@ -168,27 +180,45 @@ class ArtistImageSync(ActionBase):
         return None
 
     def _resolve_collab(
-        self, parts: List[str], attempts: List[Attempt]
+        self, name: str, attempts: List[Attempt]
     ) -> Optional[ArtistImage]:
-        resolved = [(p, self._resolve_member(p)) for p in parts]
-        found = [(p, im) for p, im in resolved if im]
+        """Two-level, whole-first resolution. Split on comma/feat; resolve each
+        component WHOLE first (so genuine '&'-artists like 'Above & Beyond' stay
+        intact); only a component that *also* misses every source is split again on
+        the opt-in ambiguous separators (& +). Pieces use a stricter MB score."""
+        components = split_collab(name) or [name]
+        members: List[Tuple[str, ArtistImage]] = []
+        for c in components:
+            if len(c) >= self.collab_min_seg_len:
+                im = self._resolve_member(c, min_score=self.collab_min_score)
+                if im:
+                    members.append((c, im))
+                    continue
+            if self.ambiguous_seps:
+                for s in split_ambiguous(c, self.ambiguous_seps):
+                    # skip too-short fragments from an over-eager split (e.g. "Bz")
+                    if len(s) < self.collab_min_seg_len:
+                        continue
+                    sim = self._resolve_member(s, min_score=self.collab_min_score)
+                    if sim:
+                        members.append((s, sim))
         attempts.append(
-            ("collab", "hit" if found else "miss", f"{len(found)}/{len(parts)}")
+            ("collab", "hit" if members else "miss", f"{len(members)} member(s)")
         )
-        if not found:
+        if not members:
             return None
         if self.collab_mode == "primary":
             # First member (in tag order) that resolved = the primary.
-            name, img = found[0]
+            label, img = members[0]
             return ArtistImage(
-                url=img.url, source=f"{img.source} (primary)", matched_name=name
+                url=img.url, source=f"{img.source} (primary)", matched_name=label
             )
         # collage: composite all resolved members (built at upload time).
         return ArtistImage(
             url="",
             source="collage",
-            matched_name=" + ".join(p for p, _ in found),
-            members=[im.url for _, im in found],
+            matched_name=" + ".join(label for label, _ in members),
+            members=[im.url for _, im in members],
         )
 
     def compute(self) -> List[Resolved]:
