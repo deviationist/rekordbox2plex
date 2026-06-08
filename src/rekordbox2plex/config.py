@@ -1,4 +1,5 @@
 import os
+import re
 import argparse
 from typing import Optional, List, Set
 from .utils.helpers import get_boolenv
@@ -216,6 +217,43 @@ def get_artist_image_limit() -> Optional[int]:
     """`artist-images`: cap how many artists to process this run (None = all)."""
     v = getattr(get_args(), "limit", None)
     return int(v) if v else None
+
+
+def get_collab_ambiguous_separators() -> List[str]:
+    """`artist-images`: extra *ambiguous* separators (e.g. ``&``, ``+``) the matcher
+    may split a collab name on **as a last resort** — only after the full string and
+    each component miss every source. CLI --collab-extra-seps wins, then env
+    ARTIST_COLLAB_EXTRA_SEPARATORS. **Empty/unset = off** (opt-in). Accepts a space-
+    or comma-separated list, e.g. "& +" or "&,+"."""
+    raw = getattr(get_args(), "collab_extra_seps", None)
+    if raw is None:
+        raw = os.getenv("ARTIST_COLLAB_EXTRA_SEPARATORS")
+    if not raw:
+        return []
+    return [tok for tok in re.split(r"[,\s]+", str(raw)) if tok]
+
+
+def get_collab_min_segment_len() -> int:
+    """`artist-images`: minimum character length for a split-collab segment to be
+    worth resolving (a too-short fragment like 'Bz' or 'A' from a bad split is
+    skipped). Env ARTIST_COLLAB_MIN_SEGMENT_LEN; default 2 (drops 1-char only —
+    raise to 3+ to also drop 2-char fragments)."""
+    raw = os.getenv("ARTIST_COLLAB_MIN_SEGMENT_LEN")
+    try:
+        return int(raw) if raw else 2
+    except ValueError:
+        return 2
+
+
+def get_collab_min_score() -> int:
+    """`artist-images`: MusicBrainz confidence threshold for **split-collab pieces**
+    (stricter than the default 90 used for whole names, since splitting is riskier).
+    Env ARTIST_COLLAB_MIN_SCORE; default 95."""
+    raw = os.getenv("ARTIST_COLLAB_MIN_SCORE")
+    try:
+        return int(raw) if raw else 95
+    except ValueError:
+        return 95
 
 
 def get_collab_mode() -> str:
