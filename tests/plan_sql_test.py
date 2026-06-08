@@ -19,7 +19,10 @@ def test_titles_only_appear_in_sanitized_comments():
     sql = build_plan_sql(rows, [])
     update_lines = [ln for ln in sql.splitlines() if ln.startswith("UPDATE")]
     assert len(update_lines) == 1
-    assert update_lines[0] == "UPDATE metadata_items SET added_at = 100 WHERE id = 5;  -- evil — DROP TABLE"
+    assert (
+        update_lines[0]
+        == "UPDATE metadata_items SET added_at = 100 WHERE id = 5;  -- evil — DROP TABLE"
+    )
 
 
 def test_empty_plan_is_just_a_transaction():

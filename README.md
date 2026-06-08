@@ -162,7 +162,7 @@ Map each Plex path to the corresponding Rekordbox path:
 
 ## Usage
 
-The tool has four subcommands — **`playlists`**, **`dates`**, **`parity`**, and **`aiff-titles`** — which you can run independently:
+The tool has six subcommands — **`playlists`**, **`dates`**, **`parity`**, **`aiff-titles`**, **`artist-images`**, and **`clear-art`** — which you can run independently:
 
 ```bash
 poetry run rekordbox2plex playlists           # mirror Rekordbox playlists into Plex
@@ -171,12 +171,18 @@ poetry run rekordbox2plex dates --write       # apply it (Plex must be stopped; 
 poetry run rekordbox2plex parity              # audit metadata parity (read-only)
 poetry run rekordbox2plex aiff-titles --dry-run   # preview AIFF NAME-chunk title fixes (read-only)
 poetry run rekordbox2plex aiff-titles --write     # repair them (file edits; see below)
+poetry run rekordbox2plex artist-images --dry-run # preview artist posters to set (read-only)
+poetry run rekordbox2plex artist-images --write   # upload them to Plex (see below)
+poetry run rekordbox2plex clear-art --dry-run     # preview uploaded posters to remove (read-only)
+poetry run rekordbox2plex clear-art --write       # remove them (Plex must be stopped; see below)
 ```
 
 - **`playlists`** — arguments below.
 - **`dates`** — full read-only-preview → write workflow in [Syncing "Date Added"](#syncing-date-added).
 - **`parity`** — read-only metadata audit; see [Checking parity](#checking-parity).
 - **`aiff-titles`** — fix AIFF titles where the legacy `NAME` chunk shadows ID3; see [Fixing AIFF titles](#fixing-aiff-titles).
+- **`artist-images`** — set artist posters from external sources; see [Artist images](#artist-images).
+- **`clear-art`** — remove uploaded artist/album posters; see [Clearing artwork](#clearing-artwork).
 
 ### `playlists` arguments
 
@@ -294,6 +300,74 @@ After a write, Plex still shows the old title until it re-reads the file: either
 * `--refresh-plex` — after writing, trigger album-level Refresh Metadata via the Plex API.
 * `--only <ratingKeys>` — limit to specific Plex track ratingKeys.
 * `--backup-dir <dir>` — where to back up originals (default `./aiff-title-backups`, or `AIFF_BACKUP_DIR`).
+
+---
+
+## Artist images
+
+If you run a Plex music library on the **local-metadata agent** (so it doesn't fetch from Plex's online agent), your artists have **no artist art**. `rekordbox2plex artist-images` sets **artist posters** from external sources — this is the **one sanctioned artwork-via-API exception** (artist posters *only*; it never touches track/album art, which comes from your embedded tags).
+
+It stays aligned with Plex without depending on the online agent: each artist's identity (**MusicBrainz ID + canonical name**) comes from Plex's *own* match (`Artist.matches`, a read-only candidate search — it does **not** rebind the artist), with a MusicBrainz text-search fallback. The portrait is then fetched from a chain of providers, **curated portraits first, broad coverage last**:
+
+**fanart.tv → TheAudioDB → Deezer → Spotify → Discogs**
+
+Name-based hits are **verified** against your tag or Plex's canonical name (so a same-named different artist is rejected), and **unusable images are rejected centrally** for every source: known placeholders (e.g. Deezer's grey "no photo" silhouette, by content fingerprint) and blank/single-color images (e.g. Spotify's solid-black no-photo image). Real portraits are size-gated, so they're never downloaded just to check.
+
+**Multi-artist names** (e.g. `A, B, C` — Plex makes these one "artist") are handled with `--collab-mode`: `skip` (default, leave blank), `primary` (the first member's portrait), or `collage` (a single composite image built from each member's portrait — Plex has no native collage, so the tool composites it with Pillow and uploads the result).
+
+```bash
+poetry run rekordbox2plex artist-images --dry-run                  # preview the posters to set (read-only)
+poetry run rekordbox2plex artist-images --write                   # fill artists that have no poster
+poetry run rekordbox2plex artist-images --write --overwrite       # also replace existing posters
+poetry run rekordbox2plex artist-images --write --collab-mode collage   # composite multi-artist entries
+poetry run rekordbox2plex artist-images --only 26135 --dry-run    # limit to specific artist ratingKeys
+```
+
+**Provider credentials** (set what you have; unconfigured ones are skipped — Deezer needs none):
+
+- `PLEX_ARTIST_IMAGE_PROVIDERS` — comma-separated order (default `fanarttv,theaudiodb,deezer,spotify,discogs`).
+- `FANARTTV_API_KEY` — free key from [fanart.tv](https://fanart.tv/get-an-api-key/).
+- `DISCOGS_TOKEN` (or `DISCOGS_KEY` + `DISCOGS_SECRET`) — from [Discogs developer settings](https://www.discogs.com/settings/developers).
+- `SPOTIFY_CLIENT_ID` + `SPOTIFY_CLIENT_SECRET` — a free app at [developer.spotify.com](https://developer.spotify.com/dashboard) (client-credentials flow; the redirect URI is unused).
+- `THEAUDIODB_API_KEY` — optional (defaults to the public test key `2`, which is rate-limited).
+- `MUSICBRAINZ_USER_AGENT` — a descriptive UA for MusicBrainz lookups.
+
+### `artist-images` arguments
+
+* `--dry-run` — preview the table of posters that would be set (also the default).
+* `--write` — upload the resolved posters (requires the `WRITE-IMAGES` token).
+* `--overwrite` — also replace artists that already have a poster (default: fill only those with none).
+* `--collab-mode skip|primary|collage` — how to handle multi-artist strings (default `skip`).
+* `--providers <list>` — override `PLEX_ARTIST_IMAGE_PROVIDERS` for this run.
+* `--only <ratingKeys>` — limit to specific Plex artist ratingKeys.
+* `--limit <N>` — process at most N artists.
+* `--threads <N>` — concurrent workers for matching + uploading (default 8).
+
+---
+
+## Clearing artwork
+
+The Plex HTTP API can **add** an uploaded poster but can't **delete** one. `rekordbox2plex clear-art` removes uploaded **artist/album posters** by clearing `metadata_items.user_thumb_url` (the field that selects the poster) via a **direct, guarded Plex DB write** — the same mechanism the `dates` command uses — **and** deletes the orphaned image file from Plex's metadata bundle on disk (Plex's "Clean Bundles" does not). Pass `--keep-files` to clear the DB selection only.
+
+It only ever targets `upload://` posters (ones set by a tool or manually), never embedded cover art. Typical use is to **reset before repopulating** with `artist-images` (e.g. after improving matching).
+
+```bash
+poetry run rekordbox2plex clear-art --dry-run                 # list the uploaded posters that would be removed
+poetry run rekordbox2plex clear-art --write                  # remove them (Plex must be stopped)
+poetry run rekordbox2plex clear-art --kind both --dry-run    # include album posters too
+poetry run rekordbox2plex clear-art --only 28859 --write     # limit to specific ratingKeys
+```
+
+As with `dates`, **stop Plex first** and back up the DB; the write is gated behind a typed `CLEAR-IMAGES` confirmation. Note album posters usually have an embedded cover behind them, so clearing reverts to that; artists (no embedded source) go blank.
+
+### `clear-art` arguments
+
+* `--dry-run` — list what would be cleared without writing (also the default).
+* `--write` — clear the posters (Plex must be stopped; requires the `CLEAR-IMAGES` token).
+* `--kind artist|album|both` — which uploaded posters to target (default `artist`).
+* `--only <ratingKeys>` — limit to specific ratingKeys.
+* `--keep-files` — clear only the DB selection; leave the on-disk image file.
+* `--allow-running` — bypass the Plex-stopped guard (scratch-copy testing only).
 
 ---
 

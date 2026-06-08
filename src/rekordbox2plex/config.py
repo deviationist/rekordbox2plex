@@ -124,6 +124,121 @@ def get_aiff_backup_dir() -> Optional[str]:
     return getattr(get_args(), "backup_dir", None) or os.getenv("AIFF_BACKUP_DIR")
 
 
+# --- artist-images subcommand -------------------------------------------------
+
+
+def get_artist_image_providers() -> List[str]:
+    """Ordered list of artist-image provider names (driver priority). CLI
+    --providers wins, then PLEX_ARTIST_IMAGE_PROVIDERS, default
+    'fanarttv,theaudiodb,discogs' — curated MBID-keyed portraits first (closest
+    to what Plex's agent prefers), with Discogs last as the broad coverage
+    fallback (its community images are often release covers, not portraits).
+    fanarttv needs FANARTTV_API_KEY and discogs a token/key+secret — each is
+    skipped, with a warning, if unconfigured."""
+    raw = getattr(get_args(), "providers", None)
+    if not raw:
+        raw = (
+            os.getenv("PLEX_ARTIST_IMAGE_PROVIDERS")
+            or "fanarttv,theaudiodb,deezer,spotify,discogs"
+        )
+    return [p.strip() for p in str(raw).split(",") if p.strip()]
+
+
+def get_theaudiodb_api_key() -> str:
+    """TheAudioDB API key. Defaults to the public test key '2'."""
+    return os.getenv("THEAUDIODB_API_KEY", "2")
+
+
+def get_fanarttv_api_key() -> Optional[str]:
+    """fanart.tv personal API key. None disables the fanarttv provider."""
+    return os.getenv("FANARTTV_API_KEY")
+
+
+def get_spotify_client_id() -> Optional[str]:
+    """Spotify app client id (client-credentials flow). None disables spotify."""
+    return os.getenv("SPOTIFY_CLIENT_ID")
+
+
+def get_spotify_client_secret() -> Optional[str]:
+    """Spotify app client secret (paired with SPOTIFY_CLIENT_ID)."""
+    return os.getenv("SPOTIFY_CLIENT_SECRET")
+
+
+def get_discogs_token() -> Optional[str]:
+    """Discogs personal access token (simplest auth). Alternative to key+secret."""
+    return os.getenv("DISCOGS_TOKEN")
+
+
+def get_discogs_key() -> Optional[str]:
+    """Discogs consumer key (used with DISCOGS_SECRET if no DISCOGS_TOKEN)."""
+    return os.getenv("DISCOGS_KEY")
+
+
+def get_discogs_secret() -> Optional[str]:
+    """Discogs consumer secret (paired with DISCOGS_KEY)."""
+    return os.getenv("DISCOGS_SECRET")
+
+
+def get_musicbrainz_user_agent() -> str:
+    """User-Agent for MusicBrainz lookups (their rules require a descriptive one)."""
+    return os.getenv(
+        "MUSICBRAINZ_USER_AGENT",
+        "rekordbox2plex/0.1 ( https://github.com/deviationist/rekordbox2plex )",
+    )
+
+
+def should_overwrite_posters() -> bool:
+    """`artist-images`: replace existing artist posters too (default: only fill
+    artists that have none)."""
+    return getattr(get_args(), "overwrite", False)
+
+
+def get_clear_kinds() -> tuple:
+    """`clear-art`: which metadata types to clear uploaded posters for, from
+    --kind (artist=8, album=9, both). Defaults to artist only."""
+    kind = getattr(get_args(), "kind", None) or "artist"
+    return {"artist": (8,), "album": (9,), "both": (8, 9)}.get(kind, (8,))
+
+
+def should_keep_files() -> bool:
+    """`clear-art --keep-files`: only clear the DB selection, leaving the uploaded
+    image file on disk (default: also delete the file)."""
+    return getattr(get_args(), "keep_files", False)
+
+
+def get_plex_metadata_path() -> Optional[str]:
+    """Override for the Plex ``Metadata`` dir (where poster files live). Defaults
+    to None — derived from PLEX_DB_PATH (…/Plex Media Server/Metadata)."""
+    return os.getenv("PLEX_METADATA_PATH")
+
+
+def get_artist_image_limit() -> Optional[int]:
+    """`artist-images`: cap how many artists to process this run (None = all)."""
+    v = getattr(get_args(), "limit", None)
+    return int(v) if v else None
+
+
+def get_collab_mode() -> str:
+    """`artist-images`: how to handle multi-artist "collab" strings (e.g.
+    'A, B, C') that match no single artist — 'skip' (default, leave blank),
+    'primary' (use the first member's portrait), or 'collage' (composite each
+    member's portrait into one poster)."""
+    v = getattr(get_args(), "collab_mode", None)
+    return v if v in ("skip", "primary", "collage") else "skip"
+
+
+def get_artist_image_threads() -> int:
+    """`artist-images`: concurrent workers for the (network-bound) match + upload
+    phases. Default 8; 1 = serial."""
+    v = getattr(get_args(), "threads", None)
+    return max(1, int(v)) if v else 8
+
+
+def get_verbosity() -> int:
+    """Shared -v/-vv count (0/1/2)."""
+    return int(getattr(get_args(), "verbose", 0) or 0)
+
+
 def get_plex_db_path() -> Optional[str]:
     """Host path to com.plexapp.plugins.library.db. Optional: when unset the
     read-only DB cross-check is skipped and the write phase will error."""
