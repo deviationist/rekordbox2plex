@@ -121,7 +121,9 @@ def parse_script_arguments() -> argparse.Namespace:
         default=None,
         metavar="FIELDS",
         help="Comma-separated subset of title,artist,album,albumartist to "
-        "compare (default: all four).",
+        "compare (default: title,artist,album). albumartist is opt-in: Rekordbox "
+        "dedups albums by name, so its album-artist is per-album, not per-track, "
+        "and unreliable for same-named releases.",
     )
     parity.add_argument(
         "--only",

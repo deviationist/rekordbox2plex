@@ -233,6 +233,30 @@ def test_ignored_folder_excludes_track_from_both_sides(action, monkeypatch):
     assert 15 not in report.rb_orphan_ids
 
 
+def test_default_fields_exclude_albumartist(action):
+    # albumartist is opt-in: Rekordbox dedups djmdAlbum by name, so its album-artist
+    # is per-album (unreliable for same-named releases). Default = the other three.
+    assert action.fields == {"title", "artist", "album"}
+
+
+def test_albumartist_is_opt_in_via_fields(tmp_path, monkeypatch):
+    db = tmp_path / "p.db"
+    _build_db(str(db))
+    monkeypatch.setenv("PLEX_DB_PATH", str(db))
+    monkeypatch.setenv("PLEX_LIBRARY_NAME", "TestMusic")
+    config.set_args(
+        argparse.Namespace(
+            command="parity",
+            fields="title,artist,album,albumartist",
+            only=None,
+            orphans=True,
+            orphan_limit=50,
+            verbose=0,
+        )
+    )
+    assert "albumartist" in ParityCheck().fields
+
+
 def test_field_filter_limits_compared_fields(action):
     action.fields = {"title"}
     report = action.compute_report(None)
