@@ -33,6 +33,11 @@ def parse_script_arguments() -> argparse.Namespace:
         help="Increase verbosity: -v = INFO, -vv = DEBUG",
     )
 
+    # Imported lazily: config.py imports from this module, so a top-level
+    # import would be circular. The parity field tuples are the single source
+    # of truth for what --fields accepts and what it defaults to.
+    from .. import config
+
     parser = argparse.ArgumentParser(prog="rekordbox2plex")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -120,16 +125,41 @@ def parse_script_arguments() -> argparse.Namespace:
         "--fields",
         default=None,
         metavar="FIELDS",
-        help="Comma-separated subset of title,artist,album,albumartist to "
-        "compare (default: title,artist,album). albumartist is opt-in: Rekordbox "
-        "dedups albums by name, so its album-artist is per-album, not per-track, "
-        "and unreliable for same-named releases.",
+        help="Comma-separated subset of {%s} to compare (default: %s). "
+        "albumartist is opt-in: Rekordbox dedups albums by name, so its "
+        "album-artist is per-album, not per-track, and unreliable for "
+        "same-named releases."
+        % (",".join(config.PARITY_FIELDS), ",".join(config.PARITY_DEFAULT_FIELDS)),
     )
     parity.add_argument(
         "--only",
         default=None,
         metavar="RATINGKEYS",
         help="Comma-separated Plex track ratingKeys to check only those.",
+    )
+    parity.add_argument(
+        "--split-artists",
+        action="store_true",
+        dest="split_artists",
+        help="On an artist/albumartist miss, retry by splitting BOTH sides into "
+        "component artists (shared collab separators) and comparing the set — so "
+        "'Fred V & Grafix' equals 'Fred V, Grafix'. Order-independent by default.",
+    )
+    parity.add_argument(
+        "--split-artists-ordered",
+        action="store_true",
+        dest="split_artists_ordered",
+        help="With --split-artists, require the components to match in the same "
+        "order (default: order-independent, so 'A, B' equals 'B, A').",
+    )
+    parity.add_argument(
+        "--collab-extra-seps",
+        dest="collab_extra_seps",
+        default=None,
+        metavar="SEPS",
+        help='Opt-in ambiguous separators (e.g. "& +") for --split-artists, so '
+        "'Fred V & Grafix' splits. Empty/unset = off (comma + feat only). "
+        "Overrides ARTIST_COLLAB_EXTRA_SEPARATORS.",
     )
     parity.add_argument(
         "--orphans",
