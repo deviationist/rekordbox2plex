@@ -270,3 +270,178 @@ def test_only_filter_scopes_to_named_track_and_skips_rb_orphans(action):
     assert (12, "album") in _fields(report)
     # RB-orphan detection is skipped on a filtered (partial) scan.
     assert report.rb_orphan_ids == []
+
+
+# --- --split-artists set comparison ------------------------------------------
+#
+# A single Plex track (id 11) whose only divergence from Rekordbox is the
+# per-track Artist string. title/album are kept identical so artist is the
+# sole field that can mismatch.
+
+
+def _build_single_db(path: str, plex_artist: str) -> None:
+    con = sqlite3.connect(path)
+    con.executescript(
+        """
+        CREATE TABLE library_sections (id INTEGER PRIMARY KEY, name TEXT);
+        CREATE TABLE metadata_items (
+            id INTEGER PRIMARY KEY, library_section_id INTEGER,
+            metadata_type INTEGER, parent_id INTEGER,
+            title TEXT, original_title TEXT, added_at INTEGER);
+        CREATE TABLE media_items (id INTEGER PRIMARY KEY, metadata_item_id INTEGER);
+        CREATE TABLE media_parts (id INTEGER PRIMARY KEY, media_item_id INTEGER, file TEXT);
+        """
+    )
+    con.execute("INSERT INTO library_sections VALUES (1, 'TestMusic')")
+    con.executemany(
+        "INSERT INTO metadata_items VALUES (?,?,?,?,?,?,?)",
+        [
+            (800, 1, 8, None, plex_artist, None, 0),  # artist (type 8)
+            (900, 1, 9, 800, "Album X", None, 0),  # album (type 9)
+            (11, 1, 10, 900, "Song", None, 0),  # track (type 10)
+        ],
+    )
+    con.execute("INSERT INTO media_items VALUES (111, 11)")
+    con.execute("INSERT INTO media_parts VALUES (1, 111, '/m/t11.mp3')")
+    con.commit()
+    con.close()
+
+
+def _collab_action(
+    tmp_path,
+    monkeypatch,
+    *,
+    plex_artist: str,
+    rb_artist: str,
+    split: bool,
+    ordered: bool = False,
+    extra_seps=None,
+):
+    db = tmp_path / "collab.db"
+    _build_single_db(str(db), plex_artist)
+    monkeypatch.setenv("PLEX_DB_PATH", str(db))
+    monkeypatch.setenv("PLEX_LIBRARY_NAME", "TestMusic")
+    # Isolate the separator config from any repo .env that a sibling test module
+    # may have loaded via dotenv — the extra-seps tier here comes only from the
+    # explicit `extra_seps` arg (Namespace.collab_extra_seps below).
+    monkeypatch.delenv("ARTIST_COLLAB_PRIMARY_SEPARATORS", raising=False)
+    monkeypatch.delenv("ARTIST_COLLAB_EXTRA_SEPARATORS", raising=False)
+    config.set_args(
+        argparse.Namespace(
+            command="parity",
+            fields=None,
+            only=None,
+            orphans=False,  # no RB-orphan walk → get_all_rb_track_ids unused
+            orphan_limit=50,
+            verbose=0,
+            split_artists=split,
+            split_artists_ordered=ordered,
+            collab_extra_seps=extra_seps,
+        )
+    )
+    mod = "rekordbox2plex.actions.ParityCheck"
+    monkeypatch.setattr(f"{mod}.convert_path_to_rekordbox", lambda p: p)
+    monkeypatch.setattr(
+        f"{mod}.resolve_track_id_by_rb_path",
+        lambda p: 11 if p == "/m/t11.mp3" else None,
+    )
+    monkeypatch.setattr(
+        f"{mod}.get_rb_metadata",
+        lambda rb_id: (
+            {
+                "title": "Song",
+                "artist": rb_artist,
+                "album": "Album X",
+                "album_artist": rb_artist,
+            }
+            if rb_id == 11
+            else None
+        ),
+    )
+    monkeypatch.setattr(f"{mod}.progress_instance", _no_progress)
+    return ParityCheck()
+
+
+def test_split_artists_treats_ampersand_and_comma_as_equal(tmp_path, monkeypatch):
+    # The motivating case: Plex "Fred V & Grafix" vs Rekordbox "Fred V, Grafix".
+    action = _collab_action(
+        tmp_path,
+        monkeypatch,
+        plex_artist="Fred V & Grafix",
+        rb_artist="Fred V, Grafix",
+        split=True,
+        extra_seps="& +",  # opt in the ambiguous tier so '&' splits
+    )
+    report = action.compute_report(None)
+    assert all(m["field"] != "artist" for m in report.mismatches)
+
+
+def test_split_artists_off_still_reports_the_artist_mismatch(tmp_path, monkeypatch):
+    action = _collab_action(
+        tmp_path,
+        monkeypatch,
+        plex_artist="Fred V & Grafix",
+        rb_artist="Fred V, Grafix",
+        split=False,
+    )
+    report = action.compute_report(None)
+    assert (11, "artist") in _fields(report)
+
+
+def test_split_artists_without_extra_seps_does_not_split_ampersand(
+    tmp_path, monkeypatch
+):
+    # '&' is opt-in: with only the primary separators (comma + feat) the two
+    # strings don't decompose the same way, so the mismatch still stands.
+    action = _collab_action(
+        tmp_path,
+        monkeypatch,
+        plex_artist="Fred V & Grafix",
+        rb_artist="Fred V, Grafix",
+        split=True,
+        extra_seps=None,
+    )
+    report = action.compute_report(None)
+    assert (11, "artist") in _fields(report)
+
+
+def test_split_artists_is_order_independent_by_default(tmp_path, monkeypatch):
+    # comma is a primary separator, so no extra seps needed here.
+    action = _collab_action(
+        tmp_path,
+        monkeypatch,
+        plex_artist="Grafix, Fred V",
+        rb_artist="Fred V, Grafix",
+        split=True,
+    )
+    report = action.compute_report(None)
+    assert all(m["field"] != "artist" for m in report.mismatches)
+
+
+def test_split_artists_ordered_requires_same_order(tmp_path, monkeypatch):
+    action = _collab_action(
+        tmp_path,
+        monkeypatch,
+        plex_artist="Grafix, Fred V",
+        rb_artist="Fred V, Grafix",
+        split=True,
+        ordered=True,
+    )
+    report = action.compute_report(None)
+    assert (11, "artist") in _fields(report)
+
+
+def test_split_artists_does_not_mask_a_genuinely_different_artist(
+    tmp_path, monkeypatch
+):
+    # Different real artists must still surface even with the fallback on.
+    action = _collab_action(
+        tmp_path,
+        monkeypatch,
+        plex_artist="Fred V & Grafix",
+        rb_artist="Some Other Artist",
+        split=True,
+        extra_seps="& +",
+    )
+    report = action.compute_report(None)
+    assert (11, "artist") in _fields(report)

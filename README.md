@@ -249,6 +249,7 @@ cd /path/to/your/plex-stack && docker compose up -d
 `rekordbox2plex parity` is a **read-only** audit. It reads the Plex library straight from the Plex DB (`PLEX_DB_PATH`, opened read-only — safe whether Plex is running or stopped) and the Rekordbox DB read-only, matches each Plex track to its Rekordbox entry by file path (the same path resolver the other commands use), and reports two kinds of finding:
 
 * **Field mismatches** — where **Title**, **Artist**, or **Album** differ between the two (**AlbumArtist** is opt-in via `--fields` — Rekordbox shares one album row across same-named releases, so its album-artist is unreliable). Comparison is normalized (trimmed, whitespace-collapsed, case-insensitive), so trivial tag-formatting differences don't show up — only real divergence does. The report prints the **raw** values side by side so you can see exactly what differs.
+  * **Multi-artist names** often differ only in how the collaborators are joined — Plex's `Fred V & Grafix` vs Rekordbox's `Fred V, Grafix`. `--split-artists` catches these: on an `artist`/`albumartist` miss it splits **both** sides into component artists (reusing the `artist-images` collab separators) and compares the set, so a pure punctuation/ordering difference is no longer flagged. It's order-independent by default (`A, B` equals `B, A`; pass `--split-artists-ordered` to require the same order). The ambiguous `&`/`+` separators stay **opt-in** — enable them with `--collab-extra-seps "& +"` (or `ARTIST_COLLAB_EXTRA_SEPARATORS`), exactly as in `artist-images`; without them only comma and `feat./ft.` split.
 * **Orphans** — Plex tracks with no matching Rekordbox entry, and Rekordbox collection tracks with no matching Plex track (1:1 coverage gaps).
 
 It **never writes** to either database and takes no destructive flags. Use it to find tags you've fixed in one system but not re-scanned into the other, before running `playlists`. The mismatch table includes the offending file's path, and the Rekordbox-orphan table includes each track's `FolderPath`, so you can jump straight to the file.
@@ -256,6 +257,7 @@ It **never writes** to either database and takes no destructive flags. Use it to
 ```bash
 poetry run rekordbox2plex parity                      # full audit (title/artist/album + orphans)
 poetry run rekordbox2plex parity --fields artist,album   # only compare some fields
+poetry run rekordbox2plex parity --split-artists --collab-extra-seps "& +"  # treat "A & B" == "A, B"
 poetry run rekordbox2plex parity --only 17779         # check specific Plex track ratingKeys
 poetry run rekordbox2plex parity --no-orphans         # mismatches only
 poetry run rekordbox2plex parity --orphan-limit 200   # show more orphan rows (default 50)
@@ -267,6 +269,9 @@ It reuses the `dates` command's `PLEX_DB_PATH` (and `PLEX_LIBRARY_NAME`, folder 
 ### `parity` arguments
 
 * `--fields <list>` — comma-separated subset of `title,artist,album,albumartist` to compare (default: `title,artist,album`). `albumartist` is **opt-in**: Rekordbox dedups albums by name, so its album-artist is per-album, not per-track, and unreliable for same-named releases.
+* `--split-artists` — on an `artist`/`albumartist` miss, retry by splitting **both** sides into component artists (with the shared collab separators) and comparing the set, so `Fred V & Grafix` matches `Fred V, Grafix`. Order-independent unless `--split-artists-ordered` is given. Applies only to the artist fields, and only when they're in `--fields`; never relaxes `title`/`album`.
+* `--split-artists-ordered` — with `--split-artists`, require the components in the same order (so `A, B` ≠ `B, A`).
+* `--collab-extra-seps "<seps>"` — opt-in ambiguous separators (e.g. `& +`) for `--split-artists`; without them only comma + `feat./ft.` split, so `&`-joined names stay un-split. Overrides `ARTIST_COLLAB_EXTRA_SEPARATORS`.
 * `--only <ratingKeys>` — comma-separated Plex track ratingKeys to check only those. (Rekordbox-orphan detection is skipped on a scoped run, since it only walks part of the library.)
 * `--no-orphans` — skip the one-system-only coverage report (on by default).
 * `--orphan-limit <N>` — cap the per-side orphan **sample** printed (default 50; the counts shown are always the full totals). Ignored under `--json`, where orphan lists are complete.
