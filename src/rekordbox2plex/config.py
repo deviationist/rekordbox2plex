@@ -100,6 +100,24 @@ def get_parity_fields() -> Set[str]:
     return chosen or set(PARITY_DEFAULT_FIELDS)
 
 
+def should_split_artists() -> bool:
+    """`parity`: when an ``artist``/``albumartist`` field misses a direct
+    (normalized) comparison, retry by splitting **both** sides into component
+    artists with the shared collab separators and comparing the components. Lets
+    'Fred V & Grafix' (Plex) equal 'Fred V, Grafix' (Rekordbox). Off by default.
+    Separators come from the artist-images collab config (primary +
+    ARTIST_COLLAB_EXTRA_SEPARATORS / --collab-extra-seps), so the ambiguous
+    ``&``/``+`` tier stays opt-in."""
+    return getattr(get_args(), "split_artists", False)
+
+
+def should_match_artist_order() -> bool:
+    """`parity --split-artists`: require the split artist components to match in
+    the same **order**. Default off → order-independent comparison, so
+    'A, B' equals 'B, A'."""
+    return getattr(get_args(), "split_artists_ordered", False)
+
+
 def should_include_orphans() -> bool:
     """Whether `parity` reports tracks present in one system but not the other."""
     return getattr(get_args(), "orphans", True)

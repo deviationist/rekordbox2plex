@@ -4,14 +4,19 @@ from typing import Dict, List, Optional, Set
 from rich.table import Table
 
 from ._ActionBase import ActionBase
+from ..artwork.collab import split_collab
 from ..config import (
+    get_collab_ambiguous_separators,
+    get_collab_primary_separators,
     get_only_rating_keys,
     get_orphan_limit,
     get_parity_fields,
     get_plex_db_path,
     get_rb_folder_paths_to_ignore,
     should_include_orphans,
+    should_match_artist_order,
     should_output_json,
+    should_split_artists,
 )
 from ..plex.PlexDBReader import read_tracks_metadata
 from ..plex.resolvers.library import get_music_library_name
@@ -32,6 +37,9 @@ FIELD_LABELS = {
     "album": "Album",
     "albumartist": "AlbumArtist",
 }
+
+# Artist-name fields eligible for the --split-artists set-comparison fallback.
+ARTIST_FIELDS = ("artist", "albumartist")
 
 
 def _fmt(value: Optional[str]) -> str:
@@ -65,6 +73,14 @@ class ParityCheck(ActionBase):
         self.include_orphans = should_include_orphans()
         self.orphan_limit = get_orphan_limit()
         self.ignore_paths = get_rb_folder_paths_to_ignore()
+        # --split-artists: decompose artist strings and compare the component
+        # set on a direct miss. Separators reuse the artist-images collab config
+        # (primary always-on + the opt-in ambiguous tier, e.g. & / +).
+        self.split_artists = should_split_artists()
+        self.match_artist_order = should_match_artist_order()
+        self.artist_separators = (
+            get_collab_primary_separators() + get_collab_ambiguous_separators()
+        )
 
     def run(self) -> None:
         if not self.plex_db_path:
@@ -139,17 +155,42 @@ class ParityCheck(ActionBase):
         for field in FIELD_LABELS:
             if field not in self.fields:
                 continue
-            if normalize(plex_vals[field]) != normalize(rb_vals[field]):
-                report.mismatches.append(
-                    {
-                        "rk": t["rk"],
-                        "field": field,
-                        "plex": plex_vals[field],
-                        "rb": rb_vals[field],
-                        "label": label,
-                        "file": t["file"],
-                    }
-                )
+            if normalize(plex_vals[field]) == normalize(rb_vals[field]):
+                continue
+            if (
+                self.split_artists
+                and field in ARTIST_FIELDS
+                and self._artists_equivalent(plex_vals[field], rb_vals[field])
+            ):
+                continue
+            report.mismatches.append(
+                {
+                    "rk": t["rk"],
+                    "field": field,
+                    "plex": plex_vals[field],
+                    "rb": rb_vals[field],
+                    "label": label,
+                    "file": t["file"],
+                }
+            )
+
+    def _artist_components(self, value: Optional[str]) -> List[str]:
+        """Decompose an artist string into normalized component names using the
+        shared collab separators. A value that doesn't split yields its single
+        normalized self; empty components are dropped."""
+        parts = split_collab(value or "", self.artist_separators) or [value or ""]
+        return [n for n in (normalize(p) for p in parts) if n]
+
+    def _artists_equivalent(self, plex: Optional[str], rb: Optional[str]) -> bool:
+        """True if both artist strings decompose to the same component artists.
+        Order-independent by default (multiset compare); --split-artists-ordered
+        requires the same order. Empty on either side defers to the direct
+        mismatch (returns False), so a real one-sided gap still surfaces."""
+        p = self._artist_components(plex)
+        r = self._artist_components(rb)
+        if not p or not r:
+            return False
+        return p == r if self.match_artist_order else sorted(p) == sorted(r)
 
     # --- rendering ----------------------------------------------------------
 

@@ -138,6 +138,30 @@ def parse_script_arguments() -> argparse.Namespace:
         help="Comma-separated Plex track ratingKeys to check only those.",
     )
     parity.add_argument(
+        "--split-artists",
+        action="store_true",
+        dest="split_artists",
+        help="On an artist/albumartist miss, retry by splitting BOTH sides into "
+        "component artists (shared collab separators) and comparing the set — so "
+        "'Fred V & Grafix' equals 'Fred V, Grafix'. Order-independent by default.",
+    )
+    parity.add_argument(
+        "--split-artists-ordered",
+        action="store_true",
+        dest="split_artists_ordered",
+        help="With --split-artists, require the components to match in the same "
+        "order (default: order-independent, so 'A, B' equals 'B, A').",
+    )
+    parity.add_argument(
+        "--collab-extra-seps",
+        dest="collab_extra_seps",
+        default=None,
+        metavar="SEPS",
+        help='Opt-in ambiguous separators (e.g. "& +") for --split-artists, so '
+        "'Fred V & Grafix' splits. Empty/unset = off (comma + feat only). "
+        "Overrides ARTIST_COLLAB_EXTRA_SEPARATORS.",
+    )
+    parity.add_argument(
         "--orphans",
         action=argparse.BooleanOptionalAction,
         default=True,
