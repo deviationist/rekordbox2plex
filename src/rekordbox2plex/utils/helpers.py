@@ -33,6 +33,11 @@ def parse_script_arguments() -> argparse.Namespace:
         help="Increase verbosity: -v = INFO, -vv = DEBUG",
     )
 
+    # Imported lazily: config.py imports from this module, so a top-level
+    # import would be circular. The parity field tuples are the single source
+    # of truth for what --fields accepts and what it defaults to.
+    from .. import config
+
     parser = argparse.ArgumentParser(prog="rekordbox2plex")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -120,10 +125,11 @@ def parse_script_arguments() -> argparse.Namespace:
         "--fields",
         default=None,
         metavar="FIELDS",
-        help="Comma-separated subset of title,artist,album,albumartist to "
-        "compare (default: title,artist,album). albumartist is opt-in: Rekordbox "
-        "dedups albums by name, so its album-artist is per-album, not per-track, "
-        "and unreliable for same-named releases.",
+        help="Comma-separated subset of {%s} to compare (default: %s). "
+        "albumartist is opt-in: Rekordbox dedups albums by name, so its "
+        "album-artist is per-album, not per-track, and unreliable for "
+        "same-named releases."
+        % (",".join(config.PARITY_FIELDS), ",".join(config.PARITY_DEFAULT_FIELDS)),
     )
     parity.add_argument(
         "--only",
