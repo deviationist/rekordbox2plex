@@ -73,31 +73,31 @@ def should_include_albums() -> bool:
     return getattr(get_args(), "albums", True)
 
 
-_PARITY_FIELDS = ("title", "artist", "album", "albumartist")  # selectable via --fields
+PARITY_FIELDS = ("title", "artist", "album", "albumartist")  # selectable via --fields
 # `albumartist` is OFF by default: Rekordbox deduplicates djmdAlbum by NAME (even on
 # edit), so one album row backs unrelated same-named releases and its AlbumArtistID is
 # per-album, not per-track — structurally unreliable and unfixable in Rekordbox. The
 # album row is trustworthy only for the album *name*. Opt in with --fields …,albumartist.
-_PARITY_DEFAULT_FIELDS = ("title", "artist", "album")
+PARITY_DEFAULT_FIELDS = ("title", "artist", "album")
 
 
 def get_parity_fields() -> Set[str]:
     """Which metadata fields the `parity` check compares. Default: title, artist,
     album. `albumartist` is **opt-in** — Rekordbox shares one album row across
     same-named releases, so its album-artist is unreliable (see
-    _PARITY_DEFAULT_FIELDS). --fields takes a comma-separated subset of
+    PARITY_DEFAULT_FIELDS). --fields takes a comma-separated subset of
     title,artist,album,albumartist."""
     raw = getattr(get_args(), "fields", None)
     if not raw:
-        return set(_PARITY_DEFAULT_FIELDS)
+        return set(PARITY_DEFAULT_FIELDS)
     chosen = {p.strip().lower() for p in raw.split(",") if p.strip()}
-    unknown = chosen - set(_PARITY_FIELDS)
+    unknown = chosen - set(PARITY_FIELDS)
     if unknown:
         raise ValueError(
             f"Unknown parity field(s): {', '.join(sorted(unknown))}. "
-            f"Valid: {', '.join(_PARITY_FIELDS)}"
+            f"Valid: {', '.join(PARITY_FIELDS)}"
         )
-    return chosen or set(_PARITY_DEFAULT_FIELDS)
+    return chosen or set(PARITY_DEFAULT_FIELDS)
 
 
 def should_include_orphans() -> bool:
