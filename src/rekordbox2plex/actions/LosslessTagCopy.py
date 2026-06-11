@@ -38,6 +38,7 @@ _DIFF_COLS = [
     ("title", "Title"),
     ("artist", "Artist"),
     ("album", "Album"),
+    ("albumartist", "AlbumArtist"),
     ("genre", "Genre"),
 ]
 
