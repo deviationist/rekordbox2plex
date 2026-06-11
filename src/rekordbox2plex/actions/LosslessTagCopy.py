@@ -11,6 +11,7 @@ from ..config import (
     get_lossy_exts,
     get_music_root,
     get_plex_media_path_map,
+    get_rb_date_snapshot_path,
     get_show_mode,
     get_tag_backup_dir,
     get_tag_copy_limit,
@@ -19,13 +20,17 @@ from ..config import (
     should_mirror_id3_version,
     should_refresh_plex,
     should_remove_name,
+    should_snapshot_dates,
     should_write,
 )
+from ..rekordbox.date_snapshot import capture_dates
+from ..utils import snapshot_store
 from ..utils.aiff_chunks import rewrite_name
 from ..utils.confirm import confirm_destructive
 from ..utils.id3_tags import copy_id3_wholesale, read_id3_fields
 from ..utils.logger import console, logger
 from ..utils.media_paths import parse_media_path_map, resolve_container_path
+from ..utils.pairing import walk_pairs
 from ..utils.paths import PROJECT_ROOT
 from ..utils.progress_bar import progress_instance
 
@@ -72,6 +77,8 @@ class LosslessTagCopy(ActionBase):
         self.mirror_version = should_mirror_id3_version()
         self.show = get_show_mode()
         self.limit = get_tag_copy_limit()
+        self.snapshot_dates = should_snapshot_dates()
+        self.snapshot_file = get_rb_date_snapshot_path()
         self.path_map = parse_media_path_map(get_plex_media_path_map())
 
     def run(self) -> None:
@@ -89,13 +96,6 @@ class LosslessTagCopy(ActionBase):
             self.preview()
 
     # --- pairing -----------------------------------------------------------
-
-    def _classify(self, ext: str) -> Optional[str]:
-        if ext in self.lossy_exts:
-            return "lossy"
-        if ext in self.lossless_exts:
-            return "lossless"
-        return None
 
     def _usable(self, path: str) -> Optional[str]:
         """Return None if the file is usable, else a skip reason. Guards broken
@@ -119,66 +119,43 @@ class LosslessTagCopy(ActionBase):
         unmatched: lossy files with no lossless sibling (not yet upgraded).
         skipped: (lossy_path, reason) for ambiguous / unusable pairings."""
         assert self.root is not None  # guaranteed by run()
+        raw_pairs, unmatched, skipped = walk_pairs(
+            self.root, self.lossy_exts, self.lossless_exts, self.ignore_case
+        )
         pairs: List[Dict] = []
-        unmatched: List[str] = []
-        skipped: List[Tuple[str, str]] = []
 
-        for dirpath, _dirnames, filenames in os.walk(self.root):
-            # Group this directory's files by basename stem (extension stripped).
-            groups: Dict[str, Dict[str, List[str]]] = {}
-            for fn in filenames:
-                stem, ext = os.path.splitext(fn)
-                kind = self._classify(ext.lower())
-                if kind is None:
-                    continue
-                key = stem.lower() if self.ignore_case else stem
-                full = os.path.join(dirpath, fn)
-                groups.setdefault(key, {"lossy": [], "lossless": []})[kind].append(full)
+        for lossy, lossless in raw_pairs:
+            ext = os.path.splitext(lossless)[1].lower()
+            if ext not in AIFF_EXTS:
+                skipped.append(
+                    (lossy, f"unsupported lossless target '{ext}' (AIFF only)")
+                )
+                continue
+            unusable = next(
+                ((p, r) for p in (lossy, lossless) if (r := self._usable(p))),
+                None,
+            )
+            if unusable is not None:
+                p, reason = unusable
+                skipped.append((lossy, f"{os.path.basename(p)}: {reason}"))
+                continue
+            lossy_fields = read_id3_fields(lossy)
+            if not lossy_fields:
+                skipped.append((lossy, "no ID3 tag in lossy source"))
+                continue
+            lossless_fields = read_id3_fields(lossless)
+            pairs.append(
+                {
+                    "lossy": lossy,
+                    "lossless": lossless,
+                    "lossy_fields": lossy_fields,
+                    "lossless_fields": lossless_fields,
+                    # A lossless file that already carries tags will be
+                    # overwritten — surface that in the preview.
+                    "overwrite": any(lossless_fields.get(k) for k, _ in _DIFF_COLS),
+                }
+            )
 
-            for grp in groups.values():
-                for lossy in grp["lossy"]:
-                    losslesses = grp["lossless"]
-                    if not losslesses:
-                        unmatched.append(lossy)
-                        continue
-                    if len(losslesses) > 1:
-                        names = ", ".join(os.path.basename(p) for p in losslesses)
-                        skipped.append((lossy, f">1 lossless sibling ({names})"))
-                        continue
-                    lossless = losslesses[0]
-                    ext = os.path.splitext(lossless)[1].lower()
-                    if ext not in AIFF_EXTS:
-                        skipped.append(
-                            (lossy, f"unsupported lossless target '{ext}' (AIFF only)")
-                        )
-                        continue
-                    for p in (lossy, lossless):
-                        reason = self._usable(p)
-                        if reason:
-                            skipped.append((lossy, f"{os.path.basename(p)}: {reason}"))
-                            break
-                    else:
-                        lossy_fields = read_id3_fields(lossy)
-                        if not lossy_fields:
-                            skipped.append((lossy, "no ID3 tag in lossy source"))
-                            continue
-                        lossless_fields = read_id3_fields(lossless)
-                        pairs.append(
-                            {
-                                "lossy": lossy,
-                                "lossless": lossless,
-                                "lossy_fields": lossy_fields,
-                                "lossless_fields": lossless_fields,
-                                # A lossless file that already carries tags will be
-                                # overwritten — surface that in the preview.
-                                "overwrite": any(
-                                    lossless_fields.get(k) for k, _ in _DIFF_COLS
-                                ),
-                            }
-                        )
-
-        pairs.sort(key=lambda d: d["lossless"].lower())
-        unmatched.sort(key=str.lower)
         skipped.sort(key=lambda t: t[0].lower())
         if self.limit is not None:
             pairs = pairs[: self.limit]
@@ -300,6 +277,12 @@ class LosslessTagCopy(ActionBase):
             logger.info("[yellow]Aborted — confirmation token did not match.")
             return
 
+        # Capture the Rekordbox Date Added BEFORE the copy loop, so a later
+        # --delete-lossy can't remove the MP3 (and its filesystem pairing) before
+        # we've snapshotted its date keyed by the lossless path.
+        if self.snapshot_dates:
+            self._snapshot_dates(pairs)
+
         ok = 0
         deleted = 0
         changed_dirs: Set[str] = set()
@@ -330,6 +313,24 @@ class LosslessTagCopy(ActionBase):
 
         if ok:
             self._after_write(changed_dirs)
+
+    def _snapshot_dates(self, pairs: List[Dict]) -> None:
+        """Capture each pair's Rekordbox Date Added into the rb-dates sidecar
+        (read-only RB access), keyed by the lossless path, for later restore."""
+        entries, skipped = capture_dates(
+            [(p["lossy"], p["lossless"]) for p in pairs], self.path_map
+        )
+        if entries:
+            store = snapshot_store.load(self.snapshot_file)
+            for k, v in entries.items():
+                snapshot_store.merge_entry(store, k, v)
+            snapshot_store.save(self.snapshot_file, store)
+        console.print(
+            f"[dim]Snapshotted {len(entries)} Rekordbox date(s) → "
+            f"{self.snapshot_file}"
+            + (f"; {len(skipped)} not in Rekordbox" if skipped else "")
+            + "[/dim]"
+        )
 
     def _copy_pair(self, pair: Dict, backup_dir: str) -> None:
         """Back up the pristine lossless original, copy the lossy ID3 onto it,

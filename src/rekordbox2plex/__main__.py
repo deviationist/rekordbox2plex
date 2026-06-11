@@ -8,6 +8,7 @@ from .actions.DateAddedRestore import DateAddedRestore
 from .actions.ParityCheck import ParityCheck
 from .actions.AiffTitleFix import AiffTitleFix
 from .actions.LosslessTagCopy import LosslessTagCopy
+from .actions.RekordboxDateCarry import RekordboxDateCarry
 from .actions.ArtistImageSync import ArtistImageSync
 from .actions.ArtworkClear import ArtworkClear
 from .utils.confirm import confirm_destructive
@@ -44,6 +45,11 @@ def main():
     if config.get_command() == "lossless-tags":
         LosslessTagCopy().run()
         logger.info("[bold green]✔ Lossless tag copy finished!")
+        return
+
+    if config.get_command() == "rb-dates":
+        RekordboxDateCarry().run()
+        logger.info("[bold green]✔ Rekordbox date carry finished!")
         return
 
     if config.get_command() == "artist-images":

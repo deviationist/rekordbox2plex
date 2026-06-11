@@ -3,6 +3,7 @@ import re
 import argparse
 from typing import Optional, List, Set
 from .utils.helpers import get_boolenv
+from .utils.paths import PROJECT_ROOT
 
 _args: argparse.Namespace | None = None
 
@@ -218,6 +219,55 @@ def get_tag_backup_dir() -> Optional[str]:
 def get_tag_copy_limit() -> Optional[int]:
     """`lossless-tags`: process at most N pairs this run (None = no cap)."""
     return getattr(get_args(), "limit", None)
+
+
+def should_snapshot_dates() -> bool:
+    """`lossless-tags --snapshot-dates`: while copying, capture each lossy file's
+    Rekordbox Date Added into the rb-dates sidecar (read-only RB access), so it can
+    be restored onto the re-added lossless file later. See [[rb-dates]]."""
+    return getattr(get_args(), "snapshot_dates", False)
+
+
+# --- rb-dates subcommand ------------------------------------------------------
+
+
+def get_rb_dates_mode() -> str:
+    """`rb-dates`: 'snapshot' (capture, read-only) or 'apply' (restore)."""
+    return getattr(get_args(), "rb_dates_mode", "snapshot")
+
+
+def get_rb_date_snapshot_path() -> str:
+    """Sidecar JSON holding captured dates. CLI --snapshot-file wins, then
+    RB_DATE_SNAPSHOT_PATH, else ./rb-date-snapshots.json."""
+    return (
+        getattr(get_args(), "snapshot_file", None)
+        or os.getenv("RB_DATE_SNAPSHOT_PATH")
+        or str(PROJECT_ROOT / "rb-date-snapshots.json")
+    )
+
+
+def get_rb_date_backup_dir() -> Optional[str]:
+    """Where master.db is backed up before an `rb-dates apply --write`. CLI
+    --backup-dir wins, then RB_DATE_BACKUP_DIR; None → action default."""
+    return getattr(get_args(), "backup_dir", None) or os.getenv("RB_DATE_BACKUP_DIR")
+
+
+def get_stability_wait() -> float:
+    """`rb-dates apply`: seconds the quiescence probe waits between stat samples
+    (the master.db must be unchanged across the window)."""
+    return float(getattr(get_args(), "stability_wait", 5.0) or 5.0)
+
+
+def should_ignore_wal() -> bool:
+    """`rb-dates apply`: proceed even if a non-empty master.db-wal exists
+    (advanced — normally a sign Rekordbox is still open)."""
+    return getattr(get_args(), "ignore_wal", False)
+
+
+def should_keep_applied() -> bool:
+    """`rb-dates apply`: keep successfully-restored entries in the sidecar instead
+    of pruning them (default prunes so the backlog shrinks)."""
+    return getattr(get_args(), "keep_applied", False)
 
 
 # --- artist-images subcommand -------------------------------------------------
