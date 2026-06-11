@@ -134,8 +134,10 @@ cp .env.example .env
 | `PLEX_SQLITE_BIN` | string | `/usr/lib/plexmediaserver/Plex SQLite` | (`dates` only) Path to that binary inside the image. |
 | `REKORDBOX_ADDED_AT_FIELD` | string | `created_at` | (`dates` only) `djmdContent` column used as the source date. |
 | `REKORDBOX_TZ` | string | host local | (`dates` only) Timezone for interpreting *naive* Rekordbox timestamps. Ignored for offset-aware ones like `created_at`. |
-| `PLEX_MEDIA_PATH_MAP` | string | – | (`aiff-titles` only) **Required.** Comma-separated `container=host` path-prefix pairs mapping Plex's stored file paths to host paths so the audio files can be opened (e.g. `/data/music=/tank/music`). Longest prefix wins. |
+| `PLEX_MEDIA_PATH_MAP` | string | – | (`aiff-titles`; `lossless-tags --refresh-plex`) **Required for `aiff-titles`.** Comma-separated `container=host` path-prefix pairs mapping Plex's stored file paths to host paths so the audio files can be opened (e.g. `/data/music=/tank/music`). Longest prefix wins. |
 | `AIFF_BACKUP_DIR` | string | `./aiff-title-backups` | (`aiff-titles` only) Where originals are backed up before `--write` edits them. |
+| `MUSIC_ROOT` | string | – | (`lossless-tags` only) Filesystem root walked for lossy/lossless pairs (or pass `--root`). |
+| `TAG_BACKUP_DIR` | string | `./lossless-tag-backups` | (`lossless-tags` only) Where lossless originals are backed up before `--write` overwrites their ID3. |
 | `LOGGER_NAME` | string | `rekordbox2plex` | Logger name used for log output. |
 
 > 🔐 **How to find your Plex Token?** See [this guide](#how-to-find-your-plex-api-token).
@@ -162,7 +164,7 @@ Map each Plex path to the corresponding Rekordbox path:
 
 ## Usage
 
-The tool has six subcommands — **`playlists`**, **`dates`**, **`parity`**, **`aiff-titles`**, **`artist-images`**, and **`clear-art`** — which you can run independently:
+The tool has seven subcommands — **`playlists`**, **`dates`**, **`parity`**, **`aiff-titles`**, **`lossless-tags`**, **`artist-images`**, and **`clear-art`** — which you can run independently:
 
 ```bash
 poetry run rekordbox2plex playlists           # mirror Rekordbox playlists into Plex
@@ -171,6 +173,8 @@ poetry run rekordbox2plex dates --write       # apply it (Plex must be stopped; 
 poetry run rekordbox2plex parity              # audit metadata parity (read-only)
 poetry run rekordbox2plex aiff-titles --dry-run   # preview AIFF NAME-chunk title fixes (read-only)
 poetry run rekordbox2plex aiff-titles --write     # repair them (file edits; see below)
+poetry run rekordbox2plex lossless-tags --root /tank/music --dry-run  # preview lossy→lossless tag copies (read-only)
+poetry run rekordbox2plex lossless-tags --root /tank/music --write    # copy the tags onto the lossless files (see below)
 poetry run rekordbox2plex artist-images --dry-run # preview artist posters to set (read-only)
 poetry run rekordbox2plex artist-images --write   # upload them to Plex (see below)
 poetry run rekordbox2plex clear-art --dry-run     # preview uploaded posters to remove (read-only)
@@ -181,6 +185,7 @@ poetry run rekordbox2plex clear-art --write       # remove them (Plex must be st
 - **`dates`** — full read-only-preview → write workflow in [Syncing "Date Added"](#syncing-date-added).
 - **`parity`** — read-only metadata audit; see [Checking parity](#checking-parity).
 - **`aiff-titles`** — fix AIFF titles where the legacy `NAME` chunk shadows ID3; see [Fixing AIFF titles](#fixing-aiff-titles).
+- **`lossless-tags`** — copy tags from a lossy file onto a same-named lossless replacement; see [Porting tags to lossless files](#porting-tags-to-lossless-files).
 - **`artist-images`** — set artist posters from external sources; see [Artist images](#artist-images).
 - **`clear-art`** — remove uploaded artist/album posters; see [Clearing artwork](#clearing-artwork).
 
@@ -305,6 +310,41 @@ After a write, Plex still shows the old title until it re-reads the file: either
 * `--refresh-plex` — after writing, trigger album-level Refresh Metadata via the Plex API.
 * `--only <ratingKeys>` — limit to specific Plex track ratingKeys.
 * `--backup-dir <dir>` — where to back up originals (default `./aiff-title-backups`, or `AIFF_BACKUP_DIR`).
+
+---
+
+## Porting tags to lossless files
+
+If your collection is mostly lossless (AIFF) but still has some leftover **lossy** files (MP3) you're replacing over time, this command carries your curated metadata across the swap. The workflow: drop a fresh lossless file next to the old lossy one (**same basename, same folder**), then run `lossless-tags`. It finds each lossy file with a same-named lossless sibling and **copies the entire ID3 tag wholesale** — every frame, including embedded artwork — from the lossy file onto the lossless one. After that the lossless file carries the tags you'd carefully set, and you can delete the lossy original (or have the tool do it with `--delete-lossy`).
+
+It walks `MUSIC_ROOT` (or `--root`) on disk — no Plex or Rekordbox lookup needed for the copy. **Read-only by default**: it prints the tags that would transfer per matched pair (a dry-run / parity check). `--write` overwrites the lossless file's ID3 behind a typed `WRITE-TAGS` confirmation, **backing up each lossless original first**. mutagen rewrites only the ID3 chunk, so the audio (`SSND`) is left byte-identical; the AIFF native `NAME` chunk is then aligned to the new title (so Plex shows it right), or stripped with `--remove-name`.
+
+Only **AIFF/AIFF-C** lossless targets are supported (they carry ID3 like MP3 does); FLAC (Vorbis comments) and WAV are skipped. Ambiguous pairings (a lossy file with **more than one** lossless sibling), untagged lossy sources, and zero-byte/broken files are skipped and reported, never silently mangled — and the lossy file is **only** deleted once every step of its copy succeeded.
+
+```bash
+poetry run rekordbox2plex lossless-tags --root /tank/music --dry-run        # preview tags that would transfer
+poetry run rekordbox2plex lossless-tags --root /tank/music --show both      # also list files not yet upgraded
+poetry run rekordbox2plex lossless-tags --root /tank/music --write          # copy tags (backs up lossless originals)
+poetry run rekordbox2plex lossless-tags --root /tank/music --write --delete-lossy   # …and remove the lossy source on success
+poetry run rekordbox2plex lossless-tags --root /tank/music --write --refresh-plex   # …and trigger a partial Plex scan
+```
+
+Use `--show unmatched` (or `both`) to list the lossy files that **don't** yet have a lossless replacement — i.e. your remaining upgrade backlog. `--refresh-plex` queues a partial Plex scan of the affected folders so Plex ingests the new file and drops the deleted one (it needs `PLEX_MEDIA_PATH_MAP` to map host directories back to Plex paths).
+
+### `lossless-tags` arguments
+
+* `--root <dir>` — music root to walk (or set `MUSIC_ROOT`).
+* `--dry-run` — preview the per-pair tag diff without writing (also the default).
+* `--write` — copy the tags onto the lossless files (requires the `WRITE-TAGS` token).
+* `--show matched|unmatched|both` — which lossy files to list: matched (default), not-yet-upgraded, or both.
+* `--lossy-exts <list>` / `--lossless-exts <list>` — override the source/target extensions (default `.mp3` / `.aiff,.aif`).
+* `--remove-name` — strip the AIFF `NAME` chunk instead of setting it to the copied title.
+* `--delete-lossy` — delete the lossy source after a fully successful copy.
+* `--refresh-plex` — after writing, trigger a partial Plex scan of the affected folders (needs `PLEX_MEDIA_PATH_MAP`).
+* `--mirror-version` — save ID3 as the source's major version instead of forcing v2.3.
+* `--ignore-case` — match basenames case-insensitively (default: exact match).
+* `--limit <N>` — process at most N matched pairs.
+* `--backup-dir <dir>` — where to back up lossless originals (default `./lossless-tag-backups`, or `TAG_BACKUP_DIR`).
 
 ---
 

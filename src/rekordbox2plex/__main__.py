@@ -7,6 +7,7 @@ from .actions.PlaylistWipe import PlaylistWipe
 from .actions.DateAddedRestore import DateAddedRestore
 from .actions.ParityCheck import ParityCheck
 from .actions.AiffTitleFix import AiffTitleFix
+from .actions.LosslessTagCopy import LosslessTagCopy
 from .actions.ArtistImageSync import ArtistImageSync
 from .actions.ArtworkClear import ArtworkClear
 from .utils.confirm import confirm_destructive
@@ -38,6 +39,11 @@ def main():
     if config.get_command() == "aiff-titles":
         AiffTitleFix().run()
         logger.info("[bold green]✔ AIFF title fix finished!")
+        return
+
+    if config.get_command() == "lossless-tags":
+        LosslessTagCopy().run()
+        logger.info("[bold green]✔ Lossless tag copy finished!")
         return
 
     if config.get_command() == "artist-images":

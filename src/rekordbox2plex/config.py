@@ -151,6 +151,75 @@ def get_aiff_backup_dir() -> Optional[str]:
     return getattr(get_args(), "backup_dir", None) or os.getenv("AIFF_BACKUP_DIR")
 
 
+# --- lossless-tags subcommand -------------------------------------------------
+
+
+def get_music_root() -> Optional[str]:
+    """`lossless-tags`: filesystem root to walk for lossy/lossless pairs. CLI
+    --root wins, then MUSIC_ROOT. None means unset (the action errors)."""
+    return getattr(get_args(), "root", None) or os.getenv("MUSIC_ROOT")
+
+
+def _split_exts(raw: Optional[str], default: tuple[str, ...]) -> tuple[str, ...]:
+    """Normalise a comma-separated extension list into a lowercased, dot-prefixed
+    tuple (e.g. 'mp3, .M4A' → ('.mp3', '.m4a')). Empty/unset → default."""
+    if not raw:
+        return default
+    out = []
+    for part in raw.split(","):
+        e = part.strip().lower()
+        if not e:
+            continue
+        out.append(e if e.startswith(".") else "." + e)
+    return tuple(out) or default
+
+
+def get_lossy_exts() -> tuple[str, ...]:
+    """`lossless-tags`: extensions treated as lossy sources (default '.mp3')."""
+    return _split_exts(getattr(get_args(), "lossy_exts", None), (".mp3",))
+
+
+def get_lossless_exts() -> tuple[str, ...]:
+    """`lossless-tags`: extensions treated as lossless targets (default AIFF).
+    Only AIFF/AIFF-C are supported for the wholesale ID3 copy; FLAC (Vorbis
+    comments) and WAV are intentionally excluded."""
+    return _split_exts(getattr(get_args(), "lossless_exts", None), (".aiff", ".aif"))
+
+
+def should_delete_lossy() -> bool:
+    """`lossless-tags`: delete the lossy source after a fully successful copy."""
+    return getattr(get_args(), "delete_lossy", False)
+
+
+def should_mirror_id3_version() -> bool:
+    """`lossless-tags`: save ID3 as the source's major version instead of forcing
+    v2.3 (the Plex/Rekordbox-friendly default)."""
+    return getattr(get_args(), "mirror_version", False)
+
+
+def should_ignore_case() -> bool:
+    """`lossless-tags`: match basenames case-insensitively (default: exact, to
+    mirror the case-sensitive host filesystem)."""
+    return getattr(get_args(), "ignore_case", False)
+
+
+def get_show_mode() -> str:
+    """`lossless-tags`: which lossy files the dry-run lists — 'matched' (default,
+    those with a lossless sibling), 'unmatched' (not yet upgraded), or 'both'."""
+    return getattr(get_args(), "show", "matched")
+
+
+def get_tag_backup_dir() -> Optional[str]:
+    """`lossless-tags`: where lossless originals are backed up before the ID3
+    overwrite. CLI --backup-dir wins, then TAG_BACKUP_DIR; None → action default."""
+    return getattr(get_args(), "backup_dir", None) or os.getenv("TAG_BACKUP_DIR")
+
+
+def get_tag_copy_limit() -> Optional[int]:
+    """`lossless-tags`: process at most N pairs this run (None = no cap)."""
+    return getattr(get_args(), "limit", None)
+
+
 # --- artist-images subcommand -------------------------------------------------
 
 
