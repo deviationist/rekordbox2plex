@@ -341,4 +341,97 @@ def parse_script_arguments() -> argparse.Namespace:
         action="store_true",
         help="Bypass the container-stopped guard (only for scratch-copy testing).",
     )
+
+    # rekordbox2plex lossless-tags --root DIR [--write] [--delete-lossy] ...
+    lossless_tags = subparsers.add_parser(
+        "lossless-tags",
+        parents=[common],
+        help="Copy ID3 tags from a lossy file onto a same-named lossless "
+        "replacement (AIFF) in the same folder (read-only unless --write).",
+    )
+    lossless_tags.add_argument(
+        "--root",
+        default=None,
+        metavar="DIR",
+        help="Music root to walk for lossy/lossless pairs (env MUSIC_ROOT).",
+    )
+    lossless_tags.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview the tag diff per matched pair without writing "
+        "(also the default; overrides --write).",
+    )
+    lossless_tags.add_argument(
+        "--write",
+        action="store_true",
+        help="Copy the tags onto the lossless files (requires the WRITE-TAGS token).",
+    )
+    lossless_tags.add_argument(
+        "--show",
+        choices=["matched", "unmatched", "both"],
+        default="matched",
+        help="Which lossy files to list: matched (have a lossless sibling; "
+        "default), unmatched (not yet upgraded), or both.",
+    )
+    lossless_tags.add_argument(
+        "--lossy-exts",
+        dest="lossy_exts",
+        default=None,
+        metavar="EXTS",
+        help="Comma-separated lossy source extensions (default '.mp3').",
+    )
+    lossless_tags.add_argument(
+        "--lossless-exts",
+        dest="lossless_exts",
+        default=None,
+        metavar="EXTS",
+        help="Comma-separated lossless target extensions (default '.aiff,.aif'; "
+        "only AIFF/AIFF-C are supported — FLAC/WAV are skipped).",
+    )
+    lossless_tags.add_argument(
+        "--remove-name",
+        action="store_true",
+        dest="remove_name",
+        help="Strip the AIFF NAME chunk instead of setting it to the copied title.",
+    )
+    lossless_tags.add_argument(
+        "--refresh-plex",
+        action="store_true",
+        dest="refresh_plex",
+        help="After writing, trigger a partial Plex scan of the affected "
+        "directories (needs PLEX_MEDIA_PATH_MAP + Plex API connection).",
+    )
+    lossless_tags.add_argument(
+        "--delete-lossy",
+        action="store_true",
+        dest="delete_lossy",
+        help="Delete the lossy source after a fully successful copy "
+        "(default: leave it for you to remove manually).",
+    )
+    lossless_tags.add_argument(
+        "--mirror-version",
+        action="store_true",
+        dest="mirror_version",
+        help="Save ID3 as the source's major version instead of forcing v2.3.",
+    )
+    lossless_tags.add_argument(
+        "--ignore-case",
+        action="store_true",
+        dest="ignore_case",
+        help="Match basenames case-insensitively (default: exact match).",
+    )
+    lossless_tags.add_argument(
+        "--limit",
+        default=None,
+        type=int,
+        metavar="N",
+        help="Process at most N matched pairs this run.",
+    )
+    lossless_tags.add_argument(
+        "--backup-dir",
+        default=None,
+        dest="backup_dir",
+        help="Directory to back up lossless originals before the ID3 overwrite "
+        "(default: ./lossless-tag-backups).",
+    )
     return parser.parse_args()
