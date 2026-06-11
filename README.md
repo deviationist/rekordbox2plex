@@ -136,8 +136,10 @@ cp .env.example .env
 | `REKORDBOX_TZ` | string | host local | (`dates` only) Timezone for interpreting *naive* Rekordbox timestamps. Ignored for offset-aware ones like `created_at`. |
 | `PLEX_MEDIA_PATH_MAP` | string | – | (`aiff-titles`; `lossless-tags --refresh-plex`) **Required for `aiff-titles`.** Comma-separated `container=host` path-prefix pairs mapping Plex's stored file paths to host paths so the audio files can be opened (e.g. `/data/music=/tank/music`). Longest prefix wins. |
 | `AIFF_BACKUP_DIR` | string | `./aiff-title-backups` | (`aiff-titles` only) Where originals are backed up before `--write` edits them. |
-| `MUSIC_ROOT` | string | – | (`lossless-tags` only) Filesystem root walked for lossy/lossless pairs (or pass `--root`). |
+| `MUSIC_ROOT` | string | – | (`lossless-tags`, `rb-dates`) Filesystem root walked for lossy/lossless pairs (or pass `--root`). |
 | `TAG_BACKUP_DIR` | string | `./lossless-tag-backups` | (`lossless-tags` only) Where lossless originals are backed up before `--write` overwrites their ID3. |
+| `RB_DATE_SNAPSHOT_PATH` | string | `./rb-date-snapshots.json` | (`rb-dates`) Sidecar JSON holding captured Rekordbox dates (or pass `--snapshot-file`). |
+| `RB_DATE_BACKUP_DIR` | string | `./rekordbox-db-backups` | (`rb-dates apply` only) Where `master.db` is backed up before a `--write` (or pass `--backup-dir`). |
 | `LOGGER_NAME` | string | `rekordbox2plex` | Logger name used for log output. |
 
 > 🔐 **How to find your Plex Token?** See [this guide](#how-to-find-your-plex-api-token).
@@ -164,7 +166,7 @@ Map each Plex path to the corresponding Rekordbox path:
 
 ## Usage
 
-The tool has seven subcommands — **`playlists`**, **`dates`**, **`parity`**, **`aiff-titles`**, **`lossless-tags`**, **`artist-images`**, and **`clear-art`** — which you can run independently:
+The tool has eight subcommands — **`playlists`**, **`dates`**, **`parity`**, **`aiff-titles`**, **`lossless-tags`**, **`rb-dates`**, **`artist-images`**, and **`clear-art`** — which you can run independently:
 
 ```bash
 poetry run rekordbox2plex playlists           # mirror Rekordbox playlists into Plex
@@ -175,6 +177,8 @@ poetry run rekordbox2plex aiff-titles --dry-run   # preview AIFF NAME-chunk titl
 poetry run rekordbox2plex aiff-titles --write     # repair them (file edits; see below)
 poetry run rekordbox2plex lossless-tags --root /tank/music --dry-run  # preview lossy→lossless tag copies (read-only)
 poetry run rekordbox2plex lossless-tags --root /tank/music --write    # copy the tags onto the lossless files (see below)
+poetry run rekordbox2plex rb-dates snapshot --root /tank/music        # capture Rekordbox "Date Added" before a swap (read-only)
+poetry run rekordbox2plex rb-dates apply --dry-run                    # preview restoring those dates (read-only)
 poetry run rekordbox2plex artist-images --dry-run # preview artist posters to set (read-only)
 poetry run rekordbox2plex artist-images --write   # upload them to Plex (see below)
 poetry run rekordbox2plex clear-art --dry-run     # preview uploaded posters to remove (read-only)
@@ -186,6 +190,7 @@ poetry run rekordbox2plex clear-art --write       # remove them (Plex must be st
 - **`parity`** — read-only metadata audit; see [Checking parity](#checking-parity).
 - **`aiff-titles`** — fix AIFF titles where the legacy `NAME` chunk shadows ID3; see [Fixing AIFF titles](#fixing-aiff-titles).
 - **`lossless-tags`** — copy tags from a lossy file onto a same-named lossless replacement; see [Porting tags to lossless files](#porting-tags-to-lossless-files).
+- **`rb-dates`** — preserve the Rekordbox "Date Added" across a lossy→lossless swap; see [Preserving Rekordbox "Date Added"](#preserving-rekordbox-date-added).
 - **`artist-images`** — set artist posters from external sources; see [Artist images](#artist-images).
 - **`clear-art`** — remove uploaded artist/album posters; see [Clearing artwork](#clearing-artwork).
 
@@ -345,6 +350,63 @@ Use `--show unmatched` (or `both`) to list the lossy files that **don't** yet ha
 * `--ignore-case` — match basenames case-insensitively (default: exact match).
 * `--limit <N>` — process at most N matched pairs.
 * `--backup-dir <dir>` — where to back up lossless originals (default `./lossless-tag-backups`, or `TAG_BACKUP_DIR`).
+
+---
+
+## Preserving Rekordbox "Date Added"
+
+When you replace a lossy file with a lossless one, Rekordbox can't just re-analyze it — a format change means the track has to be **re-added**, which creates a fresh entry with **"Date Added" = now**, losing the original. `rb-dates` rescues that date. It's a **two-phase, path-keyed** flow: capture the old date *before* the swap, restore it *after* you re-add the file.
+
+> ⚠️ **This is the only command that writes to the Rekordbox database.** Every other Rekordbox access is strictly read-only. The write is USN-correct (it bumps Rekordbox's own update counters exactly as a normal edit does) and heavily guarded, but you **must free up the DB first** — see the runbook below.
+
+### 1. Snapshot (read-only, safe)
+
+Before deleting the lossy file, capture its Rekordbox date:
+
+```bash
+poetry run rekordbox2plex rb-dates snapshot --root /tank/music            # save to the sidecar
+poetry run rekordbox2plex rb-dates snapshot --root /tank/music --dry-run  # preview only
+```
+
+This walks the root, pairs each lossy file with its same-named lossless sibling (same logic as `lossless-tags`), resolves the **lossy** file to its Rekordbox row, and stores its raw `created_at` in a sidecar JSON keyed by the **lossless** file's path (`./rb-date-snapshots.json`, or `RB_DATE_SNAPSHOT_PATH`/`--snapshot-file`). The raw string is stored verbatim so it restores byte-for-byte.
+
+You can also capture in the **same pass as the tag copy** — `lossless-tags --write --snapshot-dates` snapshots each pair's date before it (optionally) deletes the MP3, so you can't forget.
+
+### 2. Re-add the file in Rekordbox
+
+Delete the lossy file and add the lossless one in Rekordbox as you normally would. Its "Date Added" will (wrongly) be now — that's what we fix next.
+
+### 3. Apply — restore the dates (writes Rekordbox)
+
+**Read-only by default** — preview the `now → original` change for every re-added file:
+
+```bash
+poetry run rekordbox2plex rb-dates apply --dry-run
+```
+
+Files you haven't re-added yet are listed as "awaiting re-add" and kept in the sidecar for later. When the preview looks right, run the guarded write:
+
+```bash
+poetry run rekordbox2plex rb-dates apply --write   # type WRITE-RB-DATES to confirm
+```
+
+#### ⚠️ Runbook — free up the DB before `--write`
+
+`master.db` is synced across your machines (Resilio) and Rekordbox may hold it open anywhere. The write refuses to run unless the DB looks free, but the human steps are on you:
+
+1. **Quit Rekordbox on _every_ workstation.** A clean quit also checkpoints the WAL.
+2. **Pause Resilio Sync** (or be sure it's idle) so it doesn't propagate a half-written file or spawn conflict copies.
+3. Run `apply --write`. It will, in order: show the checklist + require the `WRITE-RB-DATES` token → refuse if a non-empty `master.db-wal` exists (`--ignore-wal` to override) → probe that the file isn't changing (`--stability-wait`, default 5s) → check nothing local holds it open → **back up `master.db`** (to `./rekordbox-db-backups`, or `RB_DATE_BACKUP_DIR`) → write the dates and checkpoint the WAL into the main file.
+4. **Keep Rekordbox closed everywhere until Resilio has propagated** the new `master.db` to all nodes, then verify the dates and resume.
+
+Successfully-restored entries are pruned from the sidecar (so the backlog shrinks and re-runs are idempotent); pass `--keep-applied` to retain them.
+
+Once the Rekordbox date is correct, the existing [`dates`](#syncing-date-added) command carries it through to Plex's "Date Added".
+
+### `rb-dates` arguments
+
+* **`snapshot`** — `--root <dir>` (or `MUSIC_ROOT`), `--dry-run`, `--snapshot-file <path>`, `--lossy-exts`/`--lossless-exts`, `--ignore-case`.
+* **`apply`** — `--dry-run` (default) / `--write` (needs the `WRITE-RB-DATES` token), `--snapshot-file <path>`, `--backup-dir <dir>`, `--ignore-wal`, `--stability-wait <seconds>`, `--keep-applied`, `--allow-running` (bypass the guards — scratch-copy testing only).
 
 ---
 

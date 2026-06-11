@@ -421,6 +421,14 @@ def parse_script_arguments() -> argparse.Namespace:
         help="Match basenames case-insensitively (default: exact match).",
     )
     lossless_tags.add_argument(
+        "--snapshot-dates",
+        action="store_true",
+        dest="snapshot_dates",
+        help="While copying, capture each lossy file's Rekordbox 'Date Added' into "
+        "the rb-dates sidecar (read-only) so it can be restored after you re-add "
+        "the lossless file in Rekordbox.",
+    )
+    lossless_tags.add_argument(
         "--limit",
         default=None,
         type=int,
@@ -433,5 +441,118 @@ def parse_script_arguments() -> argparse.Namespace:
         dest="backup_dir",
         help="Directory to back up lossless originals before the ID3 overwrite "
         "(default: ./lossless-tag-backups).",
+    )
+
+    # rekordbox2plex rb-dates {snapshot,apply} ...
+    rb_dates = subparsers.add_parser(
+        "rb-dates",
+        parents=[common],
+        help="Preserve Rekordbox 'Date Added' across a lossy→lossless swap: "
+        "snapshot the old date, then restore it onto the re-added file.",
+    )
+    rb_modes = rb_dates.add_subparsers(dest="rb_dates_mode", required=True)
+
+    rb_snapshot = rb_modes.add_parser(
+        "snapshot",
+        parents=[common],
+        help="Capture each lossy file's Rekordbox Date Added into the sidecar "
+        "(read-only).",
+    )
+    rb_snapshot.add_argument(
+        "--root",
+        default=None,
+        metavar="DIR",
+        help="Music root to walk for lossy/lossless pairs (env MUSIC_ROOT).",
+    )
+    rb_snapshot.add_argument(
+        "--snapshot-file",
+        dest="snapshot_file",
+        default=None,
+        help="Sidecar JSON path (env RB_DATE_SNAPSHOT_PATH; "
+        "default ./rb-date-snapshots.json).",
+    )
+    rb_snapshot.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview what would be captured without writing the sidecar.",
+    )
+    rb_snapshot.add_argument(
+        "--lossy-exts",
+        dest="lossy_exts",
+        default=None,
+        metavar="EXTS",
+        help="Comma-separated lossy source extensions (default '.mp3').",
+    )
+    rb_snapshot.add_argument(
+        "--lossless-exts",
+        dest="lossless_exts",
+        default=None,
+        metavar="EXTS",
+        help="Comma-separated lossless target extensions (default '.aiff,.aif').",
+    )
+    rb_snapshot.add_argument(
+        "--ignore-case",
+        dest="ignore_case",
+        action="store_true",
+        help="Match basenames case-insensitively (default: exact match).",
+    )
+
+    rb_apply = rb_modes.add_parser(
+        "apply",
+        parents=[common],
+        help="Restore captured dates onto the re-added Rekordbox rows "
+        "(read-only unless --write; Rekordbox must be closed everywhere).",
+    )
+    rb_apply.add_argument(
+        "--snapshot-file",
+        dest="snapshot_file",
+        default=None,
+        help="Sidecar JSON path (env RB_DATE_SNAPSHOT_PATH; "
+        "default ./rb-date-snapshots.json).",
+    )
+    rb_apply.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview the old→restored date table without writing (also the "
+        "default; overrides --write).",
+    )
+    rb_apply.add_argument(
+        "--write",
+        action="store_true",
+        help="Write the dates into the Rekordbox DB (requires the WRITE-RB-DATES "
+        "token; Rekordbox closed + Resilio idle).",
+    )
+    rb_apply.add_argument(
+        "--backup-dir",
+        dest="backup_dir",
+        default=None,
+        help="Where to back up master.db before writing "
+        "(env RB_DATE_BACKUP_DIR; default ./rekordbox-db-backups).",
+    )
+    rb_apply.add_argument(
+        "--ignore-wal",
+        dest="ignore_wal",
+        action="store_true",
+        help="Proceed even if a non-empty master.db-wal exists (advanced — "
+        "normally means Rekordbox is still open).",
+    )
+    rb_apply.add_argument(
+        "--stability-wait",
+        dest="stability_wait",
+        type=float,
+        default=5.0,
+        metavar="SECONDS",
+        help="Seconds the quiescence probe waits between stat samples (default 5).",
+    )
+    rb_apply.add_argument(
+        "--keep-applied",
+        dest="keep_applied",
+        action="store_true",
+        help="Keep restored entries in the sidecar instead of pruning them.",
+    )
+    rb_apply.add_argument(
+        "--allow-running",
+        action="store_true",
+        help="Bypass the open/stability guards (only for scratch-copy testing).",
     )
     return parser.parse_args()

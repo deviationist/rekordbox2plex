@@ -113,3 +113,8 @@ parity-*.tsv
 
 # Artwork backups / scratch output
 aiff-title-backups/
+lossless-tag-backups/
+
+# rb-dates: captured-date sidecar + Rekordbox DB backups (never commit these)
+rb-date-snapshots.json
+rekordbox-db-backups/

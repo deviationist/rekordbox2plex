@@ -2,6 +2,7 @@ from ..RekordboxDB import RekordboxDB
 from ...utils.progress_bar import Progress, TaskID, NullProgress
 from ...utils.logger import logger
 from ...utils.folder_mappings import get_folder_mappings
+from ...utils.media_paths import PathMap, resolve_container_path
 from ...plex.data_types import PlexTrackWrapper
 
 
@@ -72,6 +73,25 @@ def resolve_track_id_by_plex_path(plex_file_path: str) -> int | None:
     the `dates` command, which enumerates Plex from its DB rather than the API.
     """
     return resolve_track_id_by_rb_path(convert_path_to_rekordbox(plex_file_path))
+
+
+def resolve_rb_id_by_host_path(
+    host_path: str, media_map: PathMap | None = None
+) -> int | None:
+    """Resolve a Rekordbox track ID from a HOST filesystem path (as walked by the
+    ``lossless-tags``/``rb-dates`` filesystem pass).
+
+    Bridges the path representations: host path → Plex *container* path (reverse
+    ``PLEX_MEDIA_PATH_MAP``) → Rekordbox ``FolderPath`` (folderMappings.json) →
+    ``djmdContent.ID``. If no media map applies (e.g. run on the Mac where the host
+    path already matches what Rekordbox stored), the path passes straight through
+    ``convert_path_to_rekordbox``."""
+    plex_path = host_path
+    if media_map:
+        container = resolve_container_path(host_path, media_map)
+        if container is not None:
+            plex_path = container
+    return resolve_track_id_by_plex_path(plex_path)
 
 
 def resolve_track_id(

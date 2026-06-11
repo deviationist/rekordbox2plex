@@ -78,3 +78,15 @@ def resolve_rb_added_at(
     tz_name = tz_name if tz_name is not None else get_rekordbox_tz()
     raw = get_rb_timestamps(rb_id).get(field)
     return to_epoch(parse_rb_timestamp(raw, tz_name))
+
+
+def read_rb_added_at_raw(rb_id: int, field: Optional[str] = None) -> Optional[str]:
+    """Return the **raw, unparsed** added-at string (the configured field, default
+    ``created_at``) for a Rekordbox track ID, e.g. ``2020-09-17 22:16:29.060
+    +00:00`` — or None if absent. Used by the ``rb-dates`` snapshot so the value
+    can be restored byte-for-byte later."""
+    field = field or get_rb_added_at_field()
+    raw = get_rb_timestamps(rb_id).get(field)
+    if raw is None or not str(raw).strip():
+        return None
+    return str(raw)
