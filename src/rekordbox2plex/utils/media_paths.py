@@ -46,3 +46,18 @@ def resolve_host_path(plex_path: str, mapping: PathMap) -> Optional[str]:
         if plex_path == container or plex_path.startswith(container + "/"):
             return host + plex_path[len(container) :]
     return None
+
+
+def resolve_container_path(host_path: str, mapping: PathMap) -> Optional[str]:
+    """Return the Plex *container* path for a host filesystem path, or None if no
+    mapping prefix matches — the inverse of ``resolve_host_path``. Used to scope a
+    Plex partial scan (``LibrarySection.update(path=…)``) to a host directory.
+
+    Longest *host* prefix wins (the map is stored longest-container-first, so we
+    re-sort by host length here)."""
+    for host, container in sorted(
+        ((h, c) for c, h in mapping), key=lambda p: len(p[0]), reverse=True
+    ):
+        if host_path == host or host_path.startswith(host + "/"):
+            return container + host_path[len(host) :]
+    return None
