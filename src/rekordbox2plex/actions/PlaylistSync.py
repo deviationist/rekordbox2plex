@@ -122,7 +122,10 @@ class PlaylistSync(ActionBase):
             logger.debug(
                 f'Creating playlist "{rb_playlist.name}" with {track_count} tracks'
             )
-            PlexPlaylistRepository().create_playlist(rb_playlist.name, plex_items)
+            # Counted either way, so a dry run's summary says what a real run
+            # would do; only the write itself is skipped.
+            if not self.dry_run:
+                PlexPlaylistRepository().create_playlist(rb_playlist.name, plex_items)
             return track_count
         return False
 
@@ -184,7 +187,11 @@ class PlaylistSync(ActionBase):
             len(plex_playlist_items_from_rb) == 0
             and len(plex_playlist_existing_items) == 0
         ):
-            plex_playlist.delete()
+            # Was unguarded: a --dry-run deleted every playlist empty on both
+            # sides. --dry-run is a promise that nothing changes in Plex.
+            logger.debug(f'Delete empty playlist "{plex_playlist.title}"')
+            if not self.dry_run:
+                plex_playlist.delete()
             self.deleted += 1
             return False
         did_add_items = self.add_items_to_playlist(
